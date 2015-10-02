@@ -4,9 +4,9 @@
         xmlns="http://java.sun.com/xml/ns/jax-ws/ri/runtime"
         version="2.0">
 
-    <endpoint
-            name="MiddleManager"
-            implementation="middleware.ResourceManagerImpl"
-            url-pattern="/service"/>
+        <endpoint
+                name="MiddlewareManager"
+                implementation="middleware.ResourceManagerImpl"
+                url-pattern="/service"/>
 
 </endpoints>

@@ -8,7 +8,7 @@
 
     <property name="middleware.name" value="middle"/>
     <property name="middleware.host" value="localhost"/>
-    <property name="middleware.port" value="6659"/>
+    <property name="middleware.port" value="6666"/>
 
 
 
@@ -102,17 +102,7 @@
     <taskdef name="wsimport" classname="com.sun.tools.ws.ant.WsImport">
         <classpath refid="jaxws.classpath"/>
     </taskdef>
-    <!--
-    <target name="generate-client" depends="setup">
-        <wsimport
-                quiet="true"
-                keep="true"
-                destdir="${basedir}/build/classes"
-                package="client"
-                wsdl="http://${service.host}:${service.port}/${service.name}/service?wsdl">
-        </wsimport>
-    </target>
-    -->
+
 
     <!--MIDDLEWARE target -->
     <target name="build-middleware">
@@ -147,16 +137,31 @@
                 warfile="${basedir}/build/war/${middleware.name}.war"
                 webxml="src/middleware/web.xml">
             <webinf dir="${basedir}/src/middleware" includes="sun-jaxws.xml"/>
+            <!-- change the directory -->
+            <webinf dir="${basedir}/src/middleware" includes="sun-jaxws.xml"/>
+            <!-- change the directory -->
             <classes dir="${basedir}/build/classes"/>
         </war>
     </target>
 
-    <target name="start-tomcat-middleware">
+    <target name="build-main">
+        <javac
+                fork="true"
+                srcdir="${basedir}/src"
+                destdir="${basedir}/build"
+                includes="main/**">
+            <classpath refid="jaxws.classpath"/>
+        </javac>
+    </target>
+
+
+
+    <target name="start-tomcat-middleware" depends="build-main">
         <echo message="Starting Tomcat and deploying service ... "/>
-        <java fork="true" classname="middleware.Main">
+        <java fork="true" classname="main.Main">
             <classpath>
                 <path refid="jaxws.classpath"/>
-                <pathelement location="${basedir}/build/classes"/>
+                <pathelement location="${basedir}/build/"/>
             </classpath>
             <jvmarg value="-Djava.security.policy=${basedir}/etc/server.policy"/>
             <arg value="${middleware.name}"/>
@@ -167,7 +172,6 @@
 
 
     <target name="middleware" depends="setup">
-
         <antcall target="build-middleware"/>
         <antcall target="create-war-middleware"/>
         <antcall target="deploy-war-middleware"/>
@@ -175,6 +179,7 @@
     </target>
 
     <!--End of middleware -->
+
 
     <taskdef name="wsimport" classname="com.sun.tools.ws.ant.WsImport">
         <classpath refid="jaxws.classpath"/>
