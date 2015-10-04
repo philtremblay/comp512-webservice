@@ -180,8 +180,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                         + key + ", " + location + ") failed: update item info.");
                 return false;
             }
-//            item.setCount(item.getCount() - 1);
-//            item.setReserved(item.getReserved() + 1);
 
             Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
                     + key + ", " + location + ") OK.");
@@ -480,12 +478,24 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     @Override
     public boolean reserveItinerary(int id, int customerId, Vector flightNumbers, String location, boolean car, boolean room) {
-
-
         /** call methods from all three servers to execute actions **/
-        //not implemented on the server side yet
+        Iterator it = flightNumbers.iterator();
 
-        return false;
+        while(it.hasNext()){
+            if(!(reserveFlight(id,customerId,Integer.parseInt((String)it.next())))){
+                //error
+                return false;
+            }
+        }
+        //there is a car
+        if(!car){
+            reserveCar(id,customerId,location);
+        }
+        //there is a room
+        else if (!room){
+            reserveRoom(id,customerId,location);
+        }
+        return true;
     }
 
     @Override
