@@ -463,5 +463,19 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             return true;
         }
     }
+    @Override
+    public boolean updateDeleteCustomer(int id, String key,int count){
+        ReservableItem item = (ReservableItem) readData(id,key);
+        if (item == null){
+//            error
+            return false;
+        }
+        item.setReserved(item.getReserved() - count);
+        item.setCount(item.getCount() + count);
+
+        Trace.info(key + " reserved/available = "
+                        + item.getReserved() + "/" + item.getCount());
+        return true;
+    }
 
 }

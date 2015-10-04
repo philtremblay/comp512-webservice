@@ -63,6 +63,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // Basic operations on ReservableItem //
 
     // Delete the entire item.
+    //finish*******************************************************************************
     protected boolean deleteItem(int id, String key) {
         Trace.info("RM::deleteItem(" + id + ", " + key + ") called.");
         ReservableItem curObj = (ReservableItem) readData(id, key);
@@ -110,21 +111,21 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     }
 
     // Reserve an item.
-    protected boolean reserveItem(int id, int customerId, String location, String key, int itemInfo) {
+    protected boolean reserveItem(int id, int customerId, String location, String key, int itemInfo, int itemId) {
         //get item info
         List<String> item = null;
         int count = -1;
         int price = -1;
         switch(itemInfo){
-            case 1: //item = flightProxy.proxy.getItemInfo(id,key);
+            case 1:
                 count = flightProxy.proxy.queryFlight(id, Integer.parseInt(location));
                 price = flightProxy.proxy.queryFlightPrice(id,Integer.parseInt(location));
                 break;
-            case 2: //item = carProxy.proxy.getItemInfo(id,location);
+            case 2:
                 count = carProxy.proxy.queryCars(id,location);
                 price = carProxy.proxy.queryCarsPrice(id,location);
                 break;
-            case 3: //item = roomProxy.proxy.getItemInfo(id,key);
+            case 3:
                 count = roomProxy.proxy.queryRooms(id,location);
                 price = roomProxy.proxy.queryRoomsPrice(id,location);
                 break;
@@ -162,7 +163,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             return false;
         } else {
             // Do reservation
-            cust.reserve(key, location, price); //change location maybe
+            cust.reserve(key, location, price,itemInfo,itemId); //change location maybe
             writeData(id, cust.getKey(), cust);
 
             // Decrease the number of available items in the storage.
@@ -410,13 +411,37 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 Trace.info("RM::deleteCustomer(" + id + ", " + customerId + "): "
                         + "deleting " + reservedItem.getCount() + " reservations "
                         + "for item " + reservedItem.getKey());
-                ReservableItem item =
-                        (ReservableItem) readData(id, reservedItem.getKey());
-                item.setReserved(item.getReserved() - reservedItem.getCount());
-                item.setCount(item.getCount() + reservedItem.getCount());
-                Trace.info("RM::deleteCustomer(" + id + ", " + customerId + "): "
-                        + reservedItem.getKey() + " reserved/available = "
-                        + item.getReserved() + "/" + item.getCount());
+                //**************************************************************************************
+                int itemId = reservedItem.getId();
+                int count = reservedItem.getCount();
+
+                Trace.info("RM::deleteCustomer(" + id + ", " + customerId + "): ");
+                //car
+                if(reservedItem.getType() == 1){
+                    if(!(flightProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count))){
+                        return false;
+                        //error
+                    }
+                }
+                //room
+                else if (reservedItem.getType() == 2){
+                    if(!(carProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count))){
+                        return false;
+                        //error
+                    }
+                }
+                else if (reservedItem.getType() == 3){
+                    if(!(roomProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count))){
+                        return false;
+                        //error
+                    }
+                }
+//                ReservableItem item = (ReservableItem) readData(id, reservedItem.getKey());
+//                item.setReserved(item.getReserved() - reservedItem.getCount());
+//                item.setCount(item.getCount() + reservedItem.getCount());
+//                Trace.info("RM::deleteCustomer(" + id + ", " + customerId + "): "
+//                        + reservedItem.getKey() + " reserved/available = "
+//                        + item.getReserved() + "/" + item.getCount());
             }
             // Remove the customer from the storage.
             removeData(id, cust.getKey());
@@ -459,21 +484,21 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         /** call methods from the flight server to execute actions **/
         //get flight key
         String key = flightProxy.proxy.getFlightKey(flightNumber);
-        return reserveItem(id,customerId,String.valueOf(flightNumber),key,1);
+        return reserveItem(id,customerId,String.valueOf(flightNumber),key,1,id);
     }
 
     @Override
     public boolean reserveCar(int id, int customerId, String location) {
         /** call methods from the car server to execute actions **/
         String key = carProxy.proxy.getCarKey(location);
-        return reserveItem(id,customerId,location,key,2);
+        return reserveItem(id,customerId,location,key,2,id);
     }
 
     @Override
     public boolean reserveRoom(int id, int customerId, String location) {
         /** call methods from the room server to execute actions **/
         String key = roomProxy.proxy.getRoomKey(location);
-        return reserveItem(id, customerId,location, key, 3);
+        return reserveItem(id, customerId,location, key, 3,id);
     }
 
     @Override
@@ -500,21 +525,28 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     @Override
     public String getFlightKey(int customerId){
-        return "Has to be called from proxy";
+        return "Has to be called from middleware";
     }
 
     @Override
     public String getCarKey(String location){
-        return "Has to be called from proxy";
+        return "Has to be called from middleware";
     }
     @Override
     public String getRoomKey(String location){
-        return "Has to be called from proxy";
+        return "Has to be called from middleware";
     }
     @Override
     public boolean updateItemInfo(int id, String key){
-        Trace.warn("Error: Has to be called from proxy");
+        Trace.warn("Error: Has to be called from middleware");
 
         return false;
     }
+    @Override
+    public boolean updateDeleteCustomer(int id, String key, int count){
+        Trace.warn("Error: Has to be called from middleware");
+
+        return false;
+    }
+
 }

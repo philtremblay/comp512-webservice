@@ -151,4 +151,7 @@ public interface ResourceManager {
     @WebMethod
     public boolean updateItemInfo(int id, String key);
 
+    @WebMethod
+    public boolean updateDeleteCustomer(int id, String key, int count);
+
 }
