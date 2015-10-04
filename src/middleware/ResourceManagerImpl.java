@@ -60,56 +60,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
     }
 
-    // Basic operations on ReservableItem //
-
-    // Delete the entire item.
-    //finish*******************************************************************************
-    protected boolean deleteItem(int id, String key) {
-        Trace.info("RM::deleteItem(" + id + ", " + key + ") called.");
-        ReservableItem curObj = (ReservableItem) readData(id, key);
-        // Check if there is such an item in the storage.
-        if (curObj == null) {
-            Trace.warn("RM::deleteItem(" + id + ", " + key + ") failed: "
-                    + " item doesn't exist.");
-            return false;
-        } else {
-            if (curObj.getReserved() == 0) {
-                removeData(id, curObj.getKey());
-                Trace.info("RM::deleteItem(" + id + ", " + key + ") OK.");
-                return true;
-            }
-            else {
-                Trace.info("RM::deleteItem(" + id + ", " + key + ") failed: "
-                        + "some customers have reserved it.");
-                return false;
-            }
-        }
-    }
-
-    // Query the number of available seats/rooms/cars.
-    protected int queryNum(int id, String key) {
-        Trace.info("RM::queryNum(" + id + ", " + key + ") called.");
-        ReservableItem curObj = (ReservableItem) readData(id, key);
-        int value = 0;
-        if (curObj != null) {
-            value = curObj.getCount();
-        }
-        Trace.info("RM::queryNum(" + id + ", " + key + ") OK: " + value);
-        return value;
-    }
-
-    // Query the price of an item.
-    protected int queryPrice(int id, String key) {
-        Trace.info("RM::queryCarsPrice(" + id + ", " + key + ") called.");
-        ReservableItem curObj = (ReservableItem) readData(id, key);
-        int value = 0;
-        if (curObj != null) {
-            value = curObj.getPrice();
-        }
-        Trace.info("RM::queryCarsPrice(" + id + ", " + key + ") OK: $" + value);
-        return value;
-    }
-
     // Reserve an item.
     protected boolean reserveItem(int id, int customerId, String location, String key, int itemInfo, int itemId) {
         //get item info
@@ -152,7 +102,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
 
         // Check if the item is available.
-        //ReservableItem item = (ReservableItem) readData(id, key);
         if (count == -1) {
             Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
                     + key + ", " + location + ") failed: item doesn't exist.");
@@ -411,7 +360,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 Trace.info("RM::deleteCustomer(" + id + ", " + customerId + "): "
                         + "deleting " + reservedItem.getCount() + " reservations "
                         + "for item " + reservedItem.getKey());
-                //**************************************************************************************
                 int itemId = reservedItem.getId();
                 int count = reservedItem.getCount();
 
@@ -436,12 +384,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                         //error
                     }
                 }
-//                ReservableItem item = (ReservableItem) readData(id, reservedItem.getKey());
-//                item.setReserved(item.getReserved() - reservedItem.getCount());
-//                item.setCount(item.getCount() + reservedItem.getCount());
-//                Trace.info("RM::deleteCustomer(" + id + ", " + customerId + "): "
-//                        + reservedItem.getKey() + " reserved/available = "
-//                        + item.getReserved() + "/" + item.getCount());
+
             }
             // Remove the customer from the storage.
             removeData(id, cust.getKey());
