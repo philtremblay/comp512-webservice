@@ -138,5 +138,17 @@ public interface ResourceManager {
     @WebMethod
     public boolean reserveItinerary(int id, int customerId, Vector flightNumbers, 
                                     String location, boolean car, boolean room);
-    			
+
+    @WebMethod
+    public String getFlightKey(int flightNumber);
+
+    @WebMethod
+    public String getCarKey(String location);
+
+    @WebMethod
+    public String getRoomKey(String location);
+
+    @WebMethod
+    public boolean updateItemInfo(int id, String key);
+
 }

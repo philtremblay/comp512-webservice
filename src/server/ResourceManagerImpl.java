@@ -9,7 +9,7 @@ import java.util.*;
 import javax.jws.WebService;
 
 
-@WebService(endpointInterface = "server.ws.ResourceManager",targetNamespace = "http://server")
+@WebService(endpointInterface = "server.ws.ResourceManager")
 public class ResourceManagerImpl implements server.ws.ResourceManager {
     
     protected RMHashtable m_itemHT = new RMHashtable();
@@ -412,7 +412,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // Add flight reservation to this customer.  
     @Override
     public boolean reserveFlight(int id, int customerId, int flightNumber) {
-        return reserveItem(id, customerId, 
+        return reserveItem(id, customerId,
                 Flight.getKey(flightNumber), String.valueOf(flightNumber));
     }
 
@@ -422,7 +422,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         return reserveItem(id, customerId, Car.getKey(location), location);
     }
 
-    // Add room reservation to this customer. 
+    // Add room reservation to this customer.
     @Override
     public boolean reserveRoom(int id, int customerId, String location) {
         return reserveItem(id, customerId, Room.getKey(location), location);
@@ -434,6 +434,34 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public boolean reserveItinerary(int id, int customerId, Vector flightNumbers,
                                     String location, boolean car, boolean room) {
         return false;
+    }
+
+    @Override
+    public String getFlightKey(int flightNumber){
+        return Flight.getKey(flightNumber);
+    }
+    @Override
+    public String getCarKey(String location){
+        return Car.getKey(location);
+    }
+    @Override
+    public String getRoomKey(String location){
+        return Room.getKey(location);
+    }
+    @Override
+    public boolean updateItemInfo(int id, String key){
+        ReservableItem item = (ReservableItem) readData(id, key);
+
+        if (item == null) {
+            Trace.warn("RM::reserveItem(" + id + ", "
+                    + key + ",) failed: item doesn't exist.");
+            return false;
+        }
+        else {
+            item.setCount(item.getCount() - 1);
+            item.setReserved(item.getReserved() + 1);
+            return true;
+        }
     }
 
 }
