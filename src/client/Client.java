@@ -42,8 +42,8 @@ public class Client extends WSClient {
         int flightNumber;
         int flightPrice;
         int numSeats;
-        int room;
-        int car;
+        boolean room;
+        boolean car;
         int price;
         int numRooms;
         int numCars;
@@ -516,11 +516,10 @@ public class Client extends WSClient {
                     for (int i = 0; i < arguments.size()-6; i++)
                         flightNumbers.addElement(arguments.elementAt(3 + i));
                     location = getString(arguments.elementAt(arguments.size()-3));
-                    car = getInt(arguments.elementAt(arguments.size()-2));
-                    room = getInt(arguments.elementAt(arguments.size()-1));
+                    car = getBoolean(arguments.elementAt(arguments.size()-2));
+                    room = getBoolean(arguments.elementAt(arguments.size()-1));
                     
-                    if (proxy.reserveItinerary(id, customer, flightNumbers, 
-                            location, car, room))
+                    if (proxy.reserveItinerary(id, customer, flightNumbers, location, car, room))
                         System.out.println("Itinerary Reserved");
                     else
                         System.out.println("Itinerary could not be reserved.");

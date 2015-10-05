@@ -440,7 +440,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     }
 
     @Override
-    public boolean reserveItinerary(int id, int customerId, Vector flightNumbers, String location, int car, int room) {
+    public boolean reserveItinerary(int id, int customerId, Vector flightNumbers, String location, boolean car, boolean room) {
         /** call methods from all three servers to execute actions **/
         Iterator it = flightNumbers.iterator();
 
@@ -450,25 +450,17 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " + location + ") failed: no more seats available.");            }
         }
         //there is a car and room
-        if ((car > 0) && (room > 0)) {
-            for (int i=0 ; i < car ; i++) {
-                reserveCar(id, customerId, location);
-            }
-            for (int i=0 ; i < room ; i++){
-                reserveRoom(id, customerId, location);
-            }
+        if (car  &&  room) {
+            reserveCar(id, customerId, location);
+            reserveRoom(id, customerId, location);
         }
         //there is a room
-        else if (room > 0){
-            for (int i=0 ; i < room ; i++){
-                reserveRoom(id, customerId, location);
-            }
+        else if (room){
+            reserveRoom(id, customerId, location);
         }
         //if there is a car
-        else if(car > 0){
-            for (int i=0 ; i < car ; i++) {
-                reserveCar(id, customerId, location);
-            }
+        else if(car){
+            reserveCar(id, customerId, location);
         }
         return true;
     }

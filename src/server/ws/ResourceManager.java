@@ -137,7 +137,7 @@ public interface ResourceManager {
     /* Reserve an itinerary. */
     @WebMethod
     public boolean reserveItinerary(int id, int customerId, Vector flightNumbers, 
-                                    String location, int car, int room);
+                                    String location, boolean car, boolean room);
 
     @WebMethod
     public String getFlightKey(int flightNumber);
