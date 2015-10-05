@@ -61,7 +61,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     }
 
     // Reserve an item.
-    protected boolean reserveItem(int id, int customerId, String location, String key, int itemInfo, int itemId) {
+    protected boolean reserveItem(int id, int customerId, String location, String key, int itemInfo) {
         //get item info
         List<String> item = null;
         int count = -1;
@@ -80,12 +80,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 price = roomProxy.proxy.queryRoomsPrice(id,location);
                 break;
         }
-        /*info[0] = item.getLocation();
-            info[1] = String.valueOf(item.getCount());
-            info[2] = item.getKey();
-            info[3] = String.valueOf(item.getPrice());
-            info[4] = String.valueOf(true);
-        */
+
         if (count == -1){
             Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
                     + key  + ") failed: item doesn't exist.");
@@ -112,7 +107,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             return false;
         } else {
             // Do reservation
-            cust.reserve(key, location, price,itemInfo,itemId); //change location maybe
+            cust.reserve(key, location, price,itemInfo,id); //change location maybe
             writeData(id, cust.getKey(), cust);
 
             // Decrease the number of available items in the storage.
@@ -153,13 +148,13 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         } catch (MalformedURLException e) {
             System.out.println("Connecting to the car server " + c_host + " "+ c_port);
         }
-/*
+
         try {
             roomProxy = new WSClient(r_name, r_host, r_port);
         } catch (MalformedURLException e) {
             System.out.println("Connecting to the room server");
         }
-*/
+
 
     }
 
@@ -427,47 +422,59 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         /** call methods from the flight server to execute actions **/
         //get flight key
         String key = flightProxy.proxy.getFlightKey(flightNumber);
-        return reserveItem(id,customerId,String.valueOf(flightNumber),key,1,id);
+        return reserveItem(id,customerId,String.valueOf(flightNumber),key,1 );
     }
 
     @Override
     public boolean reserveCar(int id, int customerId, String location) {
         /** call methods from the car server to execute actions **/
         String key = carProxy.proxy.getCarKey(location);
-        return reserveItem(id,customerId,location,key,2,id);
+        return reserveItem(id,customerId,location,key,2);
     }
 
     @Override
     public boolean reserveRoom(int id, int customerId, String location) {
         /** call methods from the room server to execute actions **/
         String key = roomProxy.proxy.getRoomKey(location);
-        return reserveItem(id, customerId,location, key, 3,id);
+        return reserveItem(id, customerId,location, key, 3);
     }
 
     @Override
-    public boolean reserveItinerary(int id, int customerId, Vector flightNumbers, String location, boolean car, boolean room) {
+    public boolean reserveItinerary(int id, int customerId, Vector flightNumbers, String location, int car, int room) {
         /** call methods from all three servers to execute actions **/
         Iterator it = flightNumbers.iterator();
 
         while(it.hasNext()){
             if(!(reserveFlight(id,customerId,Integer.parseInt((String)it.next())))){
                 //error
-                return false;
+                Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " + location + ") failed: no more seats available.");            }
+        }
+        //there is a car and room
+        if ((car > 0) && (room > 0)) {
+            for (int i=0 ; i < car ; i++) {
+                reserveCar(id, customerId, location);
+            }
+            for (int i=0 ; i < room ; i++){
+                reserveRoom(id, customerId, location);
             }
         }
-        //there is a car
-        if(!car){
-            reserveCar(id,customerId,location);
-        }
         //there is a room
-        else if (!room){
-            reserveRoom(id,customerId,location);
+        else if (room > 0){
+            for (int i=0 ; i < room ; i++){
+                reserveRoom(id, customerId, location);
+            }
+        }
+        //if there is a car
+        else if(car > 0){
+            for (int i=0 ; i < car ; i++) {
+                reserveCar(id, customerId, location);
+            }
         }
         return true;
     }
 
     @Override
-    public String getFlightKey(int customerId){
+    public String getFlightKey(int flightNumber){
         return "Has to be called from middleware";
     }
 

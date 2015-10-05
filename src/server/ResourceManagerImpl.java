@@ -432,7 +432,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // Reserve an itinerary.
     @Override
     public boolean reserveItinerary(int id, int customerId, Vector flightNumbers,
-                                    String location, boolean car, boolean room) {
+                                    String location, int car, int room) {
         return false;
     }
 
