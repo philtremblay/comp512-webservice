@@ -71,7 +71,7 @@ public class LockManager
                             trxnObj.setLockType(WRITE);
                             dataObj.setLockType(WRITE);
                             this.lockTable.add(trxnObj);
-                            this.lockTable.add(dataObj);cd
+                            this.lockTable.add(dataObj);
 
                         } else {
                             // a lock request that is not lock conversion
