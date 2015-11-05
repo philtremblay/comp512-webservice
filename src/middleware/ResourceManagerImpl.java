@@ -17,6 +17,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     WSClient carProxy;
     WSClient roomProxy;
 
+
+    short f_flag = 1;
+    short c_flag = 1;
+    short r_flag = 0;
+
     //flight server properties
     String f_name = "flight";
     String f_host = "localhost";
@@ -34,7 +39,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     int r_port = 8084;
 
     //code for Client imported from server
-    protected RMHashtable m_itemHT = new RMHashtable();
+    final protected RMHashtable m_itemHT = new RMHashtable();
 
 
     // Basic operations on RMItem //
@@ -135,25 +140,63 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     //constructor that creates proxies to each server
     public ResourceManagerImpl() {
 
-        try {
-            flightProxy = new WSClient(f_name, f_host, f_port);
-            System.out.println("middleware is connected to the flight server: " +f_host + " " +f_port);
+        if (f_flag == 1) {
+            try {
+                flightProxy = new WSClient(f_name, f_host, f_port);
+                System.out.println("middleware is connected to the flight server: " +f_host + " " +f_port);
 
-        } catch (MalformedURLException e) {
-            System.out.println("Connecting to the flight server");
+            } catch (MalformedURLException e) {
+                System.out.println("Connecting to the flight server");
+            }
         }
 
-        try {
-            carProxy = new WSClient(c_name, c_host, c_port);
-        } catch (MalformedURLException e) {
-            System.out.println("Connecting to the car server " + c_host + " "+ c_port);
+        if (c_flag == 1) {
+            try {
+                carProxy = new WSClient(c_name, c_host, c_port);
+            } catch (MalformedURLException e) {
+                System.out.println("Connecting to the car server " + c_host + " "+ c_port);
+            }
         }
 
-        try {
-            roomProxy = new WSClient(r_name, r_host, r_port);
-        } catch (MalformedURLException e) {
-            System.out.println("Connecting to the room server");
+        if (r_flag == 1) {
+            try {
+                roomProxy = new WSClient(r_name, r_host, r_port);
+            } catch (MalformedURLException e) {
+                System.out.println("Connecting to the room server");
+            }
         }
+
+        if (f_flag == 1) {
+
+            if (c_flag == 0) {
+                carProxy = flightProxy;
+            }
+
+            if (r_flag == 0) {
+                roomProxy = flightProxy;
+            }
+        }
+        else if (c_flag == 1) {
+
+            if (f_flag == 0) {
+                flightProxy = carProxy;
+            }
+            if (r_flag == 0) {
+                roomProxy = carProxy;
+            }
+        }
+
+        else if (r_flag == 1) {
+
+            if (f_flag == 0) {
+                flightProxy = roomProxy;
+            }
+            if (c_flag == 0) {
+                carProxy = roomProxy;
+            }
+        }
+        
+
 
 
     }
