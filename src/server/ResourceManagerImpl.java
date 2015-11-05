@@ -17,8 +17,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     //creating unique trxnId
     protected int currentTxnId = 0;
 
-    private synchronized int incr(){
-        return ++this.currentTxnId;
+    private synchronized void incr(){
+        this.currentTxnId++;
     }
     private synchronized int getVal(){
         return this.currentTxnId;
@@ -493,7 +493,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public int start(){
         //generate new transaction Id
-        int txnId = incr();
+        this.incr();
+        int txnId = this.getVal();
 
         //create entry in transaction log
         //create operations vector
