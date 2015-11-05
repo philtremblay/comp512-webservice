@@ -13,7 +13,16 @@ import javax.jws.WebService;
 public class ResourceManagerImpl implements server.ws.ResourceManager {
     
     protected RMHashtable m_itemHT = new RMHashtable();
-    
+
+    //creating unique trxnId
+    protected int currentTxnId = 0;
+
+    private synchronized int incr(){
+        return ++this.currentTxnId;
+    }
+    private synchronized int getVal(){
+        return this.currentTxnId;
+    }
     
     // Basic operations on RMItem //
     
@@ -475,6 +484,35 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         Trace.info(key + " reserved/available = "
                         + item.getReserved() + "/" + item.getCount());
+        return true;
+    }
+
+    //*************************************************************************************
+    // Submission 2
+
+    @Override
+    public int start(){
+        //generate new transaction Id
+        int txnId = incr();
+
+        //create entry in transaction log
+        //create operations vector
+
+        return txnId;
+    }
+
+    @Override
+    public boolean commit(int txnId){
+        return true;
+    }
+
+    @Override
+    public boolean abort(int txnId){
+        return true;
+    }
+
+    @Override
+    public boolean shutdown(){
         return true;
     }
 

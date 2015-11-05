@@ -154,4 +154,16 @@ public interface ResourceManager {
     @WebMethod
     public boolean updateDeleteCustomer(int id, String key, int count);
 
+    @WebMethod
+    public int start();
+
+    @WebMethod
+    public boolean commit(int txnId);
+
+    @WebMethod
+    public boolean abort(int txnId);
+
+    @WebMethod
+    public boolean shutdown();
+
 }

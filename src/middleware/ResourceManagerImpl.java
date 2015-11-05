@@ -19,7 +19,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
 
     short f_flag = 1;
-    short c_flag = 1;
+    short c_flag = 0;
     short r_flag = 0;
 
     //flight server properties
@@ -532,6 +532,26 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         Trace.warn("Error: Has to be called from middleware");
 
         return false;
+    }
+
+    @Override
+    public int start(){
+        return 1;
+    }
+
+    @Override
+    public boolean commit(int txnId){
+        return true;
+    }
+
+    @Override
+    public boolean abort(int txnId){
+        return true;
+    }
+
+    @Override
+    public boolean shutdown(){
+        return true;
     }
 
 }
