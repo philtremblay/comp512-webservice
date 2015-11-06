@@ -1,5 +1,7 @@
 package server.LockManager;
 
+import server.Trace;
+
 import java.util.BitSet;
 import java.util.Vector;
 
@@ -13,7 +15,7 @@ public class LockManager
     
     private static TPHashTable lockTable = new TPHashTable(LockManager.TABLE_SIZE);
     private static TPHashTable stampTable = new TPHashTable(LockManager.TABLE_SIZE);
-    private static TPHashTable waitTable = new TPHashTable(LockManager.TABLE_SIZE);
+    final private static TPHashTable waitTable = new TPHashTable(LockManager.TABLE_SIZE);
     
     public LockManager() {
         super();
@@ -37,15 +39,20 @@ public class LockManager
         // two objects in lock table for easy lookup.
         TrxnObj trxnObj = new TrxnObj(xid, strData, lockType);
         DataObj dataObj = new DataObj(xid, strData, lockType);
+
+
+        System.out.println("MESSAGE: " + dataObj.toString());
         
         // return true when there is no lock conflict or throw a deadlock exception.
         try {
             boolean bConflict = true;
+            //create a bit array
             BitSet bConvert = new BitSet(1);
             while (bConflict) {
                 synchronized (this.lockTable) {
                     // check if this lock request conflicts with existing locks
                     bConflict = LockConflict(dataObj, bConvert);
+
                     if (!bConflict) {
                         // no lock conflict
                         synchronized (this.stampTable) {
@@ -59,8 +66,9 @@ public class LockManager
                             WaitObj waitObj = new WaitObj(xid, strData, lockType);
                             this.waitTable.remove(waitObj);
                         }
-                         
-                        if (bConvert.get(0) == true) {
+
+                        if (bConvert.get(0)) {
+
                             // lock conversion 
                             // *** ADD CODE HERE *** to carry out the lock conversion in the
                             // lock table
@@ -70,11 +78,13 @@ public class LockManager
                             // whats the difference between txnobj and dataobj? Do we need to change both?
                             trxnObj.setLockType(WRITE);
                             dataObj.setLockType(WRITE);
+                            Trace.info("CONVERT THE LOCK TYPE TO WRITE ");
                             this.lockTable.add(trxnObj);
                             this.lockTable.add(dataObj);
 
                         } else {
                             // a lock request that is not lock conversion
+                            // newly request lock
                             this.lockTable.add(trxnObj);
                             this.lockTable.add(dataObj);
                         }
@@ -188,9 +198,11 @@ public class LockManager
     // lock), then this is ignored. This is done by throwing RedundantLockRequestException which is handled 
     // appropriately by the caller. If the lock request is a conversion from READ lock to WRITE lock, then bitset 
     // is set. 
-    
+
+    //dataObj = incoming object
     private boolean LockConflict(DataObj dataObj, BitSet bitset) throws DeadlockException, RedundantLockRequestException {
         Vector vect = this.lockTable.elements(dataObj);
+        //System.out.println("PREVIOUS LOCK: "+ vect.toString());
         DataObj dataObj2;
         int size = vect.size();
         
@@ -198,14 +210,19 @@ public class LockManager
         for (int i = 0; i < size; i++) {
             dataObj2 = (DataObj) vect.elementAt(i);
             if (dataObj.getXId() == dataObj2.getXId()) {    
+
                 // the transaction already has a lock on this data item which means that it is either
                 // relocking it or is converting the lock
-                if (dataObj.getLockType() == DataObj.READ) {    
+                if (dataObj.getLockType() == DataObj.READ) {
+
                     // since transaction already has a lock (may be READ, may be WRITE. we don't
                     // care) on this data item and it is requesting a READ lock, this lock request
                     // is redundant.
                     throw new RedundantLockRequestException(dataObj.getXId(), "Redundant READ lock request");
-                } else if (dataObj.getLockType() == DataObj.WRITE) {
+                }
+                //the incoming object request a write lock
+                else if (dataObj.getLockType() == DataObj.WRITE) {
+
                     // transaction already has a lock and is requesting a WRITE lock
                     // now there are two cases to analyze here
                     // (1) transaction already had a READ lock
@@ -217,22 +234,26 @@ public class LockManager
                     if (dataObj2.getLockType() == DataObj.READ) {
                         //set the bitset to convert
                         bitset.set(0);
+                        Trace.info("LM: LOCK CONVERSION: READ --> WRITE");
+                        return false;
                     }
                     //2 transaction already has a write and want to write
                     else if(dataObj2.getLockType() == DataObj.WRITE){
                         //transaction requests a WRITE lock on another transaction that
                         //already has a WRITE lock ==> conflict
-                        System.out.println("Want WRITE, someone has WRITE");
-                        return true;
+                        Trace.info("LM: PROCEED WITH THE WRITE");
+                        return false;
                     }
                 }
             } 
             else {
                 if (dataObj.getLockType() == DataObj.READ) {
+
                     if (dataObj2.getLockType() == DataObj.WRITE) {
+
                         // transaction is requesting a READ lock and some other transaction
                         // already has a WRITE lock on it ==> conflict
-                        System.out.println("Want READ, someone has WRITE");
+                        Trace.warn("LM: Want READ, someone has WRITE");
                         return true;
                     }
                     else {
@@ -241,7 +262,7 @@ public class LockManager
                 } else if (dataObj.getLockType() == DataObj.WRITE) {
                     // transaction is requesting a WRITE lock and some other transaction has either
                     // a READ or a WRITE lock on it ==> conflict
-                    System.out.println("Want WRITE, someone has READ or WRITE");
+                    Trace.warn("LM: someone has READ or WRITE");
                     return true;
                 }
             }
