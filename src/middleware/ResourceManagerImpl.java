@@ -65,6 +65,71 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
     }
 
+
+
+    //constructor that creates proxies to each server
+    public ResourceManagerImpl() {
+
+
+        if (f_flag == 1) {
+            try {
+                flightProxy = new WSClient(f_name, f_host, f_port);
+                System.out.println("middleware is connected to the flight server: " +f_host + " " +f_port);
+
+            } catch (MalformedURLException e) {
+                System.out.println("Connecting to the flight server");
+            }
+        }
+
+        if (c_flag == 1) {
+            try {
+                carProxy = new WSClient(c_name, c_host, c_port);
+            } catch (MalformedURLException e) {
+                System.out.println("Connecting to the car server " + c_host + " "+ c_port);
+            }
+        }
+
+        if (r_flag == 1) {
+            try {
+                roomProxy = new WSClient(r_name, r_host, r_port);
+            } catch (MalformedURLException e) {
+                System.out.println("Connecting to the room server");
+            }
+        }
+
+        if (f_flag == 1) {
+
+            if (c_flag == 0) {
+                carProxy = flightProxy;
+            }
+
+            if (r_flag == 0) {
+                roomProxy = flightProxy;
+            }
+        }
+        else if (c_flag == 1) {
+
+            if (f_flag == 0) {
+                flightProxy = carProxy;
+            }
+            if (r_flag == 0) {
+                roomProxy = carProxy;
+            }
+        }
+
+        else if (r_flag == 1) {
+
+            if (f_flag == 0) {
+                flightProxy = roomProxy;
+            }
+            if (c_flag == 0) {
+                carProxy = roomProxy;
+            }
+        }
+
+    }
+
+
     // Reserve an item.
     protected boolean reserveItem(int id, int customerId, String location, String key, int itemInfo) {
         //get item info
@@ -137,69 +202,10 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
     }
 
-    //constructor that creates proxies to each server
-    public ResourceManagerImpl() {
-
-        if (f_flag == 1) {
-            try {
-                flightProxy = new WSClient(f_name, f_host, f_port);
-                System.out.println("middleware is connected to the flight server: " +f_host + " " +f_port);
-
-            } catch (MalformedURLException e) {
-                System.out.println("Connecting to the flight server");
-            }
-        }
-
-        if (c_flag == 1) {
-            try {
-                carProxy = new WSClient(c_name, c_host, c_port);
-            } catch (MalformedURLException e) {
-                System.out.println("Connecting to the car server " + c_host + " "+ c_port);
-            }
-        }
-
-        if (r_flag == 1) {
-            try {
-                roomProxy = new WSClient(r_name, r_host, r_port);
-            } catch (MalformedURLException e) {
-                System.out.println("Connecting to the room server");
-            }
-        }
-
-        if (f_flag == 1) {
-
-            if (c_flag == 0) {
-                carProxy = flightProxy;
-            }
-
-            if (r_flag == 0) {
-                roomProxy = flightProxy;
-            }
-        }
-        else if (c_flag == 1) {
-
-            if (f_flag == 0) {
-                flightProxy = carProxy;
-            }
-            if (r_flag == 0) {
-                roomProxy = carProxy;
-            }
-        }
-
-        else if (r_flag == 1) {
-
-            if (f_flag == 0) {
-                flightProxy = roomProxy;
-            }
-            if (c_flag == 0) {
-                carProxy = roomProxy;
-            }
-        }
-        
 
 
 
-    }
+
 
     @Override
     public boolean addFlight(int id, int flightNumber, int numSeats, int flightPrice) {

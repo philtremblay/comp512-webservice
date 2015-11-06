@@ -5,7 +5,12 @@
 
 package server;
 
+import server.LockManager.DeadlockException;
+import server.LockManager.LockManager;
+
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import javax.jws.WebMethod;
 import javax.jws.WebService;
 
 
@@ -14,9 +19,13 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     
     protected RMHashtable m_itemHT = new RMHashtable();
 
+    private static final int READ = 0;
+    private static final int WRITE = 1;
+
+
     //creating unique trxnId
     protected int currentTxnId = 0;
-
+    protected LockManager lockServer;
     private synchronized void incr(){
         this.currentTxnId++;
     }
@@ -46,7 +55,23 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             return (RMItem) m_itemHT.remove(key);
         }
     }
-    
+
+
+    //constructor here: initialize the lock manager
+    public ResourceManagerImpl() {
+
+        //initialize the lock manager
+        lockServer = new LockManager();
+
+
+
+    }
+
+
+
+
+
+
     
     // Basic operations on ReservableItem //
     
@@ -144,27 +169,46 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean addFlight(int id, int flightNumber, 
                              int numSeats, int flightPrice) {
-        Trace.info("RM::addFlight(" + id + ", " + flightNumber 
-                + ", $" + flightPrice + ", " + numSeats + ") called.");
-        Flight curObj = (Flight) readData(id, Flight.getKey(flightNumber));
-        if (curObj == null) {
-            // Doesn't exist; add it.
-            Flight newObj = new Flight(flightNumber, numSeats, flightPrice);
-            writeData(id, newObj.getKey(), newObj);
-            Trace.info("RM::addFlight(" + id + ", " + flightNumber 
-                    + ", $" + flightPrice + ", " + numSeats + ") OK.");
-        } else {
-            // Add seats to existing flight and update the price.
-            curObj.setCount(curObj.getCount() + numSeats);
-            if (flightPrice > 0) {
-                curObj.setPrice(flightPrice);
+
+
+
+        try {
+            //request the lock from the lock manager
+            String strData = "flight,"+flightNumber;
+            lockServer.Lock(id, strData, WRITE);
+
+            Trace.info("RM::addFlight(" + id + ", " + flightNumber
+                    + ", $" + flightPrice + ", " + numSeats + ") called.");
+            Flight curObj = (Flight) readData(id, Flight.getKey(flightNumber));
+            if (curObj == null) {
+                // Doesn't exist; add it.
+                Flight newObj = new Flight(flightNumber, numSeats, flightPrice);
+                writeData(id, newObj.getKey(), newObj);
+                Trace.info("RM::addFlight(" + id + ", " + flightNumber
+                        + ", $" + flightPrice + ", " + numSeats + ") OK.");
+            } else {
+                // Add seats to existing flight and update the price.
+                curObj.setCount(curObj.getCount() + numSeats);
+                if (flightPrice > 0) {
+                    curObj.setPrice(flightPrice);
+                }
+                writeData(id, curObj.getKey(), curObj);
+                Trace.info("RM::addFlight(" + id + ", " + flightNumber
+                        + ", $" + flightPrice + ", " + numSeats + ") OK: "
+                        + "seats = " + curObj.getCount() + ", price = $" + flightPrice);
             }
-            writeData(id, curObj.getKey(), curObj);
-            Trace.info("RM::addFlight(" + id + ", " + flightNumber 
-                    + ", $" + flightPrice + ", " + numSeats + ") OK: "
-                    + "seats = " + curObj.getCount() + ", price = $" + flightPrice);
+
+
+            return(true);
         }
-        return(true);
+        catch (DeadlockException dl) {
+            Trace.warn("RM::addFlight(" + id + ", " + flightNumber
+                    + ", $" + flightPrice + ", " + numSeats + ") failed.");
+            return(false);
+        }
+
+
+
     }
 
     @Override
@@ -175,7 +219,19 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // Returns the number of empty seats on this flight.
     @Override
     public int queryFlight(int id, int flightNumber) {
-        return queryNum(id, Flight.getKey(flightNumber));
+
+        String strData = "flight,"+flightNumber;
+        try {
+            lockServer.Lock(id, strData, READ);
+            return queryNum(id, Flight.getKey(flightNumber));
+        }
+        catch (DeadlockException dl) {
+            Trace.warn("RM::queryNum(" + id + ", flight " + flightNumber+ ") failed: ");
+            return -1;
+        }
+
+
+
     }
 
     // Returns price of this flight.
@@ -227,27 +283,43 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // its current price.
     @Override
     public boolean addCars(int id, String location, int numCars, int carPrice) {
-        Trace.info("RM::addCars(" + id + ", " + location + ", " 
-                + numCars + ", $" + carPrice + ") called.");
-        Car curObj = (Car) readData(id, Car.getKey(location));
-        if (curObj == null) {
-            // Doesn't exist; add it.
-            Car newObj = new Car(location, numCars, carPrice);
-            writeData(id, newObj.getKey(), newObj);
-            Trace.info("RM::addCars(" + id + ", " + location + ", " 
-                    + numCars + ", $" + carPrice + ") OK.");
-        } else {
-            // Add count to existing object and update price.
-            curObj.setCount(curObj.getCount() + numCars);
-            if (carPrice > 0) {
-                curObj.setPrice(carPrice);
+
+
+        String strData ="car,"+location;
+
+        try {
+
+            lockServer.Lock(id, strData, WRITE);
+            Trace.info("RM::addCars(" + id + ", " + location + ", "
+                    + numCars + ", $" + carPrice + ") called.");
+            Car curObj = (Car) readData(id, Car.getKey(location));
+            if (curObj == null) {
+                // Doesn't exist; add it.
+                Car newObj = new Car(location, numCars, carPrice);
+                writeData(id, newObj.getKey(), newObj);
+                Trace.info("RM::addCars(" + id + ", " + location + ", "
+                        + numCars + ", $" + carPrice + ") OK.");
+            } else {
+                // Add count to existing object and update price.
+                curObj.setCount(curObj.getCount() + numCars);
+                if (carPrice > 0) {
+                    curObj.setPrice(carPrice);
+                }
+                writeData(id, curObj.getKey(), curObj);
+                Trace.info("RM::addCars(" + id + ", " + location + ", "
+                        + numCars + ", $" + carPrice + ") OK: "
+                        + "cars = " + curObj.getCount() + ", price = $" + carPrice);
             }
-            writeData(id, curObj.getKey(), curObj);
-            Trace.info("RM::addCars(" + id + ", " + location + ", " 
-                    + numCars + ", $" + carPrice + ") OK: " 
-                    + "cars = " + curObj.getCount() + ", price = $" + carPrice);
+            return(true);
+
         }
-        return(true);
+        catch (DeadlockException dl) {
+            Trace.warn("RM::addCars(" + id + ", " + location + ", "
+                    + numCars + ", $" + carPrice + ") failed: ");
+            return(false);
+        }
+
+
     }
 
     // Delete cars from a location.
@@ -259,7 +331,16 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // Returns the number of cars available at a location.
     @Override
     public int queryCars(int id, String location) {
-        return queryNum(id, Car.getKey(location));
+
+        String strData = "car,"+location;
+        try {
+            lockServer.Lock(id, strData, READ);
+            return queryNum(id, Car.getKey(location));
+        }
+        catch (DeadlockException dl) {
+            Trace.warn("RM::queryNum(" + id + ", car " + location + ") failed: ");
+            return -1;
+        }
     }
 
     // Returns price of cars at this location.
@@ -276,27 +357,38 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // its current price.
     @Override
     public boolean addRooms(int id, String location, int numRooms, int roomPrice) {
-        Trace.info("RM::addRooms(" + id + ", " + location + ", " 
-                + numRooms + ", $" + roomPrice + ") called.");
-        Room curObj = (Room) readData(id, Room.getKey(location));
-        if (curObj == null) {
-            // Doesn't exist; add it.
-            Room newObj = new Room(location, numRooms, roomPrice);
-            writeData(id, newObj.getKey(), newObj);
-            Trace.info("RM::addRooms(" + id + ", " + location + ", " 
-                    + numRooms + ", $" + roomPrice + ") OK.");
-        } else {
-            // Add count to existing object and update price.
-            curObj.setCount(curObj.getCount() + numRooms);
-            if (roomPrice > 0) {
-                curObj.setPrice(roomPrice);
+
+        String strData = "room,"+location;
+        try {
+            lockServer.Lock(id, strData, WRITE);
+            Trace.info("RM::addRooms(" + id + ", " + location + ", "
+                    + numRooms + ", $" + roomPrice + ") called.");
+            Room curObj = (Room) readData(id, Room.getKey(location));
+            if (curObj == null) {
+                // Doesn't exist; add it.
+                Room newObj = new Room(location, numRooms, roomPrice);
+                writeData(id, newObj.getKey(), newObj);
+                Trace.info("RM::addRooms(" + id + ", " + location + ", "
+                        + numRooms + ", $" + roomPrice + ") OK.");
+            } else {
+                // Add count to existing object and update price.
+                curObj.setCount(curObj.getCount() + numRooms);
+                if (roomPrice > 0) {
+                    curObj.setPrice(roomPrice);
+                }
+                writeData(id, curObj.getKey(), curObj);
+                Trace.info("RM::addRooms(" + id + ", " + location + ", "
+                        + numRooms + ", $" + roomPrice + ") OK: "
+                        + "rooms = " + curObj.getCount() + ", price = $" + roomPrice);
             }
-            writeData(id, curObj.getKey(), curObj);
-            Trace.info("RM::addRooms(" + id + ", " + location + ", " 
-                    + numRooms + ", $" + roomPrice + ") OK: " 
-                    + "rooms = " + curObj.getCount() + ", price = $" + roomPrice);
+
+            return (true);
         }
-        return(true);
+        catch (DeadlockException dl) {
+            Trace.warn("RM::addRooms(" + id + ", " + location + ", "
+                    + numRooms + ", $" + roomPrice + ") failed");
+            return false;
+        }
     }
 
     // Delete rooms from a location.
@@ -308,7 +400,16 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // Returns the number of rooms available at a location.
     @Override
     public int queryRooms(int id, String location) {
-        return queryNum(id, Room.getKey(location));
+
+        String strData = "room,"+location;
+        try {
+            lockServer.Lock(id, strData,READ);
+            return queryNum(id, Room.getKey(location));
+        }
+        catch (DeadlockException dl) {
+            Trace.warn("RM::queryNum(" + id + ", room " + location + ") failed: ");
+            return -1;
+        }
     }
     
     // Returns room price at this location.
@@ -496,8 +597,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         this.incr();
         int txnId = this.getVal();
 
-        //create entry in transaction log
-        //create operations vector
+        //generate a transaction ID and the client uses that ID for all operations
+        Trace.info("RM::start Transaction( ID: " + txnId + ") OK");
 
         return txnId;
     }

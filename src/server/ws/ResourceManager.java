@@ -16,6 +16,8 @@
 
 package server.ws;
 
+import server.LockManager.DeadlockException;
+
 import java.util.*;
 import javax.jws.WebService;
 import javax.jws.WebMethod;
@@ -34,7 +36,7 @@ public interface ResourceManager {
      * @return success.
      */
     @WebMethod
-    public boolean addFlight(int id, int flightNumber, int numSeats, int flightPrice); 
+    public boolean addFlight(int id, int flightNumber, int numSeats, int flightPrice) throws DeadlockException;
 
     /**
      * Delete the entire flight.
