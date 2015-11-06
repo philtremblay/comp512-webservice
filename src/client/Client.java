@@ -715,6 +715,7 @@ public class Client extends WSClient {
         System.out.println("deletecustomer\nqueryflight\nquerycar\nqueryroom\nquerycustomer");
         System.out.println("queryflightprice\nquerycarprice\nqueryroomprice");
         System.out.println("reserveflight\nreservecar\nreserveroom\nitinerary");
+        System.out.println("start\ncommit\nabort\nshutdown");
         System.out.println("quit");
         System.out.println("\ntype help, <commandname> for detailed info (note the use of comma).");
     }
@@ -904,13 +905,21 @@ public class Client extends WSClient {
             case 23:
                 System.out.println("start");
                 System.out.println("\nTyping start generates a unique transaction ID for the client.");
+                System.out.println("Starts a new transaction for the client");
                 break;
             case 24:
-                System.out.println("start");
+                System.out.println("commit");
                 System.out.println("\nTyping commit unlocks all the locks related to a transaction.");
                 System.out.println("\nUsage: ");
                 System.out.println("\tcommit, <id>");
                 break;
+            case 25:
+                System.out.println("abort");
+                System.out.println("Aborts transaction");
+                break;
+            case 26:
+                System.out.println("shutdown");
+                System.out.println("graceful shutdown");
 
             default:
             System.out.println(command);

@@ -73,8 +73,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
     }
 
-
-
     //constructor that creates proxies to each server
     public ResourceManagerImpl() {
 
@@ -238,6 +236,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             this.txnManager.setNewUpdateItem(id,cmd);
 
             //set active RM list
+            this.txnManager.enlist(id, FLIGHT);
         }
         else {
             System.out.println("FAIL to sent to flight server");
@@ -253,6 +252,15 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         flightDeleted = flightProxy.proxy.deleteFlight(id, flightNumber);
 
         if (flightDeleted) {
+            int seats = flightProxy.proxy.queryFlight(id,flightNumber);
+            int price = flightProxy.proxy.queryFlightPrice(id,flightNumber);
+            Vector cmd = cmdToVect(FLIGHT,ADD,flightNumber);
+            cmd.add(seats);
+            cmd.add(price);
+            this.txnManager.setNewUpdateItem(id,cmd);
+
+            this.txnManager.enlist(id,FLIGHT);
+
             System.out.println("DELETED flight " + flightNumber);
         }
         else {
@@ -294,6 +302,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             this.txnManager.setNewUpdateItem(id,cmd);
 
             //set active RM list
+            this.txnManager.enlist(id,CAR);
         }
         else {
             System.out.println("FAIL to add cars");
@@ -308,6 +317,15 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         carsDeleted = carProxy.proxy.deleteCars(id, location);
 
         if(carsDeleted) {
+            int num = carProxy.proxy.queryCars(id,location);
+            int price = carProxy.proxy.queryCarsPrice(id,location);
+            Vector cmd = cmdToVect(CAR,ADD,Integer.parseInt(location));
+            cmd.add(num);
+            cmd.add(price);
+            this.txnManager.setNewUpdateItem(id,cmd);
+
+            this.txnManager.enlist(id,CAR);
+
             System.out.println("DELETE cars " + id);
         }
         else {
@@ -347,6 +365,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             System.out.println("EXECUTE the addRoom command to the room server: "+r_host +":"+r_port);
             Vector cmd = cmdToVect(ROOM,DEL,Integer.parseInt(location));
             this.txnManager.setNewUpdateItem(id,cmd);
+
+            this.txnManager.enlist(id,ROOM);
         }
         else {
             System.out.println("FAIL to add rooms to the room server: "+r_host + ":" +r_port);
@@ -361,6 +381,17 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         boolean roomDeleted = roomProxy.proxy.deleteRooms(id, location);
 
         if (roomDeleted) {
+            int num = roomProxy.proxy.queryRooms(id,location);
+            int price = roomProxy.proxy.queryRoomsPrice(id,location);
+            Vector cmd = cmdToVect(ROOM,ADD,Integer.parseInt(location));
+            cmd.add(num);
+            cmd.add(price);
+            this.txnManager.setNewUpdateItem(id,cmd);
+
+            this.txnManager.enlist(id,ROOM);
+            this.txnManager.enlist(id,ROOM);
+
+
             System.out.println("EXECUTE the deleteRoom command to the rooom server: "+r_host + ":" +r_port);
         }
         else {
@@ -402,6 +433,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         Vector cmd = cmdToVect(CUST,DEL,customerId);
         this.txnManager.setNewUpdateItem(id,cmd);
 
+        this.txnManager.enlist(id,CUST);
+
         return customerId;
     }
 
@@ -416,6 +449,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
             Vector cmd = cmdToVect(CUST,DEL,customerId);
             this.txnManager.setNewUpdateItem(id,cmd);
+            this.txnManager.enlist(id,CUST);
 
             return true;
         } else {
@@ -582,12 +616,15 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public int start(){
         int txnId = txnManager.newTxn();
+        Trace.info("Starting a new transaction with ID : "+txnId);
 
         return txnId;
     }
 
     @Override
     public boolean commit(int txnId){
+        //iterate through active RM list and release locks
+
         return true;
     }
 

@@ -63,7 +63,27 @@ public class TxnManager {
             return false;
         }
     }
+    public boolean enlist(int txnId, int RMType){
+        if (this.activeTxnRM.containsKey(txnId)){
+            appendActive(txnId,RMType);
+            return true;
+        }
+        else{
+            System.out.println("TRANSACTION HAS NO VALID ENTRY IN TRANSACTION COMMAND LIST HASH");
+            return false;
+        }
 
+    }
+
+
+    private void appendActive(int txnId,int RMType){
+        synchronized (this.activeTxnRM){
+            Vector list = this.activeTxnRM.get(txnId);
+            list.add(RMType);
+            this.activeTxnRM.put(txnId,list);
+        }
+
+    }
     //append to cmdStack
     private void appendStack(int txnId, Vector command){
         synchronized (this.txnCmdList){
