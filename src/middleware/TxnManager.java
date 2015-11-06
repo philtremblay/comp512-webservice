@@ -65,7 +65,10 @@ public class TxnManager {
     }
     public boolean enlist(int txnId, int RMType){
         if (this.activeTxnRM.containsKey(txnId)){
-            appendActive(txnId,RMType);
+            //check for duplicates
+            if (!this.activeTxnRM.contains(RMType)) {
+                appendActive(txnId,RMType);
+            }
             return true;
         }
         else{

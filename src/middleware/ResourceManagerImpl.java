@@ -1,6 +1,8 @@
 package middleware;
 
 
+import client.Client;
+import client.DeadlockException;
 import client.WSClient;
 import server.Trace;
 
@@ -24,6 +26,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public static final int DEL = 5;
     public static final int ADD = 6;
     public static final int RES = 7;
+    public static final int UNRES =8;
 
     short f_flag = 1;
     short c_flag = 0;
@@ -140,19 +143,18 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // Reserve an item.
     protected boolean reserveItem(int id, int customerId, String location, String key, int itemInfo) {
         //get item info
-        List<String> item = null;
         int count = -1;
         int price = -1;
         switch(itemInfo){
-            case 1:
+            case FLIGHT:
                 count = flightProxy.proxy.queryFlight(id, Integer.parseInt(location));
                 price = flightProxy.proxy.queryFlightPrice(id,Integer.parseInt(location));
                 break;
-            case 2:
+            case CAR:
                 count = carProxy.proxy.queryCars(id,location);
                 price = carProxy.proxy.queryCarsPrice(id,location);
                 break;
-            case 3:
+            case ROOM:
                 count = roomProxy.proxy.queryRooms(id,location);
                 price = roomProxy.proxy.queryRoomsPrice(id,location);
                 break;
@@ -173,12 +175,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             return false;
         }
 
-        // Check if the item is available.
-        if (count == -1) {
-            Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
-                    + key + ", " + location + ") failed: item doesn't exist.");
-            return false;
-        } else if (count == 0) {
+        if (count == 0) {
             Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
                     + key + ", " + location + ") failed: no more items.");
             return false;
@@ -190,11 +187,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             // Decrease the number of available items in the storage.
             boolean update = true;
             switch(itemInfo){
-                case 1: update = flightProxy.proxy.updateItemInfo(id,key);
+                case 1: update = flightProxy.proxy.updateItemInfo(id,key,RES);
                     break;
-                case 2: update = carProxy.proxy.updateItemInfo(id,key);
+                case 2: update = carProxy.proxy.updateItemInfo(id,key,RES);
                     break;
-                case 3: update = roomProxy.proxy.updateItemInfo(id,key);
+                case 3: update = roomProxy.proxy.updateItemInfo(id,key,RES);
                     break;
             }
             if (!update){
@@ -209,6 +206,68 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
     }
 
+    // Reserve an item.
+    protected boolean unreserveItem(int id, int customerId, String location, String key, int itemInfo) {
+        //get item info
+        int count = -1;
+        //int price = -1;
+        switch(itemInfo){
+            case 1:
+                count = flightProxy.proxy.queryFlight(id, Integer.parseInt(location));
+                //price = flightProxy.proxy.queryFlightPrice(id,Integer.parseInt(location));
+                break;
+            case 2:
+                count = carProxy.proxy.queryCars(id,location);
+                //price = carProxy.proxy.queryCarsPrice(id,location);
+                break;
+            case 3:
+                count = roomProxy.proxy.queryRooms(id,location);
+                //price = roomProxy.proxy.queryRoomsPrice(id,location);
+                break;
+        }
+
+        Trace.info("RM::unreserveItem(" + id + ", " + customerId + ", "
+                + key + ", " + location + ") called.");
+        // Read customer object if it exists (and read lock it).
+        Customer cust = (Customer) readData(id, Customer.getKey(customerId));
+        if (cust == null) {
+            Trace.warn("RM::unreserveItem(" + id + ", " + customerId + ", "
+                    + key + ", " + location + ") failed: customer doesn't exist.");
+            return false;
+        }
+
+        // Check if the item is available.
+        if (count == -1) {
+            Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
+                    + key + ", " + location + ") failed: item doesn't exist.");
+            return false;
+        }
+        else {
+            // Do unreservation
+            cust.unreserve(key, location,itemInfo,id); //change location maybe
+            writeData(id, cust.getKey(), cust);
+
+            // Decrease the number of available items in the storage.
+            boolean update = true;
+            switch(itemInfo){
+                case 1: update = flightProxy.proxy.updateItemInfo(id,key,UNRES);
+                    break;
+                case 2: update = carProxy.proxy.updateItemInfo(id,key,UNRES);
+                    break;
+                case 3: update = roomProxy.proxy.updateItemInfo(id,key,UNRES);
+                    break;
+            }
+            if (!update){
+                Trace.warn("RM::unreserveItem(" + id + ", " + customerId + ", "
+                        + key + ", " + location + ") failed: update item info.");
+                return false;
+            }
+
+            Trace.warn("RM::unreserveItem(" + id + ", " + customerId + ", "
+                    + key + ", " + location + ") OK.");
+            return true;
+        }
+    }
 
 
 
@@ -227,8 +286,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public boolean addFlight(int id, int flightNumber, int numSeats, int flightPrice) {
 
         boolean flightAdded;
-
-        flightAdded = flightProxy.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
+        try {
+            flightAdded = flightProxy.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
+        }catch (server.LockManager.DeadlockException e){
+            System.err.println("DeadlockException: " + e.getMessage());
+        }
         if (flightAdded) {
             System.out.println("SENT the addFlight command to the flight server:" + f_host + ":" + f_port);
 
@@ -573,21 +635,60 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         /** call methods from the flight server to execute actions **/
         //get flight key
         String key = flightProxy.proxy.getFlightKey(flightNumber);
-        return reserveItem(id,customerId,String.valueOf(flightNumber),key,1 );
+        if (reserveItem(id,customerId,String.valueOf(flightNumber),key,FLIGHT )){
+            Vector cmd = cmdToVect(FLIGHT,UNRES,flightNumber);
+            cmd.add(customerId);
+            cmd.add(key);
+            this.txnManager.setNewUpdateItem(id,cmd);
+
+            this.txnManager.enlist(id,FLIGHT);
+            txnManager.enlist(id,CUST);
+            return true;
+        }
+        else{
+            //error
+            return false;
+        }
     }
 
     @Override
     public boolean reserveCar(int id, int customerId, String location) {
         /** call methods from the car server to execute actions **/
         String key = carProxy.proxy.getCarKey(location);
-        return reserveItem(id,customerId,location,key,2);
+        if (reserveItem(id,customerId,location,key,CAR)){
+            Vector cmd = cmdToVect(CAR,UNRES,Integer.parseInt(location));
+            cmd.add(customerId);
+            cmd.add(key);
+            this.txnManager.setNewUpdateItem(id,cmd);
+
+            this.txnManager.enlist(id,CAR);
+            this.txnManager.enlist(id,CUST);
+            return true;
+        }
+        else{
+            //error
+            return false;
+        }
     }
 
     @Override
     public boolean reserveRoom(int id, int customerId, String location) {
         /** call methods from the room server to execute actions **/
         String key = roomProxy.proxy.getRoomKey(location);
-        return reserveItem(id, customerId,location, key, 3);
+        if (reserveItem(id, customerId,location, key, ROOM)){
+            Vector cmd = cmdToVect(CAR,UNRES,Integer.parseInt(location));
+            cmd.add(customerId);
+            cmd.add(key);
+            this.txnManager.setNewUpdateItem(id,cmd);
+
+            this.txnManager.enlist(id,ROOM);
+            this.txnManager.enlist(id,CUST);
+            return true;
+        }
+        else{
+            //error
+            return false;
+        }
     }
 
     @Override
@@ -630,7 +731,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         return "Has to be called from middleware";
     }
     @Override
-    public boolean updateItemInfo(int id, String key){
+    public boolean updateItemInfo(int id, String key,int resOrUnres){
         Trace.warn("Error: Has to be called from middleware");
 
         return false;

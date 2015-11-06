@@ -188,12 +188,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             }
 
 
-            return(true);
+            return true;
         }
         catch (DeadlockException dl) {
             Trace.warn("RM::addFlight(" + id + ", " + flightNumber
                     + ", $" + flightPrice + ", " + numSeats + ") failed.");
-            return(false);
+            return false;
         }
 
 
@@ -383,7 +383,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                         + "rooms = " + curObj.getCount() + ", price = $" + roomPrice);
             }
 
-            return (true);
+            return true;
         }
         catch (DeadlockException dl) {
             Trace.warn("RM::addRooms(" + id + ", " + location + ", "
@@ -600,18 +600,36 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         return Room.getKey(location);
     }
     @Override
-    public boolean updateItemInfo(int id, String key){
+    public boolean updateItemInfo(int id, String key, int resOrUnres){
         ReservableItem item = (ReservableItem) readData(id, key);
 
-        if (item == null) {
-            Trace.warn("RM::reserveItem(" + id + ", "
-                    + key + ",) failed: item doesn't exist.");
-            return false;
+        //reserve
+        if (resOrUnres == 7) {
+            if (item == null) {
+                Trace.warn("RM::reserveItem(" + id + ", "
+                        + key + ",) failed: item doesn't exist.");
+                return false;
+            } else {
+                item.setCount(item.getCount() - 1);
+                item.setReserved(item.getReserved() + 1);
+                return true;
+            }
         }
-        else {
-            item.setCount(item.getCount() - 1);
-            item.setReserved(item.getReserved() + 1);
-            return true;
+        //unreserve
+        else if (resOrUnres == 8){
+            if (item == null) {
+                Trace.warn("RM::reserveItem(" + id + ", "
+                        + key + ",) failed: item doesn't exist.");
+                return false;
+            } else {
+                item.setCount(item.getCount() + 1);
+                item.setReserved(item.getReserved() - 1);
+                return true;
+            }
+        }
+        else{
+            //error
+            return false;
         }
     }
     @Override

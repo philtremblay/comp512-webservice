@@ -151,7 +151,7 @@ public interface ResourceManager {
     public String getRoomKey(String location);
 
     @WebMethod
-    public boolean updateItemInfo(int id, String key);
+    public boolean updateItemInfo(int id, String key, int resOrUnres);
 
     @WebMethod
     public boolean updateDeleteCustomer(int id, String key, int count);
