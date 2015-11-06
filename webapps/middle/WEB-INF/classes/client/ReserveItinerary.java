@@ -22,8 +22,8 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element name="arg1" type="{http://www.w3.org/2001/XMLSchema}int"/>
  *         &lt;element name="arg2" type="{http://www.w3.org/2001/XMLSchema}anyType" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element name="arg3" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
- *         &lt;element name="arg4" type="{http://www.w3.org/2001/XMLSchema}int"/>
- *         &lt;element name="arg5" type="{http://www.w3.org/2001/XMLSchema}int"/>
+ *         &lt;element name="arg4" type="{http://www.w3.org/2001/XMLSchema}boolean"/>
+ *         &lt;element name="arg5" type="{http://www.w3.org/2001/XMLSchema}boolean"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -47,8 +47,8 @@ public class ReserveItinerary {
     protected int arg1;
     protected List<Object> arg2;
     protected String arg3;
-    protected int arg4;
-    protected int arg5;
+    protected boolean arg4;
+    protected boolean arg5;
 
     /**
      * Gets the value of the arg0 property.
@@ -139,7 +139,7 @@ public class ReserveItinerary {
      * Gets the value of the arg4 property.
      * 
      */
-    public int getArg4() {
+    public boolean isArg4() {
         return arg4;
     }
 
@@ -147,7 +147,7 @@ public class ReserveItinerary {
      * Sets the value of the arg4 property.
      * 
      */
-    public void setArg4(int value) {
+    public void setArg4(boolean value) {
         this.arg4 = value;
     }
 
@@ -155,7 +155,7 @@ public class ReserveItinerary {
      * Gets the value of the arg5 property.
      * 
      */
-    public int getArg5() {
+    public boolean isArg5() {
         return arg5;
     }
 
@@ -163,7 +163,7 @@ public class ReserveItinerary {
      * Sets the value of the arg5 property.
      * 
      */
-    public void setArg5(int value) {
+    public void setArg5(boolean value) {
         this.arg5 = value;
     }
 

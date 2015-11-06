@@ -13,16 +13,6 @@ import javax.jws.WebService;
 public class ResourceManagerImpl implements server.ws.ResourceManager {
     
     protected RMHashtable m_itemHT = new RMHashtable();
-
-    //creating unique trxnId
-    protected int currentTxnId = 0;
-
-    private synchronized void incr(){
-        this.currentTxnId++;
-    }
-    private synchronized int getVal(){
-        return this.currentTxnId;
-    }
     
     // Basic operations on RMItem //
     
@@ -493,13 +483,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public int start(){
         //generate new transaction Id
-        this.incr();
-        int txnId = this.getVal();
+
 
         //create entry in transaction log
         //create operations vector
 
-        return txnId;
+        return 0;
     }
 
     @Override

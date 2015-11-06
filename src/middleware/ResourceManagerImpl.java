@@ -17,6 +17,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     WSClient carProxy;
     WSClient roomProxy;
 
+    public static final int FLIGHT = 1;
+    public static final int CAR = 2;
+    public static final int ROOM = 3;
+    public static final int CUST = 4;
+    public static final int DEL = 5;
+    public static final int ADD = 6;
 
     short f_flag = 1;
     short c_flag = 0;
@@ -39,8 +45,10 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     int r_port = 8084;
 
     //code for Client imported from server
-    final protected RMHashtable m_itemHT = new RMHashtable();
+    protected RMHashtable m_itemHT = new RMHashtable();
 
+    //Transaction Manager
+    TxnManager txnManager = new TxnManager();
 
     // Basic operations on RMItem //
 
@@ -201,6 +209,15 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     }
 
+    protected Vector cmdToVect(int queryType, int addOrDel, int itemNumOrLocation){
+        Vector cmd = new Vector();
+        cmd.add(queryType);
+        cmd.add(addOrDel);
+        cmd.add(itemNumOrLocation);
+
+        return cmd;
+    }
+
     @Override
     public boolean addFlight(int id, int flightNumber, int numSeats, int flightPrice) {
 
@@ -209,6 +226,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         flightAdded = flightProxy.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
         if (flightAdded) {
             System.out.println("SENT the addFlight command to the flight server:" + f_host + ":" + f_port);
+
+            //Set the cmd to delete because it needs to be deleted in the rollback
+            Vector cmd = cmdToVect(FLIGHT,DEL,flightNumber);
+            this.txnManager.setNewUpdateItem(id,cmd);
+
+            //set active RM list
         }
         else {
             System.out.println("FAIL to sent to flight server");
@@ -260,6 +283,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         carsAdded = carProxy.proxy.addCars(id,location, numCars, carPrice);
         if (carsAdded) {
             System.out.println("SENT the addCar command to the car server:" + c_host + ":" + c_port);
+            //Set the cmd to delete because it needs to be deleted in the rollback
+            Vector cmd = cmdToVect(CAR,DEL,Integer.parseInt(location));
+            this.txnManager.setNewUpdateItem(id,cmd);
+
+            //set active RM list
         }
         else {
             System.out.println("FAIL to add cars");
@@ -311,6 +339,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         if (roomsAdded) {
             System.out.println("EXECUTE the addRoom command to the room server: "+r_host +":"+r_port);
+            Vector cmd = cmdToVect(ROOM,DEL,Integer.parseInt(location));
+            this.txnManager.setNewUpdateItem(id,cmd);
         }
         else {
             System.out.println("FAIL to add rooms to the room server: "+r_host + ":" +r_port);
@@ -361,6 +391,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         Customer cust = new Customer(customerId);
         writeData(id, cust.getKey(), cust);
         Trace.info("RM::newCustomer(" + id + ") OK: " + customerId);
+
+        //add command to txn command list
+        Vector cmd = cmdToVect(CUST,DEL,customerId);
+        this.txnManager.setNewUpdateItem(id,cmd);
+
         return customerId;
     }
 
@@ -372,6 +407,10 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             cust = new Customer(customerId);
             writeData(id, cust.getKey(), cust);
             Trace.info("INFO: RM::newCustomer(" + id + ", " + customerId + ") OK.");
+
+            Vector cmd = cmdToVect(CUST,DEL,customerId);
+            this.txnManager.setNewUpdateItem(id,cmd);
+
             return true;
         } else {
             Trace.info("INFO: RM::newCustomer(" + id + ", " +
@@ -536,7 +575,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     @Override
     public int start(){
-        return 1;
+        int txnId = txnManager.newTxn();
+
+        return txnId;
     }
 
     @Override

@@ -27,7 +27,9 @@ public class ObjectFactory {
     private final static QName _DeleteCustomer_QNAME = new QName("http://ws.server/", "deleteCustomer");
     private final static QName _QueryCarsPrice_QNAME = new QName("http://ws.server/", "queryCarsPrice");
     private final static QName _DeleteCustomerResponse_QNAME = new QName("http://ws.server/", "deleteCustomerResponse");
+    private final static QName _Start_QNAME = new QName("http://ws.server/", "start");
     private final static QName _NewCustomerId_QNAME = new QName("http://ws.server/", "newCustomerId");
+    private final static QName _AbortResponse_QNAME = new QName("http://ws.server/", "abortResponse");
     private final static QName _QueryFlightResponse_QNAME = new QName("http://ws.server/", "queryFlightResponse");
     private final static QName _AddCarsResponse_QNAME = new QName("http://ws.server/", "addCarsResponse");
     private final static QName _ReserveCarResponse_QNAME = new QName("http://ws.server/", "reserveCarResponse");
@@ -40,9 +42,10 @@ public class ObjectFactory {
     private final static QName _QueryRooms_QNAME = new QName("http://ws.server/", "queryRooms");
     private final static QName _QueryRoomsResponse_QNAME = new QName("http://ws.server/", "queryRoomsResponse");
     private final static QName _QueryCustomerInfoResponse_QNAME = new QName("http://ws.server/", "queryCustomerInfoResponse");
-    private final static QName _GetCarKey_QNAME = new QName("http://ws.server/", "getCarKey");
     private final static QName _ReserveRoomResponse_QNAME = new QName("http://ws.server/", "reserveRoomResponse");
+    private final static QName _GetCarKey_QNAME = new QName("http://ws.server/", "getCarKey");
     private final static QName _UpdateItemInfo_QNAME = new QName("http://ws.server/", "updateItemInfo");
+    private final static QName _Commit_QNAME = new QName("http://ws.server/", "commit");
     private final static QName _QueryCustomerInfo_QNAME = new QName("http://ws.server/", "queryCustomerInfo");
     private final static QName _ReserveFlight_QNAME = new QName("http://ws.server/", "reserveFlight");
     private final static QName _ReserveItineraryResponse_QNAME = new QName("http://ws.server/", "reserveItineraryResponse");
@@ -52,24 +55,29 @@ public class ObjectFactory {
     private final static QName _QueryRoomsPriceResponse_QNAME = new QName("http://ws.server/", "queryRoomsPriceResponse");
     private final static QName _QueryFlightPriceResponse_QNAME = new QName("http://ws.server/", "queryFlightPriceResponse");
     private final static QName _DeleteCarsResponse_QNAME = new QName("http://ws.server/", "deleteCarsResponse");
-    private final static QName _DeleteFlight_QNAME = new QName("http://ws.server/", "deleteFlight");
     private final static QName _DeleteCars_QNAME = new QName("http://ws.server/", "deleteCars");
+    private final static QName _Abort_QNAME = new QName("http://ws.server/", "abort");
+    private final static QName _DeleteFlight_QNAME = new QName("http://ws.server/", "deleteFlight");
     private final static QName _DeleteRooms_QNAME = new QName("http://ws.server/", "deleteRooms");
     private final static QName _NewCustomer_QNAME = new QName("http://ws.server/", "newCustomer");
     private final static QName _DeleteRoomsResponse_QNAME = new QName("http://ws.server/", "deleteRoomsResponse");
     private final static QName _UpdateItemInfoResponse_QNAME = new QName("http://ws.server/", "updateItemInfoResponse");
+    private final static QName _CommitResponse_QNAME = new QName("http://ws.server/", "commitResponse");
     private final static QName _UpdateDeleteCustomer_QNAME = new QName("http://ws.server/", "updateDeleteCustomer");
     private final static QName _AddRooms_QNAME = new QName("http://ws.server/", "addRooms");
     private final static QName _GetCarKeyResponse_QNAME = new QName("http://ws.server/", "getCarKeyResponse");
+    private final static QName _Shutdown_QNAME = new QName("http://ws.server/", "shutdown");
     private final static QName _AddFlight_QNAME = new QName("http://ws.server/", "addFlight");
+    private final static QName _ShutdownResponse_QNAME = new QName("http://ws.server/", "shutdownResponse");
     private final static QName _QueryCars_QNAME = new QName("http://ws.server/", "queryCars");
     private final static QName _ReserveFlightResponse_QNAME = new QName("http://ws.server/", "reserveFlightResponse");
-    private final static QName _GetFlightKey_QNAME = new QName("http://ws.server/", "getFlightKey");
     private final static QName _ReserveRoom_QNAME = new QName("http://ws.server/", "reserveRoom");
+    private final static QName _GetFlightKey_QNAME = new QName("http://ws.server/", "getFlightKey");
     private final static QName _QueryCarsPriceResponse_QNAME = new QName("http://ws.server/", "queryCarsPriceResponse");
     private final static QName _ReserveItinerary_QNAME = new QName("http://ws.server/", "reserveItinerary");
     private final static QName _QueryFlight_QNAME = new QName("http://ws.server/", "queryFlight");
     private final static QName _AddRoomsResponse_QNAME = new QName("http://ws.server/", "addRoomsResponse");
+    private final static QName _StartResponse_QNAME = new QName("http://ws.server/", "startResponse");
     private final static QName _GetFlightKeyResponse_QNAME = new QName("http://ws.server/", "getFlightKeyResponse");
     private final static QName _QueryCarsResponse_QNAME = new QName("http://ws.server/", "queryCarsResponse");
     private final static QName _NewCustomerIdResponse_QNAME = new QName("http://ws.server/", "newCustomerIdResponse");
@@ -131,6 +139,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link Commit }
+     * 
+     */
+    public Commit createCommit() {
+        return new Commit();
+    }
+
+    /**
      * Create an instance of {@link QueryCustomerInfo }
      * 
      */
@@ -155,19 +171,19 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link GetCarKey }
-     * 
-     */
-    public GetCarKey createGetCarKey() {
-        return new GetCarKey();
-    }
-
-    /**
      * Create an instance of {@link ReserveRoomResponse }
      * 
      */
     public ReserveRoomResponse createReserveRoomResponse() {
         return new ReserveRoomResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetCarKey }
+     * 
+     */
+    public GetCarKey createGetCarKey() {
+        return new GetCarKey();
     }
 
     /**
@@ -275,6 +291,22 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link AbortResponse }
+     * 
+     */
+    public AbortResponse createAbortResponse() {
+        return new AbortResponse();
+    }
+
+    /**
+     * Create an instance of {@link Start }
+     * 
+     */
+    public Start createStart() {
+        return new Start();
+    }
+
+    /**
      * Create an instance of {@link NewCustomerId }
      * 
      */
@@ -339,6 +371,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link StartResponse }
+     * 
+     */
+    public StartResponse createStartResponse() {
+        return new StartResponse();
+    }
+
+    /**
      * Create an instance of {@link AddRoomsResponse }
      * 
      */
@@ -387,14 +427,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link GetFlightKey }
-     * 
-     */
-    public GetFlightKey createGetFlightKey() {
-        return new GetFlightKey();
-    }
-
-    /**
      * Create an instance of {@link ReserveRoom }
      * 
      */
@@ -403,11 +435,35 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link GetFlightKey }
+     * 
+     */
+    public GetFlightKey createGetFlightKey() {
+        return new GetFlightKey();
+    }
+
+    /**
+     * Create an instance of {@link ShutdownResponse }
+     * 
+     */
+    public ShutdownResponse createShutdownResponse() {
+        return new ShutdownResponse();
+    }
+
+    /**
      * Create an instance of {@link AddFlight }
      * 
      */
     public AddFlight createAddFlight() {
         return new AddFlight();
+    }
+
+    /**
+     * Create an instance of {@link Shutdown }
+     * 
+     */
+    public Shutdown createShutdown() {
+        return new Shutdown();
     }
 
     /**
@@ -432,6 +488,14 @@ public class ObjectFactory {
      */
     public UpdateDeleteCustomer createUpdateDeleteCustomer() {
         return new UpdateDeleteCustomer();
+    }
+
+    /**
+     * Create an instance of {@link CommitResponse }
+     * 
+     */
+    public CommitResponse createCommitResponse() {
+        return new CommitResponse();
     }
 
     /**
@@ -467,19 +531,27 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link DeleteCars }
-     * 
-     */
-    public DeleteCars createDeleteCars() {
-        return new DeleteCars();
-    }
-
-    /**
      * Create an instance of {@link DeleteFlight }
      * 
      */
     public DeleteFlight createDeleteFlight() {
         return new DeleteFlight();
+    }
+
+    /**
+     * Create an instance of {@link Abort }
+     * 
+     */
+    public Abort createAbort() {
+        return new Abort();
+    }
+
+    /**
+     * Create an instance of {@link DeleteCars }
+     * 
+     */
+    public DeleteCars createDeleteCars() {
+        return new DeleteCars();
     }
 
     /**
@@ -510,12 +582,30 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link Start }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://ws.server/", name = "start")
+    public JAXBElement<Start> createStart(Start value) {
+        return new JAXBElement<Start>(_Start_QNAME, Start.class, null, value);
+    }
+
+    /**
      * Create an instance of {@link JAXBElement }{@code <}{@link NewCustomerId }{@code >}}
      * 
      */
     @XmlElementDecl(namespace = "http://ws.server/", name = "newCustomerId")
     public JAXBElement<NewCustomerId> createNewCustomerId(NewCustomerId value) {
         return new JAXBElement<NewCustomerId>(_NewCustomerId_QNAME, NewCustomerId.class, null, value);
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link AbortResponse }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://ws.server/", name = "abortResponse")
+    public JAXBElement<AbortResponse> createAbortResponse(AbortResponse value) {
+        return new JAXBElement<AbortResponse>(_AbortResponse_QNAME, AbortResponse.class, null, value);
     }
 
     /**
@@ -627,15 +717,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link GetCarKey }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "http://ws.server/", name = "getCarKey")
-    public JAXBElement<GetCarKey> createGetCarKey(GetCarKey value) {
-        return new JAXBElement<GetCarKey>(_GetCarKey_QNAME, GetCarKey.class, null, value);
-    }
-
-    /**
      * Create an instance of {@link JAXBElement }{@code <}{@link ReserveRoomResponse }{@code >}}
      * 
      */
@@ -645,12 +726,30 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link GetCarKey }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://ws.server/", name = "getCarKey")
+    public JAXBElement<GetCarKey> createGetCarKey(GetCarKey value) {
+        return new JAXBElement<GetCarKey>(_GetCarKey_QNAME, GetCarKey.class, null, value);
+    }
+
+    /**
      * Create an instance of {@link JAXBElement }{@code <}{@link UpdateItemInfo }{@code >}}
      * 
      */
     @XmlElementDecl(namespace = "http://ws.server/", name = "updateItemInfo")
     public JAXBElement<UpdateItemInfo> createUpdateItemInfo(UpdateItemInfo value) {
         return new JAXBElement<UpdateItemInfo>(_UpdateItemInfo_QNAME, UpdateItemInfo.class, null, value);
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link Commit }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://ws.server/", name = "commit")
+    public JAXBElement<Commit> createCommit(Commit value) {
+        return new JAXBElement<Commit>(_Commit_QNAME, Commit.class, null, value);
     }
 
     /**
@@ -735,21 +834,30 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link DeleteFlight }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "http://ws.server/", name = "deleteFlight")
-    public JAXBElement<DeleteFlight> createDeleteFlight(DeleteFlight value) {
-        return new JAXBElement<DeleteFlight>(_DeleteFlight_QNAME, DeleteFlight.class, null, value);
-    }
-
-    /**
      * Create an instance of {@link JAXBElement }{@code <}{@link DeleteCars }{@code >}}
      * 
      */
     @XmlElementDecl(namespace = "http://ws.server/", name = "deleteCars")
     public JAXBElement<DeleteCars> createDeleteCars(DeleteCars value) {
         return new JAXBElement<DeleteCars>(_DeleteCars_QNAME, DeleteCars.class, null, value);
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link Abort }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://ws.server/", name = "abort")
+    public JAXBElement<Abort> createAbort(Abort value) {
+        return new JAXBElement<Abort>(_Abort_QNAME, Abort.class, null, value);
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link DeleteFlight }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://ws.server/", name = "deleteFlight")
+    public JAXBElement<DeleteFlight> createDeleteFlight(DeleteFlight value) {
+        return new JAXBElement<DeleteFlight>(_DeleteFlight_QNAME, DeleteFlight.class, null, value);
     }
 
     /**
@@ -789,6 +897,15 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link CommitResponse }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://ws.server/", name = "commitResponse")
+    public JAXBElement<CommitResponse> createCommitResponse(CommitResponse value) {
+        return new JAXBElement<CommitResponse>(_CommitResponse_QNAME, CommitResponse.class, null, value);
+    }
+
+    /**
      * Create an instance of {@link JAXBElement }{@code <}{@link UpdateDeleteCustomer }{@code >}}
      * 
      */
@@ -816,12 +933,30 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link Shutdown }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://ws.server/", name = "shutdown")
+    public JAXBElement<Shutdown> createShutdown(Shutdown value) {
+        return new JAXBElement<Shutdown>(_Shutdown_QNAME, Shutdown.class, null, value);
+    }
+
+    /**
      * Create an instance of {@link JAXBElement }{@code <}{@link AddFlight }{@code >}}
      * 
      */
     @XmlElementDecl(namespace = "http://ws.server/", name = "addFlight")
     public JAXBElement<AddFlight> createAddFlight(AddFlight value) {
         return new JAXBElement<AddFlight>(_AddFlight_QNAME, AddFlight.class, null, value);
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link ShutdownResponse }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://ws.server/", name = "shutdownResponse")
+    public JAXBElement<ShutdownResponse> createShutdownResponse(ShutdownResponse value) {
+        return new JAXBElement<ShutdownResponse>(_ShutdownResponse_QNAME, ShutdownResponse.class, null, value);
     }
 
     /**
@@ -843,21 +978,21 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link GetFlightKey }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "http://ws.server/", name = "getFlightKey")
-    public JAXBElement<GetFlightKey> createGetFlightKey(GetFlightKey value) {
-        return new JAXBElement<GetFlightKey>(_GetFlightKey_QNAME, GetFlightKey.class, null, value);
-    }
-
-    /**
      * Create an instance of {@link JAXBElement }{@code <}{@link ReserveRoom }{@code >}}
      * 
      */
     @XmlElementDecl(namespace = "http://ws.server/", name = "reserveRoom")
     public JAXBElement<ReserveRoom> createReserveRoom(ReserveRoom value) {
         return new JAXBElement<ReserveRoom>(_ReserveRoom_QNAME, ReserveRoom.class, null, value);
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link GetFlightKey }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://ws.server/", name = "getFlightKey")
+    public JAXBElement<GetFlightKey> createGetFlightKey(GetFlightKey value) {
+        return new JAXBElement<GetFlightKey>(_GetFlightKey_QNAME, GetFlightKey.class, null, value);
     }
 
     /**
@@ -894,6 +1029,15 @@ public class ObjectFactory {
     @XmlElementDecl(namespace = "http://ws.server/", name = "addRoomsResponse")
     public JAXBElement<AddRoomsResponse> createAddRoomsResponse(AddRoomsResponse value) {
         return new JAXBElement<AddRoomsResponse>(_AddRoomsResponse_QNAME, AddRoomsResponse.class, null, value);
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link StartResponse }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://ws.server/", name = "startResponse")
+    public JAXBElement<StartResponse> createStartResponse(StartResponse value) {
+        return new JAXBElement<StartResponse>(_StartResponse_QNAME, StartResponse.class, null, value);
     }
 
     /**
