@@ -1,6 +1,8 @@
 package client;
 
 
+import server.Trace;
+
 import java.util.*;
 import java.io.*;
 
@@ -174,10 +176,17 @@ public class Client extends WSClient {
                     break;
                 }
                 System.out.println("Adding a new Customer using id: " + arguments.elementAt(1));
+                System.out.println("Waiting for response from server...");
                 try {
                     id = getInt(arguments.elementAt(1));
                     int customer = proxy.newCustomer(id);
-                    System.out.println("new customer id: " + customer);
+                    if (customer > 0) {
+                        System.out.println("new customer id: " + customer);
+                    }
+                    else {
+                        Trace.warn("Fail to generate a new customer");
+                    }
+
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -408,6 +417,7 @@ public class Client extends WSClient {
                 }
                 System.out.println("Querying a car price using id: " + arguments.elementAt(1));
                 System.out.println("car location: " + arguments.elementAt(2));
+                System.out.println("Waiting for response from server...");
                 try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
@@ -567,12 +577,17 @@ public class Client extends WSClient {
                 }
                 System.out.println("Adding a new Customer using id: "
                         + arguments.elementAt(1)  +  " and cid "  + arguments.elementAt(2));
+                System.out.println("Waiting for response from server...");
                 try {
                     id = getInt(arguments.elementAt(1));
                     int customer = getInt(arguments.elementAt(2));
 
-                    boolean c = proxy.newCustomerId(id, customer);
-                    System.out.println("new customer id: " + customer);
+                    if (proxy.newCustomerId(id, customer)) {
+                        System.out.println("new customer id: " + customer);
+                    }
+                    else {
+                        Trace.warn("Customer already exists");
+                    }
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -590,6 +605,30 @@ public class Client extends WSClient {
                 else  //wrong use of help command
                     System.out.println("Improper use of help command. Type help or help, <commandname>");
                 break;
+
+            case 24:
+                if (arguments.size() != 2) { //command was "start"
+                    wrongNumber();
+                    break;
+                }
+                else {
+                    try {
+                        int transactionID = getInt(arguments.elementAt(1));
+                        if (proxy.abort(transactionID)){
+                            Trace.info("Unlock transaction " + transactionID + "successfully");
+                        }
+                        else {
+                            Trace.warn("Invalid transaction ID or failed to unlock");
+                        }
+                    } catch (Exception e) {
+                        System.out.println("EXCEPTION: ");
+                        e.printStackTrace();
+                    }
+                    System.out.println("TRANSACTION ID: " + proxy.start());
+
+                }
+                break;
+
 
 
             default:
@@ -866,7 +905,12 @@ public class Client extends WSClient {
                 System.out.println("start");
                 System.out.println("\nTyping start generates a unique transaction ID for the client.");
                 break;
-
+            case 24:
+                System.out.println("start");
+                System.out.println("\nTyping commit unlocks all the locks related to a transaction.");
+                System.out.println("\nUsage: ");
+                System.out.println("\tcommit, <id>");
+                break;
 
             default:
             System.out.println(command);

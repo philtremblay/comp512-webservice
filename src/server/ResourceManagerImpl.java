@@ -213,6 +213,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     @Override
     public boolean deleteFlight(int id, int flightNumber) {
+
+
+        
         return deleteItem(id, Flight.getKey(flightNumber));
     }
 
@@ -346,7 +349,16 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // Returns price of cars at this location.
     @Override
     public int queryCarsPrice(int id, String location) {
-        return queryPrice(id, Car.getKey(location));
+
+        String strData = "car,"+location;
+        try {
+            lockServer.Lock(id, strData, READ);
+            return queryPrice(id, Car.getKey(location));
+        }
+        catch (DeadlockException dl) {
+            Trace.warn("RM::queryPrice(" + id + ", car " + location + ") failed: ");
+            return -1;
+        }
     }
     
 
@@ -415,7 +427,18 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // Returns room price at this location.
     @Override
     public int queryRoomsPrice(int id, String location) {
-        return queryPrice(id, Room.getKey(location));
+
+        String strData = "room,"+location;
+
+        try {
+            lockServer.Lock(id, strData, READ);
+            return queryPrice(id, Room.getKey(location));
+        }
+        catch (DeadlockException dl) {
+            Trace.warn("RM::queryPrice(" + id + ", room " + location + ") failed: ");
+            return -1;
+        }
+
     }
 
 
@@ -423,30 +446,50 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     @Override
     public int newCustomer(int id) {
-        Trace.info("INFO: RM::newCustomer(" + id + ") called.");
-        // Generate a globally unique Id for the new customer.
+
         int customerId = Integer.parseInt(String.valueOf(id) +
                 String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) +
                 String.valueOf(Math.round(Math.random() * 100 + 1)));
-        Customer cust = new Customer(customerId);
-        writeData(id, cust.getKey(), cust);
-        Trace.info("RM::newCustomer(" + id + ") OK: " + customerId);
-        return customerId;
+        String strData = "customer," +customerId;
+
+        try {
+            lockServer.Lock(id, strData, WRITE);
+            Trace.info("INFO: RM::newCustomer(" + id + ") called.");
+            // Generate a globally unique Id for the new customer.
+
+            Customer cust = new Customer(customerId);
+            writeData(id, cust.getKey(), cust);
+            Trace.info("RM::newCustomer(" + id + ") OK: " + customerId);
+            return customerId;
+        }
+        catch (DeadlockException dl) {
+            Trace.warn("RM::newCustomer(" + id + ") failed: ");
+            return -1;
+        }
     }
 
     // This method makes testing easier.
     @Override
     public boolean newCustomerId(int id, int customerId) {
+
         Trace.info("INFO: RM::newCustomer(" + id + ", " + customerId + ") called.");
-        Customer cust = (Customer) readData(id, Customer.getKey(customerId));
-        if (cust == null) {
-            cust = new Customer(customerId);
-            writeData(id, cust.getKey(), cust);
-            Trace.info("INFO: RM::newCustomer(" + id + ", " + customerId + ") OK.");
-            return true;
-        } else {
-            Trace.info("INFO: RM::newCustomer(" + id + ", " + 
-                    customerId + ") failed: customer already exists.");
+        String strData = "customer,"+customerId;
+        try {
+            lockServer.Lock(id, strData, WRITE);
+            Customer cust = (Customer) readData(id, Customer.getKey(customerId));
+            if (cust == null) {
+                cust = new Customer(customerId);
+                writeData(id, cust.getKey(), cust);
+                Trace.info("INFO: RM::newCustomer(" + id + ", " + customerId + ") OK.");
+                return true;
+            } else {
+                Trace.info("INFO: RM::newCustomer(" + id + ", " +
+                        customerId + ") failed: customer already exists.");
+                return false;
+            }
+        }
+        catch (DeadlockException dl) {
+            Trace.info("INFO: RM::newCustomer(" + id + ", " + customerId + ") failed.");
             return false;
         }
     }
@@ -504,18 +547,27 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // Return a bill.
     @Override
     public String queryCustomerInfo(int id, int customerId) {
-        Trace.info("RM::queryCustomerInfo(" + id + ", " + customerId + ") called.");
-        Customer cust = (Customer) readData(id, Customer.getKey(customerId));
-        if (cust == null) {
-            Trace.warn("RM::queryCustomerInfo(" + id + ", " 
-                    + customerId + ") failed: customer doesn't exist.");
-            // Returning an empty bill means that the customer doesn't exist.
-            return "";
-        } else {
-            String s = cust.printBill();
-            Trace.info("RM::queryCustomerInfo(" + id + ", " + customerId + "): \n");
-            System.out.println(s);
-            return s;
+
+        String strData = "customer,"+customerId;
+        try {
+            lockServer.Lock(id, strData, READ);
+            Trace.info("RM::queryCustomerInfo(" + id + ", " + customerId + ") called.");
+            Customer cust = (Customer) readData(id, Customer.getKey(customerId));
+            if (cust == null) {
+                Trace.warn("RM::queryCustomerInfo(" + id + ", "
+                        + customerId + ") failed: customer doesn't exist.");
+                // Returning an empty bill means that the customer doesn't exist.
+                return "";
+            } else {
+                String s = cust.printBill();
+                Trace.info("RM::queryCustomerInfo(" + id + ", " + customerId + "): \n");
+                System.out.println(s);
+                return s;
+            }
+        }
+        catch (DeadlockException dl) {
+            return "WARN: RM::queryCustomerInfo(" + id + ", "
+                    + customerId + ")";
         }
     }
 
@@ -610,7 +662,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     @Override
     public boolean abort(int txnId){
-        return true;
+        return lockServer.UnlockAll(txnId);
     }
 
     @Override

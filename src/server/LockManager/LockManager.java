@@ -68,7 +68,7 @@ public class LockManager
                         }
 
                         if (bConvert.get(0)) {
-                            System.out.println("ENTER HERE!!!!!");
+
                             // lock conversion 
                             // *** ADD CODE HERE *** to carry out the lock conversion in the
                             // lock table
@@ -78,7 +78,7 @@ public class LockManager
                             // whats the difference between txnobj and dataobj? Do we need to change both?
                             trxnObj.setLockType(WRITE);
                             dataObj.setLockType(WRITE);
-                            System.out.println("SET THE LOCK TYPE TO WRITE ");
+                            Trace.info("CONVERT THE LOCK TYPE TO WRITE ");
                             this.lockTable.add(trxnObj);
                             this.lockTable.add(dataObj);
 
