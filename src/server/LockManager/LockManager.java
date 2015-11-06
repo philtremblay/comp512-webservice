@@ -241,8 +241,8 @@ public class LockManager
                     else if(dataObj2.getLockType() == DataObj.WRITE){
                         //transaction requests a WRITE lock on another transaction that
                         //already has a WRITE lock ==> conflict
-                        Trace.warn("LM: WANT WRITE, SOMEONE HAS WRITE");
-                        return true;
+                        Trace.info("LM: PROCEED WITH THE WRITE");
+                        return false;
                     }
                 }
             } 
