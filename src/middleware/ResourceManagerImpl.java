@@ -23,6 +23,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public static final int CUST = 4;
     public static final int DEL = 5;
     public static final int ADD = 6;
+    public static final int RES = 7;
 
     short f_flag = 1;
     short c_flag = 0;
@@ -479,26 +480,54 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                         + "for item " + reservedItem.getKey());
                 int itemId = reservedItem.getId();
                 int count = reservedItem.getCount();
+                String location = reservedItem.getLocation();
 
                 Trace.info("RM::deleteCustomer(" + id + ", " + customerId + "): ");
                 //car
                 if(reservedItem.getType() == 1){
-                    if(!(flightProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count))){
-                        return false;
+                    if(flightProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count)){
+                        Vector cmd = cmdToVect(FLIGHT,RES,Integer.parseInt(location));
+                        cmd.add(count);
+
+                        this.txnManager.setNewUpdateItem(id,cmd);
+                        this.txnManager.enlist(id,FLIGHT);
+
+                        return true;
+                    }
+                    else{
                         //error
+                        return false;
                     }
                 }
                 //room
                 else if (reservedItem.getType() == 2){
-                    if(!(carProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count))){
-                        return false;
+                    if(carProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count)){
+                        Vector cmd = cmdToVect(CAR,RES,Integer.parseInt(location));
+                        cmd.add(count);
+
+                        this.txnManager.setNewUpdateItem(id,cmd);
+                        this.txnManager.enlist(id,CAR);
+
+                        return true;
+                    }
+                    else{
                         //error
+                        return false;
                     }
                 }
                 else if (reservedItem.getType() == 3){
-                    if(!(roomProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count))){
-                        return false;
+                    if(roomProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count)){
+                        Vector cmd = cmdToVect(CAR,RES,Integer.parseInt(location));
+                        cmd.add(count);
+
+                        this.txnManager.setNewUpdateItem(id,cmd);
+                        this.txnManager.enlist(id,ROOM);
+
+                        return true;
+                    }
+                    else{
                         //error
+                        return false;
                     }
                 }
 
