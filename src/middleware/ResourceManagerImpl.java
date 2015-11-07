@@ -642,6 +642,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             }
             // Remove the customer from the storage.
             removeData(id, cust.getKey());
+            Vector cmd = cmdToVect(CUST,ADD,customerId);
+            this.txnManager.setNewUpdateItem(id,cmd);
             Trace.info("RM::deleteCustomer(" + id + ", " + customerId + ") OK.");
             return true;
         }
@@ -953,8 +955,15 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 case CUST:
                     switch (queryType){
                         case ADD:
+                            //location is the customerId. it gets set in newcustomer
+                            if(!newCustomerId(txnId,location));
                             break;
                         case DEL:
+                            //location is the customerId. it gets set in newcustomer
+                            if(!deleteCustomer(txnId,location)){
+                                Trace.info("FAILED TO DELETE CUSTOMER UPON ABORT");
+                                return false;
+                            }
                             break;
                         case RES:
                             break;
@@ -965,6 +974,37 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             }
         }//endwhile
         //abort in specific RMs
+        Vector RMList = this.txnManager.activeTxnRM.get(txnId);
+        Iterator it = RMList.iterator();
+        while(it.hasNext()){
+            Integer RMType = (Integer) it.next();
+            switch (RMType){
+                case FLIGHT:
+                    if (!flightProxy.proxy.abort(txnId)){
+                        Trace.info("ERROR IN ABORT IN THE FLIGHT SERVER");
+                        return false;
+                    }
+                    break;
+                case CAR:
+                    if (!carProxy.proxy.abort(txnId)){
+                        Trace.info("ERROR IN ABORT IN THE CAR SERVER");
+                        return false;
+                    }
+                    break;
+                case ROOM:
+                    if (!roomProxy.proxy.abort(txnId)){
+                        Trace.info("ERROR IN ABORT IN THE ROOM SERVER");
+                        return false;
+                    }
+                    break;
+                case CUST:
+                    if(!MWLock.UnlockAll(txnId)){
+                        Trace.info("ERROR IN ABORT IN THE MIDDLEWARE FOR THE CUSTOMER RM");
+                        return false;
+                    }
+                    break;
+            }
+        }
 
         return true;
     }
