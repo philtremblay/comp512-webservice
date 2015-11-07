@@ -1,14 +1,9 @@
 package middleware;
 
-<<<<<<< HEAD
 import client.DeadlockException_Exception;
 import server.LockManager.*;
-=======
 
-import client.Client;
 import client.DeadlockException;
-import client.DeadlockException_Exception;
->>>>>>> 612923ce70bb8255ebc09cacd53f1a7d7cd7cf8b
 import client.WSClient;
 import server.Trace;
 
@@ -299,39 +294,27 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         boolean flightAdded = false;
         try {
             flightAdded = flightProxy.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
-<<<<<<< HEAD
-        }catch (client.DeadlockException_Exception e){
+        }
+        catch(client.DeadlockException_Exception e) {
             System.err.println("DeadlockException: " + e.getMessage());
             return false;
-=======
         }
-        catch (DeadlockException_Exception e) {
-            e.printStackTrace();
->>>>>>> 612923ce70bb8255ebc09cacd53f1a7d7cd7cf8b
+            if (flightAdded) {
+                System.out.println("SENT the addFlight command to the flight server:" + f_host + ":" + f_port);
+
+                //Set the cmd to delete because it needs to be deleted in the rollback
+                Vector cmd = cmdToVect(FLIGHT, DEL, flightNumber);
+                this.txnManager.setNewUpdateItem(id, cmd);
+
+                //set active RM list
+                this.txnManager.enlist(id, FLIGHT);
+
+                return flightAdded;
+            } else {
+                System.out.println("FAIL to sent to flight server");
+                return false;
+            }
         }
-        if (flightAdded) {
-            System.out.println("SENT the addFlight command to the flight server:" + f_host + ":" + f_port);
-
-            //Set the cmd to delete because it needs to be deleted in the rollback
-            Vector cmd = cmdToVect(FLIGHT,DEL,flightNumber);
-            this.txnManager.setNewUpdateItem(id,cmd);
-
-            //set active RM list
-            this.txnManager.enlist(id, FLIGHT);
-
-            return flightAdded;
-        }
-        else {
-            System.out.println("FAIL to sent to flight server");
-            return false;
-        }
-<<<<<<< HEAD
-=======
-
-
-        return flightAdded;
->>>>>>> 612923ce70bb8255ebc09cacd53f1a7d7cd7cf8b
-    }
 
     @Override
     public boolean deleteFlight(int id, int flightNumber) {
@@ -526,7 +509,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             writeData(id, cust.getKey(), cust);
             Trace.info("RM::newCustomer(" + id + ") OK: " + customerId);
 
-        } catch (DeadlockException e) {
+        } catch (server.LockManager.DeadlockException e) {
             e.printStackTrace();
             return -1;
         }
@@ -546,7 +529,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         try {
             MWLock.Lock(id,strData,READ);
-        } catch (DeadlockException e) {
+        } catch (server.LockManager.DeadlockException e) {
             e.printStackTrace();
             return false;
         }
@@ -575,7 +558,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         try {
             MWLock.Lock(id,strData,WRITE);
-        } catch (DeadlockException e) {
+        } catch (server.LockManager.DeadlockException e) {
             e.printStackTrace();
             return false;
         }
@@ -662,7 +645,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         try {
             MWLock.Lock(id,strData,READ);
-        } catch (DeadlockException e) {
+        } catch (server.LockManager.DeadlockException e) {
             e.printStackTrace();
             return "WARN: RM::queryCustomerInfo(" + id + ", "
                     + customerId + ") failed: DeadlockException";
@@ -815,30 +798,29 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     }
 
     @Override
-    public boolean commit(int txnId){
+    public boolean commit(int txnId) {
         //iterate through active RM list and release locks
-<<<<<<< HEAD
         Vector RMlist = this.txnManager.activeTxnRM.get(txnId);
         Iterator it = RMlist.iterator();
 
-        while(it.hasNext()){
+        while (it.hasNext()) {
             //release locks for this RM
             Integer RMType = (Integer) it.next();
-            switch (RMType){
+            switch (RMType) {
                 case FLIGHT:
-                    if(!flightProxy.proxy.commit(txnId)){
+                    if (!flightProxy.proxy.commit(txnId)) {
                         Trace.info("ERROR IN FLIGHT RM COMMIT");
                         return false;
                     }
                     break;
                 case CAR:
-                    if(!carProxy.proxy.commit(txnId)){
+                    if (!carProxy.proxy.commit(txnId)) {
                         Trace.info("ERROR IN CAR RM COMMIT");
                         return false;
                     }
                     break;
                 case ROOM:
-                    if(!roomProxy.proxy.commit(txnId)){
+                    if (!roomProxy.proxy.commit(txnId)) {
                         Trace.info("ERROR IN ROOM RM COMMIT");
                         return false;
                     }
@@ -846,13 +828,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 case CUST:
                     //add lock manager to MIDDLEWARE
                     if (txnId > 0) {
-                        Trace.info("RM::COMMIT TRANSACTION ID: "+ txnId);
-                        if (!this.MWLock.UnlockAll(txnId)){
+                        Trace.info("RM::COMMIT TRANSACTION ID: " + txnId);
+                        if (!this.MWLock.UnlockAll(txnId)) {
                             Trace.info("FAILED TO UNLOCK ALL CUSTOMER LOCKS");
                             return false;
                         }
-                    }
-                    else {
+                    } else {
                         Trace.info("INVALID TXNID: CANNOT COMMIT CUSTOMER");
                         return false;
                     }
@@ -867,19 +848,10 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }catch (NullPointerException e){
             Trace.info("ERROR WHEN REMOVING TXNMANAGER ENTRIES");
             e.printStackTrace();
-=======
-        if (txnId > 0) {
-            if (flightProxy.proxy.commit(txnId) && carProxy.proxy.commit(txnId) && roomProxy.proxy.commit(txnId)) {
-                Trace.info("RM::SUCCESSUFULLY COMMIT TRANSACTION ID: " + txnId);
-                return true;
-            }
-            else
-                return false;
-        }else {
->>>>>>> 612923ce70bb8255ebc09cacd53f1a7d7cd7cf8b
+
             return false;
         }
-
+        return true;
     }
 
     @Override
@@ -916,7 +888,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                             }
                             break;
                         case UNRES:
-
+                            //implement unreserve on server to continue
                             break;
                     }
                     break;
@@ -953,9 +925,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                     }
                     break;
             }
-            //abort in specific RMs to remove locks
-
-        }
+        }//endwhile
+        //abort in specific RMs
 
         return true;
     }
