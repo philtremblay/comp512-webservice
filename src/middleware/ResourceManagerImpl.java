@@ -4,6 +4,7 @@ import client.DeadlockException_Exception;
 import server.LockManager.*;
 
 import client.DeadlockException;
+
 import client.DeadlockException_Exception;
 
 import client.WSClient;
@@ -308,15 +309,16 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             return false;
         }
 
+
         if (flightAdded) {
             System.out.println("SENT the addFlight command to the flight server:" + f_host + ":" + f_port);
 
-                //Set the cmd to delete because it needs to be deleted in the rollback
-                Vector cmd = cmdToVect(FLIGHT, DEL, flightNumber);
-                this.txnManager.setNewUpdateItem(id, cmd);
+            //Set the cmd to delete because it needs to be deleted in the rollback
+            Vector cmd = cmdToVect(FLIGHT, DEL, flightNumber);
+            this.txnManager.setNewUpdateItem(id, cmd);
 
-                //set active RM list
-                this.txnManager.enlist(id, FLIGHT);
+            //set active RM list
+            this.txnManager.enlist(id, FLIGHT);
 
             return flightAdded;
         }
@@ -326,7 +328,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
 
     }
-
 
     @Override
     public boolean deleteFlight(int id, int flightNumber) {
@@ -531,6 +532,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             e.printStackTrace();
             return -1;
         }
+
         Customer cust = new Customer(customerId);
         writeData(id, cust.getKey(), cust);
         Trace.info("RM::newCustomer(" + id + ") OK: " + customerId);
@@ -665,7 +667,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public String queryCustomerInfo(int id, int customerId) {
         Trace.info("RM::queryCustomerInfo(" + id + ", " + customerId + ") called.");
         String strData = "customer,"+customerId;
-
         try {
             MWLock.Lock(id,strData,READ);
         } catch (server.LockManager.DeadlockException e) {
@@ -673,6 +674,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             return "WARN: RM::queryCustomerInfo(" + id + ", "
                     + customerId + ") failed: DeadlockException";
         }
+
         Customer cust = (Customer) readData(id, Customer.getKey(customerId));
         if (cust == null) {
             Trace.warn("RM::queryCustomerInfo(" + id + ", "
@@ -895,8 +897,19 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }catch (NullPointerException e) {
             Trace.warn("ERROR WHEN REMOVING TXNMANAGER ENTRIES");
             e.printStackTrace();
+        }
+        /*
+        if (txnId > 0) {
+            if (flightProxy.proxy.commit(txnId) && carProxy.proxy.commit(txnId) && roomProxy.proxy.commit(txnId)) {
+                Trace.info("RM::SUCCESSUFULLY COMMIT TRANSACTION ID: " + txnId);
+                return true;
+            }
+            else
+                return false;
+        }else {
             return false;
         }
+        */
         return true;
     }
 
