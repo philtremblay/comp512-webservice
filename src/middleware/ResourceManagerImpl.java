@@ -498,7 +498,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public int queryRooms(int id, String location) {
 
         int roomquery = roomProxy.proxy.queryRooms(id, location);
-        System.out.println("QUERY the room with ID: "+ id);
+        System.out.println("QUERY the room with ID: " + id);
 
         this.txnManager.enlist(id,ROOM);
 
@@ -564,7 +564,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
             Vector cmd = cmdToVect(CUST,DEL,customerId);
             this.txnManager.setNewUpdateItem(id,cmd);
-            this.txnManager.enlist(id,CUST);
+            this.txnManager.enlist(id, CUST);
 
             return true;
         } else {
@@ -844,7 +844,15 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean commit(int txnId) {
         //iterate through active RM list and release locks
-        Vector RMlist = this.txnManager.activeTxnRM.get(txnId);
+        Vector RMlist;
+        try{
+            RMlist = this.txnManager.activeTxnRM.get(txnId);
+        }
+        catch (NullPointerException e){
+            e.printStackTrace();
+            Trace.warn("NEED TO START TRANSACTION BEFORE CALLING COMMIT");
+            return false;
+        }
         Iterator it = RMlist.iterator();
         if (RMlist.isEmpty()) {
             Trace.info("RM::NOTHING TO COMMIT FOR ID: "+ txnId);
@@ -916,7 +924,15 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean abort(int txnId){
         //get the commands from the stack of commands and execute them
-        Stack cmdList = this.txnManager.txnCmdList.get(txnId);
+        Stack cmdList;
+        try {
+             cmdList = this.txnManager.txnCmdList.get(txnId);
+        }
+        catch (NullPointerException e){
+            e.printStackTrace();
+            Trace.warn("NEED TO START TRANSCATION BEFORE CALLING ABORT");
+            return false;
+        }
         while (!cmdList.isEmpty()){
             Vector cmd = (Vector) cmdList.pop();
             Integer RMType = (Integer) cmd.get(0);
