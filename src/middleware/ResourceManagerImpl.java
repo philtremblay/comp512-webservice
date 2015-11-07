@@ -3,6 +3,7 @@ package middleware;
 
 import client.Client;
 import client.DeadlockException;
+import client.DeadlockException_Exception;
 import client.WSClient;
 import server.Trace;
 
@@ -26,7 +27,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public static final int DEL = 5;
     public static final int ADD = 6;
     public static final int RES = 7;
-    public static final int UNRES =8;
+    public static final int UNRES = 8;
 
     short f_flag = 1;
     short c_flag = 0;
@@ -160,7 +161,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 break;
         }
 
-        if (count == -1){
+        if (count == -1) {
             Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
                     + key  + ") failed: item doesn't exist.");
             return false;
@@ -200,7 +201,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 return false;
             }
 
-            Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
+            Trace.info("RM::reserveItem(" + id + ", " + customerId + ", "
                     + key + ", " + location + ") OK.");
             return true;
         }
@@ -285,11 +286,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean addFlight(int id, int flightNumber, int numSeats, int flightPrice) {
 
-        boolean flightAdded;
+        boolean flightAdded = false;
         try {
             flightAdded = flightProxy.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
-        }catch (server.LockManager.DeadlockException e){
-            System.err.println("DeadlockException: " + e.getMessage());
+        }
+        catch (DeadlockException_Exception e) {
+            e.printStackTrace();
         }
         if (flightAdded) {
             System.out.println("SENT the addFlight command to the flight server:" + f_host + ":" + f_port);
@@ -304,6 +306,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         else {
             System.out.println("FAIL to sent to flight server");
         }
+
+
         return flightAdded;
     }
 
@@ -337,8 +341,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public int queryFlight(int id, int flightNumber) {
 
         int flightNum = flightProxy.proxy.queryFlight(id, flightNumber);
-
-        System.out.println("QUERY the flight with ID:" + id);
+        if (flightNum > 0) {
+            System.out.println("QUERY the flight with ID:" + id);
+        }
+        else {
+            Trace.warn("Cannot query the flight# " + id);
+        }
 
         return flightNum;
     }
@@ -754,8 +762,17 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean commit(int txnId){
         //iterate through active RM list and release locks
+        if (txnId > 0) {
+            if (flightProxy.proxy.commit(txnId) && carProxy.proxy.commit(txnId) && roomProxy.proxy.commit(txnId)) {
+                Trace.info("RM::SUCCESSUFULLY COMMIT TRANSACTION ID: " + txnId);
+                return true;
+            }
+            else
+                return false;
+        }else {
+            return false;
+        }
 
-        return true;
     }
 
     @Override

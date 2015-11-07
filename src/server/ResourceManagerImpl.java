@@ -688,6 +688,14 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public boolean updateItemInfo(int id, String key, int resOrUnres){
         ReservableItem item = (ReservableItem) readData(id, key);
 
+        //the key is either flight-#, car-# or room-#
+
+        //create a string flight,1 to lock it up
+
+        String strData = key.substring(0,key.indexOf('-'))+','+key.substring(key.indexOf('-') + 1);
+
+        System.out.println("HERE IS THE KEY:" + key);
+
         //reserve
         if (resOrUnres == 7) {
             if (item == null) {
@@ -695,9 +703,18 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                         + key + ",) failed: item doesn't exist.");
                 return false;
             } else {
-                item.setCount(item.getCount() - 1);
-                item.setReserved(item.getReserved() + 1);
-                return true;
+                try {
+                    lockServer.Lock(id, strData, WRITE);
+                    item.setCount(item.getCount() - 1);
+                    item.setReserved(item.getReserved() + 1);
+                    return true;
+                } catch (DeadlockException e) {
+
+                    Trace.warn("RM::reserveItem(" + id + ", "
+                            + key + ",) failed: DeadlockException.");
+                    return false;
+                }
+
             }
         }
         //unreserve
@@ -707,9 +724,18 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                         + key + ",) failed: item doesn't exist.");
                 return false;
             } else {
-                item.setCount(item.getCount() + 1);
-                item.setReserved(item.getReserved() - 1);
-                return true;
+                try {
+                    lockServer.Lock(id, strData, WRITE);
+                    item.setCount(item.getCount() + 1);
+                    item.setReserved(item.getReserved() - 1);
+                    return true;
+                } catch (DeadlockException e) {
+
+                    Trace.warn("RM::unreserveItem(" + id + ", "
+                            + key + ",) failed: DeadlockException.");
+                    return false;
+                }
+
             }
         }
         else{
@@ -720,6 +746,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean updateDeleteCustomer(int id, String key,int count){
         ReservableItem item = (ReservableItem) readData(id,key);
+
         if (item == null){
 //            error
             return false;
@@ -737,14 +764,14 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     @Override
     public int start(){
-        //generate new transaction Id
 
+        //you dont need to call this from the server
         return 0;
     }
 
     @Override
     public boolean commit(int txnId){
-
+        /**testing purposes **/
         if (txnId > 0) {
             Trace.info("RM::COMMIT TRANSACTION ID: "+ txnId);
             return lockServer.UnlockAll(txnId);
