@@ -1,7 +1,14 @@
 package middleware;
 
+<<<<<<< HEAD
 import client.DeadlockException_Exception;
 import server.LockManager.*;
+=======
+
+import client.Client;
+import client.DeadlockException;
+import client.DeadlockException_Exception;
+>>>>>>> 612923ce70bb8255ebc09cacd53f1a7d7cd7cf8b
 import client.WSClient;
 import server.Trace;
 
@@ -28,7 +35,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public static final int DEL = 5;
     public static final int ADD = 6;
     public static final int RES = 7;
-    public static final int UNRES =8;
+    public static final int UNRES = 8;
 
     protected LockManager MWLock;
 
@@ -164,7 +171,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 break;
         }
 
-        if (count == -1){
+        if (count == -1) {
             Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
                     + key  + ") failed: item doesn't exist.");
             return false;
@@ -204,7 +211,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 return false;
             }
 
-            Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
+            Trace.info("RM::reserveItem(" + id + ", " + customerId + ", "
                     + key + ", " + location + ") OK.");
             return true;
         }
@@ -289,12 +296,18 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean addFlight(int id, int flightNumber, int numSeats, int flightPrice) {
 
-        boolean flightAdded;
+        boolean flightAdded = false;
         try {
             flightAdded = flightProxy.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
+<<<<<<< HEAD
         }catch (client.DeadlockException_Exception e){
             System.err.println("DeadlockException: " + e.getMessage());
             return false;
+=======
+        }
+        catch (DeadlockException_Exception e) {
+            e.printStackTrace();
+>>>>>>> 612923ce70bb8255ebc09cacd53f1a7d7cd7cf8b
         }
         if (flightAdded) {
             System.out.println("SENT the addFlight command to the flight server:" + f_host + ":" + f_port);
@@ -312,6 +325,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             System.out.println("FAIL to sent to flight server");
             return false;
         }
+<<<<<<< HEAD
+=======
+
+
+        return flightAdded;
+>>>>>>> 612923ce70bb8255ebc09cacd53f1a7d7cd7cf8b
     }
 
     @Override
@@ -344,8 +363,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public int queryFlight(int id, int flightNumber) {
 
         int flightNum = flightProxy.proxy.queryFlight(id, flightNumber);
-
-        System.out.println("QUERY the flight with ID:" + id);
+        if (flightNum > 0) {
+            System.out.println("QUERY the flight with ID:" + id);
+        }
+        else {
+            Trace.warn("Cannot query the flight# " + id);
+        }
 
         return flightNum;
     }
@@ -794,6 +817,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean commit(int txnId){
         //iterate through active RM list and release locks
+<<<<<<< HEAD
         Vector RMlist = this.txnManager.activeTxnRM.get(txnId);
         Iterator it = RMlist.iterator();
 
@@ -843,10 +867,19 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }catch (NullPointerException e){
             Trace.info("ERROR WHEN REMOVING TXNMANAGER ENTRIES");
             e.printStackTrace();
+=======
+        if (txnId > 0) {
+            if (flightProxy.proxy.commit(txnId) && carProxy.proxy.commit(txnId) && roomProxy.proxy.commit(txnId)) {
+                Trace.info("RM::SUCCESSUFULLY COMMIT TRANSACTION ID: " + txnId);
+                return true;
+            }
+            else
+                return false;
+        }else {
+>>>>>>> 612923ce70bb8255ebc09cacd53f1a7d7cd7cf8b
             return false;
         }
 
-        return true;
     }
 
     @Override
