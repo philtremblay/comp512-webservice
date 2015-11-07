@@ -40,6 +40,8 @@ public class LockManager
         TrxnObj trxnObj = new TrxnObj(xid, strData, lockType);
         DataObj dataObj = new DataObj(xid, strData, lockType);
 
+        TrxnObj trxnObj2;
+        DataObj dataObj2;
 
         System.out.println("MESSAGE: " + dataObj.toString());
         
@@ -73,15 +75,15 @@ public class LockManager
                             // *** ADD CODE HERE *** to carry out the lock conversion in the
                             // lock table
 
-                            //change the lock type by removing precedent entry and entering the
-                            //new one in locktable
-                            // whats the difference between txnobj and dataobj? Do we need to change both?
+
+
+                            //add the new object to the locktable with a write lock
                             trxnObj.setLockType(WRITE);
                             dataObj.setLockType(WRITE);
-                            Trace.info("CONVERT THE LOCK TYPE TO WRITE ");
                             this.lockTable.add(trxnObj);
                             this.lockTable.add(dataObj);
 
+                            Trace.info("LM::CONVERT THE LOCK TYPE TO WRITE ");
                         } else {
                             // a lock request that is not lock conversion
                             // newly request lock
@@ -204,6 +206,7 @@ public class LockManager
         Vector vect = this.lockTable.elements(dataObj);
         //System.out.println("PREVIOUS LOCK: "+ vect.toString());
         DataObj dataObj2;
+        DataObj tempData;
         int size = vect.size();
         
         // as soon as a lock that conflicts with the current lock request is found, return true
@@ -230,19 +233,34 @@ public class LockManager
                     // Seeing the comments at the top of this function might be helpful
                     // *** ADD CODE HERE *** to take care of both these cases
 
-                    //1 convert read lock to write lock --> set bitset
-                    if (dataObj2.getLockType() == DataObj.READ) {
-                        //set the bitset to convert
-                        bitset.set(0);
-                        Trace.info("LM: LOCK CONVERSION: READ --> WRITE");
-                        return false;
+                    // ***Lock conversion ***
+                    //1. check if there exists another read lock
+                    //2. if there is no other read lock
+                    //      convert read lock to write lock --> set bitset
+                    //3. else its a conflict
+                    int j;
+                    for (j = 0; j < size; j++ ) {
+                        tempData = (DataObj) vect.elementAt(j);
+                        if (tempData.getXId() != dataObj.getXId() && tempData.getLockType() == DataObj.READ) {
+                            //conflict: there exists another read lock on the same object
+                            Trace.info("LM: THERE EXISTS MORE THAN ONE READ LOCK ON THE SAME OBJECT");
+                            return true;
+                        }
                     }
-                    //2 transaction already has a write and want to write
-                    else if(dataObj2.getLockType() == DataObj.WRITE){
-                        //transaction requests a WRITE lock on another transaction that
-                        //already has a WRITE lock ==> conflict
-                        Trace.info("LM: PROCEED WITH THE WRITE");
-                        return false;
+                    //if other locks are checked
+                    if (j == size) {
+                        if (dataObj2.getLockType() == DataObj.READ) {
+                            //set the bitset to convert
+                            bitset.set(0);
+                            Trace.info("LM: LOCK CONVERSION: READ --> WRITE");
+                            return false;
+                        }
+                        //2 transaction already has a write and want to write
+                        else if (dataObj2.getLockType() == DataObj.WRITE) {
+
+                            Trace.info("LM: PROCEED WITH THE WRITE");
+                            return false;
+                        }
                     }
                 }
             } 
@@ -253,7 +271,7 @@ public class LockManager
 
                         // transaction is requesting a READ lock and some other transaction
                         // already has a WRITE lock on it ==> conflict
-                        Trace.warn("LM: Want READ, someone has WRITE");
+                        Trace.warn("LM: WANT READ, SOMEONE HAS WRITE");
                         return true;
                     }
                     else {
@@ -262,7 +280,7 @@ public class LockManager
                 } else if (dataObj.getLockType() == DataObj.WRITE) {
                     // transaction is requesting a WRITE lock and some other transaction has either
                     // a READ or a WRITE lock on it ==> conflict
-                    Trace.warn("LM: someone has READ or WRITE");
+                    Trace.warn("LM: SOMEONE HAS READ or WRITE");
                     return true;
                 }
             }
