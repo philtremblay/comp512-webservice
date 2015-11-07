@@ -100,7 +100,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         if (curObj != null) {
             value = curObj.getPrice();
         }
-        Trace.info("RM::queryCarsPrice(" + id + ", " + key + ") OK: $" + value);
+        Trace.info("RM::queryPrice(" + id + ", " + key + ") OK: $" + value);
         return value;
     }
 
@@ -141,7 +141,78 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             return true;
         }
     }
-    
+    /*
+    // Unreserve an item.
+    protected boolean unreserveItem(int id, int customerId, String location, String key, int itemInfo) {
+        //I will leave it to you to do some modifications
+
+
+        //get item info
+        int count = -1;
+        //int price = -1;
+        switch(itemInfo){
+            case FLIGHT:
+                count = flightProxy.proxy.queryFlight(id, Integer.parseInt(location));
+                //price = flightProxy.proxy.queryFlightPrice(id,Integer.parseInt(location));
+                break;
+            case CAR:
+                count = carProxy.proxy.queryCars(id,location);
+                //price = carProxy.proxy.queryCarsPrice(id,location);
+                break;
+            case ROOM:
+                count = roomProxy.proxy.queryRooms(id,location);
+                //price = roomProxy.proxy.queryRoomsPrice(id,location);
+                break;
+        }
+
+        Trace.info("RM::unreserveItem(" + id + ", " + customerId + ", "
+                + key + ", " + location + ") called.");
+        // Read customer object if it exists (and read lock it).
+        Customer cust = (Customer) readData(id, Customer.getKey(customerId));
+        if (cust == null) {
+            Trace.warn("RM::unreserveItem(" + id + ", " + customerId + ", "
+                    + key + ", " + location + ") failed: customer doesn't exist.");
+            return false;
+        }
+
+        // Check if the item is available.
+        if (count == -1) {
+            Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
+                    + key + ", " + location + ") failed: item doesn't exist.");
+            return false;
+        }
+        else {
+
+
+            // Decrease the number of available items in the storage.
+            boolean update = true;
+            switch(itemInfo){
+                case FLIGHT: update = flightProxy.proxy.updateItemInfo(id,key,UNRES);
+                    break;
+                case CAR: update = carProxy.proxy.updateItemInfo(id,key,UNRES);
+                    break;
+                case ROOM: update = roomProxy.proxy.updateItemInfo(id,key,UNRES);
+                    break;
+            }
+            if (!update){
+                Trace.warn("RM::unreserveItem(" + id + ", " + customerId + ", "
+                        + key + ", " + location + ") failed: update item info.");
+                return false;
+            }
+            else {
+                // Do unreservation
+                cust.unreserve(key, location,itemInfo,id); //change location maybe
+                writeData(id, cust.getKey(), cust);
+            }
+
+            Trace.warn("RM::unreserveItem(" + id + ", " + customerId + ", "
+                    + key + ", " + location + ") OK.");
+            return true;
+        }
+
+    }
+
+    */
     
     // Flight operations //
     
