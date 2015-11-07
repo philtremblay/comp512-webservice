@@ -3,9 +3,11 @@ package middleware;
 import client.DeadlockException_Exception;
 import server.LockManager.*;
 
-import client.Client;
 import client.DeadlockException;
+<<<<<<< HEAD
 import client.DeadlockException_Exception;
+=======
+>>>>>>> 26f8b6d4591f85b18c61351c0e770ce59d38e850
 import client.WSClient;
 import server.Trace;
 
@@ -37,7 +39,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     protected LockManager MWLock;
 
     short f_flag = 1;
-    short c_flag = 0;
+    short c_flag = 1;
     short r_flag = 0;
 
     //flight server properties
@@ -302,6 +304,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         boolean flightAdded = false;
         try {
             flightAdded = flightProxy.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
+<<<<<<< HEAD
 
         }catch (client.DeadlockException_Exception e){
             System.err.println("DeadlockException: " + e.getMessage());
@@ -310,14 +313,24 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         if (flightAdded) {
             System.out.println("SENT the addFlight command to the flight server:" + f_host + ":" + f_port);
+=======
+        }
+        catch(client.DeadlockException_Exception e) {
+            System.err.println("DeadlockException: " + e.getMessage());
+            return false;
+        }
+            if (flightAdded) {
+                System.out.println("SENT the addFlight command to the flight server:" + f_host + ":" + f_port);
+>>>>>>> 26f8b6d4591f85b18c61351c0e770ce59d38e850
 
-            //Set the cmd to delete because it needs to be deleted in the rollback
-            Vector cmd = cmdToVect(FLIGHT,DEL,flightNumber);
-            this.txnManager.setNewUpdateItem(id,cmd);
+                //Set the cmd to delete because it needs to be deleted in the rollback
+                Vector cmd = cmdToVect(FLIGHT, DEL, flightNumber);
+                this.txnManager.setNewUpdateItem(id, cmd);
 
-            //set active RM list
-            this.txnManager.enlist(id, FLIGHT);
+                //set active RM list
+                this.txnManager.enlist(id, FLIGHT);
 
+<<<<<<< HEAD
             return flightAdded;
         }
         else {
@@ -326,6 +339,14 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
 
     }
+=======
+                return flightAdded;
+            } else {
+                System.out.println("FAIL to sent to flight server");
+                return false;
+            }
+        }
+>>>>>>> 26f8b6d4591f85b18c61351c0e770ce59d38e850
 
     @Override
     public boolean deleteFlight(int id, int flightNumber) {
@@ -363,7 +384,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         else {
             Trace.warn("Cannot query the flight# " + id);
         }
-
+        this.txnManager.enlist(id,FLIGHT);
         return flightNum;
     }
 
@@ -373,6 +394,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         int flightPrice = flightProxy.proxy.queryFlightPrice(id, flightNumber);
 
         System.out.println("QUERY the flight price with ID: " + id);
+
+        this.txnManager.enlist(id,FLIGHT);
 
         return flightPrice;
     }
@@ -429,6 +452,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         System.out.println("QUERY the car with ID: " + id);
 
+        this.txnManager.enlist(id,CAR);
+
         return carNum;
     }
 
@@ -439,6 +464,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         System.out.println("QUERY the car price with ID: " + id);
 
+        this.txnManager.enlist(id,CAR);
 
         return carPrice;
     }
@@ -493,6 +519,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         int roomquery = roomProxy.proxy.queryRooms(id, location);
         System.out.println("QUERY the room with ID: "+ id);
 
+        this.txnManager.enlist(id,ROOM);
+
         return roomquery;
     }
 
@@ -500,6 +528,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public int queryRoomsPrice(int id, String location) {
         int roomPrice = roomProxy.proxy.queryRoomsPrice(id,location);
         System.out.println("QUERY the room PRICE with ID:" + id);
+
+        this.txnManager.enlist(id,ROOM);
 
         return roomPrice;
     }
@@ -517,8 +547,13 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         try {
             MWLock.Lock(id,strData,WRITE);
 
+<<<<<<< HEAD
         }
         catch (server.LockManager.DeadlockException e) {
+=======
+        } catch (server.LockManager.DeadlockException e) {
+            e.printStackTrace();
+>>>>>>> 26f8b6d4591f85b18c61351c0e770ce59d38e850
             return -1;
         }
         Customer cust = new Customer(customerId);
@@ -541,6 +576,10 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         try {
             MWLock.Lock(id,strData,WRITE);
         } catch (server.LockManager.DeadlockException e) {
+<<<<<<< HEAD
+=======
+            e.printStackTrace();
+>>>>>>> 26f8b6d4591f85b18c61351c0e770ce59d38e850
             return false;
         }
         Customer cust = (Customer) readData(id, Customer.getKey(customerId));
@@ -656,7 +695,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         try {
             MWLock.Lock(id,strData,READ);
         } catch (server.LockManager.DeadlockException e) {
+<<<<<<< HEAD
 
+=======
+            e.printStackTrace();
+>>>>>>> 26f8b6d4591f85b18c61351c0e770ce59d38e850
             return "WARN: RM::queryCustomerInfo(" + id + ", "
                     + customerId + ") failed: DeadlockException";
         }
@@ -670,6 +713,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             String s = cust.printBill();
             Trace.info("RM::queryCustomerInfo(" + id + ", " + customerId + "): \n");
             System.out.println(s);
+            this.txnManager.enlist(id,CUST);
             return s;
         }
     }
@@ -826,7 +870,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     }
 
     @Override
-    public boolean commit(int txnId){
+    public boolean commit(int txnId) {
         //iterate through active RM list and release locks
         Vector RMlist = this.txnManager.activeTxnRM.get(txnId);
         Iterator it = RMlist.iterator();
@@ -835,39 +879,59 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             return true;
         }
 
-        while(it.hasNext()){
+        while (it.hasNext()) {
             //release locks for this RM
             Integer RMType = (Integer) it.next();
-            switch (RMType){
+            switch (RMType) {
                 case FLIGHT:
+<<<<<<< HEAD
                     if(!flightProxy.proxy.commit(txnId)){
                         Trace.warn("ERROR IN FLIGHT RM COMMIT");
+=======
+                    if (!flightProxy.proxy.commit(txnId)) {
+                        Trace.info("ERROR IN FLIGHT RM COMMIT");
+>>>>>>> 26f8b6d4591f85b18c61351c0e770ce59d38e850
                         return false;
                     }
                     break;
                 case CAR:
+<<<<<<< HEAD
                     if(!carProxy.proxy.commit(txnId)){
                         Trace.warn("ERROR IN CAR RM COMMIT");
+=======
+                    if (!carProxy.proxy.commit(txnId)) {
+                        Trace.info("ERROR IN CAR RM COMMIT");
+>>>>>>> 26f8b6d4591f85b18c61351c0e770ce59d38e850
                         return false;
                     }
                     break;
                 case ROOM:
+<<<<<<< HEAD
                     if(!roomProxy.proxy.commit(txnId)){
                         Trace.warn("ERROR IN ROOM RM COMMIT");
+=======
+                    if (!roomProxy.proxy.commit(txnId)) {
+                        Trace.info("ERROR IN ROOM RM COMMIT");
+>>>>>>> 26f8b6d4591f85b18c61351c0e770ce59d38e850
                         return false;
                     }
                     break;
                 case CUST:
                     //add lock manager to MIDDLEWARE
                     if (txnId > 0) {
-                        Trace.info("RM::COMMIT TRANSACTION ID: "+ txnId);
-                        if (!this.MWLock.UnlockAll(txnId)){
+                        Trace.info("RM::COMMIT TRANSACTION ID: " + txnId);
+                        if (!this.MWLock.UnlockAll(txnId)) {
                             Trace.info("FAILED TO UNLOCK ALL CUSTOMER LOCKS");
                             return false;
                         }
+<<<<<<< HEAD
                     }
                     else {
                         Trace.warn("INVALID TXNID: CANNOT COMMIT CUSTOMER");
+=======
+                    } else {
+                        Trace.info("INVALID TXNID: CANNOT COMMIT CUSTOMER");
+>>>>>>> 26f8b6d4591f85b18c61351c0e770ce59d38e850
                         return false;
                     }
                     break;
@@ -881,6 +945,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }catch (NullPointerException e) {
             Trace.warn("ERROR WHEN REMOVING TXNMANAGER ENTRIES");
             e.printStackTrace();
+<<<<<<< HEAD
         }
 
         if (txnId > 0) {
@@ -891,9 +956,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             else
                 return false;
         }else {
+=======
+
+>>>>>>> 26f8b6d4591f85b18c61351c0e770ce59d38e850
             return false;
         }
-
+        return true;
     }
 
     @Override
@@ -930,27 +998,55 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                             }
                             break;
                         case UNRES:
-
+                            //implement unreserve on server to continue
                             break;
                     }
                     break;
                 case CAR:
                     switch (queryType){
                         case ADD:
+                            Integer numCars = (Integer) cmd.get(3);
+                            Integer price = (Integer) cmd.get(4);
+                            try {
+                                if (!carProxy.proxy.addCars(txnId, String.valueOf(location), numCars, price)) {
+                                    Trace.info("FAILED TO ADDCAR UPON ABORT");
+                                    return false;
+                                }
+                            }catch (Exception e){ //why isn't there an exception here?
+                                Trace.info("DEADLOCK EXCEPTION UPON ADDFLIGHT IN ABORT");
+                                e.printStackTrace();
+                                return false;
+                            }
                             break;
                         case DEL:
+                            if(!carProxy.proxy.deleteCars(txnId,String.valueOf(location))){
+                                Trace.info("FAILED TO DELETECAR UPON ABORT");
+                                return false;
+                            }
                             break;
                         case UNRES:
+                            //implement unreserve on server to continue
                             break;
                     }
                     break;
                 case ROOM:
                     switch (queryType){
                         case ADD:
+                            Integer numRooms = (Integer) cmd.get(3);
+                            Integer price = (Integer) cmd.get(4);
+                            if (roomProxy.proxy.addRooms(txnId,String.valueOf(location),numRooms,price)){
+                                Trace.info("FAILED TO ADDROOM UPON ABORT");
+                                return false;
+                            }
                             break;
                         case DEL:
+                            if(!roomProxy.proxy.deleteRooms(txnId,String.valueOf(location))){
+                                Trace.info("FAILED TO DELETEROOM UPON ABORT");
+                                return false;
+                            }
                             break;
                         case UNRES:
+                            //implement unreserve on server to continue
                             break;
                     }
                     break;
@@ -967,9 +1063,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                     }
                     break;
             }
-            //abort in specific RMs to remove locks
-
-        }
+        }//endwhile
+        //abort in specific RMs
 
         return true;
     }
