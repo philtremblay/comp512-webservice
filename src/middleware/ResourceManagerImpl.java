@@ -35,7 +35,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     protected LockManager MWLock;
 
     short f_flag = 1;
-    short c_flag = 0;
+    short c_flag = 1;
     short r_flag = 0;
 
     //flight server properties
@@ -352,7 +352,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         else {
             Trace.warn("Cannot query the flight# " + id);
         }
-
+        this.txnManager.enlist(id,FLIGHT);
         return flightNum;
     }
 
@@ -362,6 +362,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         int flightPrice = flightProxy.proxy.queryFlightPrice(id, flightNumber);
 
         System.out.println("QUERY the flight price with ID: " + id);
+
+        this.txnManager.enlist(id,FLIGHT);
 
         return flightPrice;
     }
@@ -418,6 +420,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         System.out.println("QUERY the car with ID: " + id);
 
+        this.txnManager.enlist(id,CAR);
+
         return carNum;
     }
 
@@ -428,6 +432,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         System.out.println("QUERY the car price with ID: " + id);
 
+        this.txnManager.enlist(id,CAR);
 
         return carPrice;
     }
@@ -482,6 +487,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         int roomquery = roomProxy.proxy.queryRooms(id, location);
         System.out.println("QUERY the room with ID: "+ id);
 
+        this.txnManager.enlist(id,ROOM);
+
         return roomquery;
     }
 
@@ -489,6 +496,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public int queryRoomsPrice(int id, String location) {
         int roomPrice = roomProxy.proxy.queryRoomsPrice(id,location);
         System.out.println("QUERY the room PRICE with ID:" + id);
+
+        this.txnManager.enlist(id,ROOM);
 
         return roomPrice;
     }
@@ -528,7 +537,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         String strData = "customer,"+customerId;
 
         try {
-            MWLock.Lock(id,strData,READ);
+            MWLock.Lock(id,strData,WRITE);
         } catch (server.LockManager.DeadlockException e) {
             e.printStackTrace();
             return false;
@@ -660,6 +669,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             String s = cust.printBill();
             Trace.info("RM::queryCustomerInfo(" + id + ", " + customerId + "): \n");
             System.out.println(s);
+            this.txnManager.enlist(id,CUST);
             return s;
         }
     }
@@ -895,20 +905,48 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 case CAR:
                     switch (queryType){
                         case ADD:
+                            Integer numCars = (Integer) cmd.get(3);
+                            Integer price = (Integer) cmd.get(4);
+                            try {
+                                if (!carProxy.proxy.addCars(txnId, String.valueOf(location), numCars, price)) {
+                                    Trace.info("FAILED TO ADDCAR UPON ABORT");
+                                    return false;
+                                }
+                            }catch (Exception e){ //why isn't there an exception here?
+                                Trace.info("DEADLOCK EXCEPTION UPON ADDFLIGHT IN ABORT");
+                                e.printStackTrace();
+                                return false;
+                            }
                             break;
                         case DEL:
+                            if(!carProxy.proxy.deleteCars(txnId,String.valueOf(location))){
+                                Trace.info("FAILED TO DELETECAR UPON ABORT");
+                                return false;
+                            }
                             break;
                         case UNRES:
+                            //implement unreserve on server to continue
                             break;
                     }
                     break;
                 case ROOM:
                     switch (queryType){
                         case ADD:
+                            Integer numRooms = (Integer) cmd.get(3);
+                            Integer price = (Integer) cmd.get(4);
+                            if (roomProxy.proxy.addRooms(txnId,String.valueOf(location),numRooms,price)){
+                                Trace.info("FAILED TO ADDROOM UPON ABORT");
+                                return false;
+                            }
                             break;
                         case DEL:
+                            if(!roomProxy.proxy.deleteRooms(txnId,String.valueOf(location))){
+                                Trace.info("FAILED TO DELETEROOM UPON ABORT");
+                                return false;
+                            }
                             break;
                         case UNRES:
+                            //implement unreserve on server to continue
                             break;
                     }
                     break;
