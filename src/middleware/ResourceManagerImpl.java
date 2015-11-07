@@ -1,8 +1,7 @@
 package middleware;
 
-
-import client.Client;
-import client.DeadlockException;
+import client.DeadlockException_Exception;
+import server.LockManager.*;
 import client.WSClient;
 import server.Trace;
 
@@ -19,6 +18,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     WSClient carProxy;
     WSClient roomProxy;
 
+    private static final int READ = 0;
+    private static final int WRITE = 1;
+
     public static final int FLIGHT = 1;
     public static final int CAR = 2;
     public static final int ROOM = 3;
@@ -27,6 +29,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public static final int ADD = 6;
     public static final int RES = 7;
     public static final int UNRES =8;
+
+    protected LockManager MWLock;
 
     short f_flag = 1;
     short c_flag = 0;
@@ -79,7 +83,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     //constructor that creates proxies to each server
     public ResourceManagerImpl() {
-
+        this.MWLock = new LockManager();
 
         if (f_flag == 1) {
             try {
@@ -187,11 +191,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             // Decrease the number of available items in the storage.
             boolean update = true;
             switch(itemInfo){
-                case 1: update = flightProxy.proxy.updateItemInfo(id,key,RES);
+                case FLIGHT: update = flightProxy.proxy.updateItemInfo(id,key,RES);
                     break;
-                case 2: update = carProxy.proxy.updateItemInfo(id,key,RES);
+                case CAR: update = carProxy.proxy.updateItemInfo(id,key,RES);
                     break;
-                case 3: update = roomProxy.proxy.updateItemInfo(id,key,RES);
+                case ROOM: update = roomProxy.proxy.updateItemInfo(id,key,RES);
                     break;
             }
             if (!update){
@@ -206,21 +210,21 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
     }
 
-    // Reserve an item.
+    // Unreserve an item.
     protected boolean unreserveItem(int id, int customerId, String location, String key, int itemInfo) {
         //get item info
         int count = -1;
         //int price = -1;
         switch(itemInfo){
-            case 1:
+            case FLIGHT:
                 count = flightProxy.proxy.queryFlight(id, Integer.parseInt(location));
                 //price = flightProxy.proxy.queryFlightPrice(id,Integer.parseInt(location));
                 break;
-            case 2:
+            case CAR:
                 count = carProxy.proxy.queryCars(id,location);
                 //price = carProxy.proxy.queryCarsPrice(id,location);
                 break;
-            case 3:
+            case ROOM:
                 count = roomProxy.proxy.queryRooms(id,location);
                 //price = roomProxy.proxy.queryRoomsPrice(id,location);
                 break;
@@ -250,11 +254,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             // Decrease the number of available items in the storage.
             boolean update = true;
             switch(itemInfo){
-                case 1: update = flightProxy.proxy.updateItemInfo(id,key,UNRES);
+                case FLIGHT: update = flightProxy.proxy.updateItemInfo(id,key,UNRES);
                     break;
-                case 2: update = carProxy.proxy.updateItemInfo(id,key,UNRES);
+                case CAR: update = carProxy.proxy.updateItemInfo(id,key,UNRES);
                     break;
-                case 3: update = roomProxy.proxy.updateItemInfo(id,key,UNRES);
+                case ROOM: update = roomProxy.proxy.updateItemInfo(id,key,UNRES);
                     break;
             }
             if (!update){
@@ -273,10 +277,10 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
 
 
-    protected Vector cmdToVect(int queryType, int addOrDel, int itemNumOrLocation){
+    protected Vector cmdToVect(int RMType, int queryType, int itemNumOrLocation){
         Vector cmd = new Vector();
+        cmd.add(RMType);
         cmd.add(queryType);
-        cmd.add(addOrDel);
         cmd.add(itemNumOrLocation);
 
         return cmd;
@@ -288,8 +292,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         boolean flightAdded;
         try {
             flightAdded = flightProxy.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
-        }catch (server.LockManager.DeadlockException e){
+        }catch (client.DeadlockException_Exception e){
             System.err.println("DeadlockException: " + e.getMessage());
+            return false;
         }
         if (flightAdded) {
             System.out.println("SENT the addFlight command to the flight server:" + f_host + ":" + f_port);
@@ -300,11 +305,13 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
             //set active RM list
             this.txnManager.enlist(id, FLIGHT);
+
+            return flightAdded;
         }
         else {
             System.out.println("FAIL to sent to flight server");
+            return false;
         }
-        return flightAdded;
     }
 
     @Override
@@ -488,10 +495,18 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         int customerId = Integer.parseInt(String.valueOf(id) +
                 String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) +
                 String.valueOf(Math.round(Math.random() * 100 + 1)));
-        Customer cust = new Customer(customerId);
-        writeData(id, cust.getKey(), cust);
-        Trace.info("RM::newCustomer(" + id + ") OK: " + customerId);
+        String strData = "customer,"+customerId;
 
+        try {
+            MWLock.Lock(id,strData,WRITE);
+            Customer cust = new Customer(customerId);
+            writeData(id, cust.getKey(), cust);
+            Trace.info("RM::newCustomer(" + id + ") OK: " + customerId);
+
+        } catch (DeadlockException e) {
+            e.printStackTrace();
+            return -1;
+        }
         //add command to txn command list
         Vector cmd = cmdToVect(CUST,DEL,customerId);
         this.txnManager.setNewUpdateItem(id,cmd);
@@ -504,6 +519,14 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean newCustomerId(int id, int customerId) {
         Trace.info("INFO: RM::newCustomer(" + id + ", " + customerId + ") called.");
+        String strData = "customer,"+customerId;
+
+        try {
+            MWLock.Lock(id,strData,READ);
+        } catch (DeadlockException e) {
+            e.printStackTrace();
+            return false;
+        }
         Customer cust = (Customer) readData(id, Customer.getKey(customerId));
         if (cust == null) {
             cust = new Customer(customerId);
@@ -525,6 +548,14 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean deleteCustomer(int id, int customerId) {
         Trace.info("RM::deleteCustomer(" + id + ", " + customerId + ") called.");
+        String strData = "customer,"+customerId;
+
+        try {
+            MWLock.Lock(id,strData,WRITE);
+        } catch (DeadlockException e) {
+            e.printStackTrace();
+            return false;
+        }
         Customer cust = (Customer) readData(id, Customer.getKey(customerId));
         if (cust == null) {
             Trace.warn("RM::deleteCustomer(" + id + ", "
@@ -604,6 +635,15 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public String queryCustomerInfo(int id, int customerId) {
         Trace.info("RM::queryCustomerInfo(" + id + ", " + customerId + ") called.");
+        String strData = "customer,"+customerId;
+
+        try {
+            MWLock.Lock(id,strData,READ);
+        } catch (DeadlockException e) {
+            e.printStackTrace();
+            return "WARN: RM::queryCustomerInfo(" + id + ", "
+                    + customerId + ") failed: DeadlockException";
+        }
         Customer cust = (Customer) readData(id, Customer.getKey(customerId));
         if (cust == null) {
             Trace.warn("RM::queryCustomerInfo(" + id + ", "
@@ -754,12 +794,136 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean commit(int txnId){
         //iterate through active RM list and release locks
+        Vector RMlist = this.txnManager.activeTxnRM.get(txnId);
+        Iterator it = RMlist.iterator();
+
+        while(it.hasNext()){
+            //release locks for this RM
+            Integer RMType = (Integer) it.next();
+            switch (RMType){
+                case FLIGHT:
+                    if(!flightProxy.proxy.commit(txnId)){
+                        Trace.info("ERROR IN FLIGHT RM COMMIT");
+                        return false;
+                    }
+                    break;
+                case CAR:
+                    if(!carProxy.proxy.commit(txnId)){
+                        Trace.info("ERROR IN CAR RM COMMIT");
+                        return false;
+                    }
+                    break;
+                case ROOM:
+                    if(!roomProxy.proxy.commit(txnId)){
+                        Trace.info("ERROR IN ROOM RM COMMIT");
+                        return false;
+                    }
+                    break;
+                case CUST:
+                    //add lock manager to MIDDLEWARE
+                    if (txnId > 0) {
+                        Trace.info("RM::COMMIT TRANSACTION ID: "+ txnId);
+                        if (!this.MWLock.UnlockAll(txnId)){
+                            Trace.info("FAILED TO UNLOCK ALL CUSTOMER LOCKS");
+                            return false;
+                        }
+                    }
+                    else {
+                        Trace.info("INVALID TXNID: CANNOT COMMIT CUSTOMER");
+                        return false;
+                    }
+                    break;
+            }
+        }
+
+        //clean up entries in txnmanager upon success
+        try {
+            this.txnManager.activeTxnRM.remove(txnId);
+            this.txnManager.txnCmdList.remove(txnId);
+        }catch (NullPointerException e){
+            Trace.info("ERROR WHEN REMOVING TXNMANAGER ENTRIES");
+            e.printStackTrace();
+            return false;
+        }
 
         return true;
     }
 
     @Override
     public boolean abort(int txnId){
+        //get the commands from the stack of commands and execute them
+        Stack cmdList = this.txnManager.txnCmdList.get(txnId);
+        while (!cmdList.isEmpty()){
+            Vector cmd = (Vector) cmdList.pop();
+            Integer RMType = (Integer) cmd.get(0);
+            Integer queryType = (Integer) cmd.get(1);
+            Integer location = (Integer) cmd.get(2);
+
+            switch (RMType){
+                case FLIGHT:
+                    switch (queryType){
+                        case ADD:
+                            Integer seats = (Integer) cmd.get(3);
+                            Integer price = (Integer) cmd.get(4);
+                            try {
+                                if (!flightProxy.proxy.addFlight(txnId,location,seats,price)){
+                                    Trace.info("FAILED TO ADDFLIGHT UPON ABORT");
+                                    return false;
+                                }
+                            } catch (DeadlockException_Exception e) {
+                                Trace.info("DEADLOCK EXCEPTION UPON ADDFLIGHT IN ABORT");
+                                e.printStackTrace();
+                                return false;
+                            }
+                            break;
+                        case DEL:
+                            if(!flightProxy.proxy.deleteFlight(txnId,location)){
+                                Trace.info("FAILED TO DELETEFLIGHT UPON ABORT");
+                                return false;
+                            }
+                            break;
+                        case UNRES:
+
+                            break;
+                    }
+                    break;
+                case CAR:
+                    switch (queryType){
+                        case ADD:
+                            break;
+                        case DEL:
+                            break;
+                        case UNRES:
+                            break;
+                    }
+                    break;
+                case ROOM:
+                    switch (queryType){
+                        case ADD:
+                            break;
+                        case DEL:
+                            break;
+                        case UNRES:
+                            break;
+                    }
+                    break;
+                case CUST:
+                    switch (queryType){
+                        case ADD:
+                            break;
+                        case DEL:
+                            break;
+                        case RES:
+                            break;
+                        case UNRES:
+                            break;
+                    }
+                    break;
+            }
+            //abort in specific RMs to remove locks
+
+        }
+
         return true;
     }
 

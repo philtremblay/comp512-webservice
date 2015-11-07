@@ -37,6 +37,7 @@ public class ObjectFactory {
     private final static QName _QueryFlightPrice_QNAME = new QName("http://ws.server/", "queryFlightPrice");
     private final static QName _GetRoomKey_QNAME = new QName("http://ws.server/", "getRoomKey");
     private final static QName _AddFlightResponse_QNAME = new QName("http://ws.server/", "addFlightResponse");
+    private final static QName _DeadlockException_QNAME = new QName("http://ws.server/", "DeadlockException");
     private final static QName _DeleteFlightResponse_QNAME = new QName("http://ws.server/", "deleteFlightResponse");
     private final static QName _NewCustomerResponse_QNAME = new QName("http://ws.server/", "newCustomerResponse");
     private final static QName _QueryRooms_QNAME = new QName("http://ws.server/", "queryRooms");
@@ -45,10 +46,10 @@ public class ObjectFactory {
     private final static QName _ReserveRoomResponse_QNAME = new QName("http://ws.server/", "reserveRoomResponse");
     private final static QName _GetCarKey_QNAME = new QName("http://ws.server/", "getCarKey");
     private final static QName _UpdateItemInfo_QNAME = new QName("http://ws.server/", "updateItemInfo");
+    private final static QName _ReserveItineraryResponse_QNAME = new QName("http://ws.server/", "reserveItineraryResponse");
     private final static QName _Commit_QNAME = new QName("http://ws.server/", "commit");
     private final static QName _QueryCustomerInfo_QNAME = new QName("http://ws.server/", "queryCustomerInfo");
     private final static QName _ReserveFlight_QNAME = new QName("http://ws.server/", "reserveFlight");
-    private final static QName _ReserveItineraryResponse_QNAME = new QName("http://ws.server/", "reserveItineraryResponse");
     private final static QName _GetRoomKeyResponse_QNAME = new QName("http://ws.server/", "getRoomKeyResponse");
     private final static QName _UpdateDeleteCustomerResponse_QNAME = new QName("http://ws.server/", "updateDeleteCustomerResponse");
     private final static QName _AddCars_QNAME = new QName("http://ws.server/", "addCars");
@@ -139,6 +140,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link ReserveItineraryResponse }
+     * 
+     */
+    public ReserveItineraryResponse createReserveItineraryResponse() {
+        return new ReserveItineraryResponse();
+    }
+
+    /**
      * Create an instance of {@link Commit }
      * 
      */
@@ -160,14 +169,6 @@ public class ObjectFactory {
      */
     public ReserveFlight createReserveFlight() {
         return new ReserveFlight();
-    }
-
-    /**
-     * Create an instance of {@link ReserveItineraryResponse }
-     * 
-     */
-    public ReserveItineraryResponse createReserveItineraryResponse() {
-        return new ReserveItineraryResponse();
     }
 
     /**
@@ -232,6 +233,14 @@ public class ObjectFactory {
      */
     public DeleteFlightResponse createDeleteFlightResponse() {
         return new DeleteFlightResponse();
+    }
+
+    /**
+     * Create an instance of {@link DeadlockException }
+     * 
+     */
+    public DeadlockException createDeadlockException() {
+        return new DeadlockException();
     }
 
     /**
@@ -672,6 +681,15 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link DeadlockException }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://ws.server/", name = "DeadlockException")
+    public JAXBElement<DeadlockException> createDeadlockException(DeadlockException value) {
+        return new JAXBElement<DeadlockException>(_DeadlockException_QNAME, DeadlockException.class, null, value);
+    }
+
+    /**
      * Create an instance of {@link JAXBElement }{@code <}{@link DeleteFlightResponse }{@code >}}
      * 
      */
@@ -744,6 +762,15 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link ReserveItineraryResponse }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://ws.server/", name = "reserveItineraryResponse")
+    public JAXBElement<ReserveItineraryResponse> createReserveItineraryResponse(ReserveItineraryResponse value) {
+        return new JAXBElement<ReserveItineraryResponse>(_ReserveItineraryResponse_QNAME, ReserveItineraryResponse.class, null, value);
+    }
+
+    /**
      * Create an instance of {@link JAXBElement }{@code <}{@link Commit }{@code >}}
      * 
      */
@@ -768,15 +795,6 @@ public class ObjectFactory {
     @XmlElementDecl(namespace = "http://ws.server/", name = "reserveFlight")
     public JAXBElement<ReserveFlight> createReserveFlight(ReserveFlight value) {
         return new JAXBElement<ReserveFlight>(_ReserveFlight_QNAME, ReserveFlight.class, null, value);
-    }
-
-    /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link ReserveItineraryResponse }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "http://ws.server/", name = "reserveItineraryResponse")
-    public JAXBElement<ReserveItineraryResponse> createReserveItineraryResponse(ReserveItineraryResponse value) {
-        return new JAXBElement<ReserveItineraryResponse>(_ReserveItineraryResponse_QNAME, ReserveItineraryResponse.class, null, value);
     }
 
     /**

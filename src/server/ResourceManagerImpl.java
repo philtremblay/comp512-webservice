@@ -50,16 +50,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public ResourceManagerImpl() {
 
         //initialize the lock manager
-        lockServer = new LockManager();
-
-
+        this.lockServer = new LockManager();
 
     }
-
-
-
-
-
 
     
     // Basic operations on ReservableItem //
