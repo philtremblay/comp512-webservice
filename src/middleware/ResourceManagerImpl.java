@@ -218,76 +218,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
     }
 
-    // Unreserve an item.
-    protected boolean unreserveItem(int id, int customerId, String location, String key, int itemInfo) {
-        //get item info
-        int count = -1;
-        //int price = -1;
-        switch(itemInfo){
-            case FLIGHT:
-                count = flightProxy.proxy.queryFlight(id, Integer.parseInt(location));
-                //price = flightProxy.proxy.queryFlightPrice(id,Integer.parseInt(location));
-                break;
-            case CAR:
-                count = carProxy.proxy.queryCars(id,location);
-                //price = carProxy.proxy.queryCarsPrice(id,location);
-                break;
-            case ROOM:
-                count = roomProxy.proxy.queryRooms(id,location);
-                //price = roomProxy.proxy.queryRoomsPrice(id,location);
-                break;
-        }
-
-        Trace.info("RM::unreserveItem(" + id + ", " + customerId + ", "
-                + key + ", " + location + ") called.");
-        // Read customer object if it exists (and read lock it).
-        Customer cust = (Customer) readData(id, Customer.getKey(customerId));
-        if (cust == null) {
-            Trace.warn("RM::unreserveItem(" + id + ", " + customerId + ", "
-                    + key + ", " + location + ") failed: customer doesn't exist.");
-            return false;
-        }
-
-        // Check if the item is available.
-        if (count == -1) {
-            Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
-                    + key + ", " + location + ") failed: item doesn't exist.");
-            return false;
-        }
-        else {
-
-
-            // Decrease the number of available items in the storage.
-            boolean update = true;
-            switch(itemInfo){
-                case FLIGHT: update = flightProxy.proxy.updateItemInfo(id,key,UNRES);
-                    break;
-                case CAR: update = carProxy.proxy.updateItemInfo(id,key,UNRES);
-                    break;
-                case ROOM: update = roomProxy.proxy.updateItemInfo(id,key,UNRES);
-                    break;
-            }
-            if (!update){
-                Trace.warn("RM::unreserveItem(" + id + ", " + customerId + ", "
-                        + key + ", " + location + ") failed: update item info.");
-                return false;
-            }
-            else {
-                // Do unreservation
-                cust.unreserve(key, location,itemInfo,id); //change location maybe
-                writeData(id, cust.getKey(), cust);
-            }
-
-            Trace.warn("RM::unreserveItem(" + id + ", " + customerId + ", "
-                    + key + ", " + location + ") OK.");
-            return true;
-        }
-    }
-
-
-
-
-
     protected Vector cmdToVect(int RMType, int queryType, int itemNumOrLocation){
         Vector cmd = new Vector();
         cmd.add(RMType);
@@ -865,19 +795,19 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             switch (RMType) {
                 case FLIGHT:
                     if(!flightProxy.proxy.commit(txnId)){
-                        Trace.warn("ERROR IN FLIGHT RM COMMIT");
+                        Trace.warn("ERROR IN FLIGHT RM COMMIT: "+txnId);
                         return false;
                     }
                     break;
                 case CAR:
                     if(!carProxy.proxy.commit(txnId)){
-                        Trace.warn("ERROR IN CAR RM COMMIT");
+                        Trace.warn("ERROR IN CAR RM COMMIT: "+txnId);
                         return false;
                     }
                     break;
                 case ROOM:
                     if(!roomProxy.proxy.commit(txnId)){
-                        Trace.warn("ERROR IN ROOM RM COMMIT");
+                        Trace.warn("ERROR IN ROOM RM COMMIT: "+txnId);
                         return false;
                     }
                     break;
@@ -886,12 +816,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                     if (txnId > 0) {
                         Trace.info("RM::COMMIT TRANSACTION ID: " + txnId);
                         if (!this.MWLock.UnlockAll(txnId)) {
-                            Trace.info("FAILED TO UNLOCK ALL CUSTOMER LOCKS");
+                            Trace.info("FAILED TO UNLOCK ALL CUSTOMER LOCKS: "+txnId);
                             return false;
                         }
                     }
                     else {
-                        Trace.warn("INVALID TXNID: CANNOT COMMIT CUSTOMER");
+                        Trace.warn("INVALID TXNID: CANNOT COMMIT CUSTOMER: " + txnId);
                         return false;
                     }
                     break;
@@ -903,7 +833,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             this.txnManager.activeTxnRM.remove(txnId);
             this.txnManager.txnCmdList.remove(txnId);
         }catch (NullPointerException e) {
-            Trace.warn("ERROR WHEN REMOVING TXNMANAGER ENTRIES");
+            Trace.warn("ERROR WHEN REMOVING TXNMANAGER ENTRIES: "+txnId);
             e.printStackTrace();
         }
         /*
@@ -947,23 +877,27 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                             Integer price = (Integer) cmd.get(4);
                             try {
                                 if (!flightProxy.proxy.addFlight(txnId,location,seats,price)){
-                                    Trace.info("FAILED TO ADDFLIGHT UPON ABORT");
+                                    Trace.warn("FAILED TO ADDFLIGHT UPON ABORT: "+txnId);
                                     return false;
                                 }
                             } catch (DeadlockException_Exception e) {
-                                Trace.info("DEADLOCK EXCEPTION UPON ADDFLIGHT IN ABORT");
+                                Trace.warn("DEADLOCK EXCEPTION UPON ADDFLIGHT IN ABORT: "+txnId);
                                 e.printStackTrace();
                                 return false;
                             }
                             break;
                         case DEL:
                             if(!flightProxy.proxy.deleteFlight(txnId,location)){
-                                Trace.info("FAILED TO DELETEFLIGHT UPON ABORT");
+                                Trace.warn("FAILED TO DELETEFLIGHT UPON ABORT: "+txnId);
                                 return false;
                             }
                             break;
                         case UNRES:
-                            //implement unreserve on server to continue
+                            String key = flightProxy.proxy.getFlightKey(location);
+                            if(!flightProxy.proxy.updateItemInfo(txnId,key,UNRES)){
+                                Trace.warn("FAILED TO UNRESERVE FLIGHT IN FLIGHT RM UPON ABORT: " + txnId);
+                                return false;
+                            }
                             break;
                     }
                     break;
@@ -974,23 +908,27 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                             Integer price = (Integer) cmd.get(4);
                             try {
                                 if (!carProxy.proxy.addCars(txnId, String.valueOf(location), numCars, price)) {
-                                    Trace.info("FAILED TO ADDCAR UPON ABORT");
+                                    Trace.warn("FAILED TO ADDCAR UPON ABORT: "+txnId);
                                     return false;
                                 }
                             }catch (Exception e){ //why isn't there an exception here?
-                                Trace.info("DEADLOCK EXCEPTION UPON ADDFLIGHT IN ABORT");
+                                Trace.warn("DEADLOCK EXCEPTION UPON ADDFLIGHT IN ABORT: "+txnId);
                                 e.printStackTrace();
                                 return false;
                             }
                             break;
                         case DEL:
                             if(!carProxy.proxy.deleteCars(txnId,String.valueOf(location))){
-                                Trace.info("FAILED TO DELETECAR UPON ABORT");
+                                Trace.warn("FAILED TO DELETECAR UPON ABORT: " +txnId);
                                 return false;
                             }
                             break;
                         case UNRES:
-                            //implement unreserve on server to continue
+                            String key = carProxy.proxy.getCarKey(String.valueOf(location));
+                            if(!carProxy.proxy.updateItemInfo(txnId,key,UNRES)){
+                                Trace.warn("FAILED TO UNRESERVE CAR IN CAR RM UPON ABORT: " +txnId);
+                                return false;
+                            }
                             break;
                     }
                     break;
@@ -1000,18 +938,22 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                             Integer numRooms = (Integer) cmd.get(3);
                             Integer price = (Integer) cmd.get(4);
                             if (roomProxy.proxy.addRooms(txnId,String.valueOf(location),numRooms,price)){
-                                Trace.info("FAILED TO ADDROOM UPON ABORT");
+                                Trace.warn("FAILED TO ADDROOM UPON ABORT: "+txnId);
                                 return false;
                             }
                             break;
                         case DEL:
                             if(!roomProxy.proxy.deleteRooms(txnId,String.valueOf(location))){
-                                Trace.info("FAILED TO DELETEROOM UPON ABORT");
+                                Trace.warn("FAILED TO DELETEROOM UPON ABORT: "+txnId);
                                 return false;
                             }
                             break;
                         case UNRES:
-                            //implement unreserve on server to continue
+                            String key = roomProxy.proxy.getRoomKey(String.valueOf(location));
+                            if (!roomProxy.proxy.updateItemInfo(txnId,key,UNRES)){
+                                Trace.warn("FAILED TO UNRESERVE ROOM UPON ABORT: "+txnId);
+                                return false;
+                            }
                             break;
                     }
                     break;
@@ -1019,18 +961,17 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                     switch (queryType){
                         case ADD:
                             //location is the customerId. it gets set in newcustomer
-                            if(!newCustomerId(txnId,location));
-                            break;
-                        case DEL:
-                            //location is the customerId. it gets set in newcustomer
-                            if(!deleteCustomer(txnId,location)){
-                                Trace.info("FAILED TO DELETE CUSTOMER UPON ABORT");
+                            if(!newCustomerId(txnId, location)){
+                                Trace.warn("FAILED TO CREATE NEW CUSTOMER UPON ABORT: "+txnId);
                                 return false;
                             }
                             break;
-                        case RES:
-                            break;
-                        case UNRES:
+                        case DEL:
+                            //location is the customerId. it gets set in newcustomer
+                            if(!deleteCustomer(txnId, location)){
+                                Trace.warn("FAILED TO DELETE CUSTOMER UPON ABORT: "+txnId);
+                                return false;
+                            }
                             break;
                     }
                     break;
@@ -1044,25 +985,25 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             switch (RMType){
                 case FLIGHT:
                     if (!flightProxy.proxy.abort(txnId)){
-                        Trace.info("ERROR IN ABORT IN THE FLIGHT SERVER");
+                        Trace.warn("ERROR IN ABORT IN THE FLIGHT SERVER: " + txnId);
                         return false;
                     }
                     break;
                 case CAR:
                     if (!carProxy.proxy.abort(txnId)){
-                        Trace.info("ERROR IN ABORT IN THE CAR SERVER");
+                        Trace.info("ERROR IN ABORT IN THE CAR SERVER: "+txnId);
                         return false;
                     }
                     break;
                 case ROOM:
                     if (!roomProxy.proxy.abort(txnId)){
-                        Trace.info("ERROR IN ABORT IN THE ROOM SERVER");
+                        Trace.info("ERROR IN ABORT IN THE ROOM SERVER: "+txnId);
                         return false;
                     }
                     break;
                 case CUST:
                     if(!MWLock.UnlockAll(txnId)){
-                        Trace.info("ERROR IN ABORT IN THE MIDDLEWARE FOR THE CUSTOMER RM");
+                        Trace.info("ERROR IN ABORT IN THE MIDDLEWARE FOR THE CUSTOMER RM: "+txnId);
                         return false;
                     }
                     break;

@@ -784,7 +784,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         //unreserve
         else if (resOrUnres == 8){
             if (item == null) {
-                Trace.warn("RM::reserveItem(" + id + ", "
+                Trace.warn("RM::unreserveItem(" + id + ", "
                         + key + ",) failed: item doesn't exist.");
                 return false;
             } else {

@@ -653,6 +653,32 @@ public class Client extends WSClient {
                 }
                 break;
 
+                case 25:
+                    if (arguments.size() != 2) { //command was "commit"
+                        wrongNumber();
+                        break;
+                    }
+                    else {
+                        try {
+                            int transactionID = getInt(arguments.elementAt(1));
+                            if (proxy.abort(transactionID)){
+                                Trace.info("Abort transaction " + transactionID + "successfully");
+                            }
+                            else {
+                                Trace.warn("Invalid transaction ID or failed to unlock");
+                            }
+                        } catch (Exception e) {
+                            System.out.println("EXCEPTION: ");
+                            e.printStackTrace();
+                        }
+
+                    }
+
+                    break;
+                case 26:
+                    //implement shutdown
+                    break;
+
 
 
             default:
