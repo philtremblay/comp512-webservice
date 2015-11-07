@@ -203,9 +203,17 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean deleteFlight(int id, int flightNumber) {
 
-
+        String strData = "flight,"+flightNumber;
+        try {
+            lockServer.Lock(id, strData, WRITE);
+            return deleteItem(id, Flight.getKey(flightNumber));
+        }
+        catch (DeadlockException dl) {
+            Trace.warn("RM::deleteItem(" + id + ", flight " + flightNumber+ ") failed: ");
+            return false;
+        }
         
-        return deleteItem(id, Flight.getKey(flightNumber));
+
     }
 
     // Returns the number of empty seats on this flight.
@@ -228,7 +236,18 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     // Returns price of this flight.
     public int queryFlightPrice(int id, int flightNumber) {
-        return queryPrice(id, Flight.getKey(flightNumber));
+
+        String strData = "flight," + flightNumber;
+        try {
+            lockServer.Lock(id, strData, READ);
+            return queryPrice(id, Flight.getKey(flightNumber));
+        }
+        catch (DeadlockException dl) {
+            Trace.warn("RM::queryPrice(" +id +", flight " +flightNumber+") failed: DeadlockException");
+            return -1;
+
+        }
+
     }
 
     /*
@@ -317,7 +336,17 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // Delete cars from a location.
     @Override
     public boolean deleteCars(int id, String location) {
-        return deleteItem(id, Car.getKey(location));
+        String strData = "car," + location;
+        try {
+
+            lockServer.Lock(id, strData, WRITE);
+            return deleteItem(id, Car.getKey(location));
+        }
+        catch (DeadlockException dl) {
+            Trace.warn("RM::deleteItem(" + id + ", car " + location + ") failed: ");
+            return false;
+        }
+
     }
 
     // Returns the number of cars available at a location.
@@ -395,7 +424,15 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // Delete rooms from a location.
     @Override
     public boolean deleteRooms(int id, String location) {
-        return deleteItem(id, Room.getKey(location));
+
+        String strData = "room," + location;
+        try {
+            lockServer.Lock(id, strData, WRITE);
+            return deleteItem(id, Room.getKey(location));
+        }
+        catch (DeadlockException dl) {
+            return false;
+        }
     }
 
     // Returns the number of rooms available at a location.
@@ -487,33 +524,43 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean deleteCustomer(int id, int customerId) {
         Trace.info("RM::deleteCustomer(" + id + ", " + customerId + ") called.");
-        Customer cust = (Customer) readData(id, Customer.getKey(customerId));
-        if (cust == null) {
-            Trace.warn("RM::deleteCustomer(" + id + ", " 
-                    + customerId + ") failed: customer doesn't exist.");
-            return false;
-        } else {            
-            // Increase the reserved numbers of all reservable items that 
-            // the customer reserved. 
-            RMHashtable reservationHT = cust.getReservations();
-            for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
-                String reservedKey = (String) (e.nextElement());
-                ReservedItem reservedItem = cust.getReservedItem(reservedKey);
-                Trace.info("RM::deleteCustomer(" + id + ", " + customerId + "): " 
-                        + "deleting " + reservedItem.getCount() + " reservations "
-                        + "for item " + reservedItem.getKey());
-                ReservableItem item = 
-                        (ReservableItem) readData(id, reservedItem.getKey());
-                item.setReserved(item.getReserved() - reservedItem.getCount());
-                item.setCount(item.getCount() + reservedItem.getCount());
-                Trace.info("RM::deleteCustomer(" + id + ", " + customerId + "): "
-                        + reservedItem.getKey() + " reserved/available = " 
-                        + item.getReserved() + "/" + item.getCount());
+
+        String strData = "customer," +customerId;
+
+        try {
+            lockServer.Lock(id, strData, WRITE);
+            Customer cust = (Customer) readData(id, Customer.getKey(customerId));
+            if (cust == null) {
+                Trace.warn("RM::deleteCustomer(" + id + ", "
+                        + customerId + ") failed: customer doesn't exist.");
+                return false;
+            } else {
+                // Increase the reserved numbers of all reservable items that
+                // the customer reserved.
+                RMHashtable reservationHT = cust.getReservations();
+                for (Enumeration e = reservationHT.keys(); e.hasMoreElements(); ) {
+                    String reservedKey = (String) (e.nextElement());
+                    ReservedItem reservedItem = cust.getReservedItem(reservedKey);
+                    Trace.info("RM::deleteCustomer(" + id + ", " + customerId + "): "
+                            + "deleting " + reservedItem.getCount() + " reservations "
+                            + "for item " + reservedItem.getKey());
+                    ReservableItem item =
+                            (ReservableItem) readData(id, reservedItem.getKey());
+                    item.setReserved(item.getReserved() - reservedItem.getCount());
+                    item.setCount(item.getCount() + reservedItem.getCount());
+                    Trace.info("RM::deleteCustomer(" + id + ", " + customerId + "): "
+                            + reservedItem.getKey() + " reserved/available = "
+                            + item.getReserved() + "/" + item.getCount());
+                }
+                // Remove the customer from the storage.
+                removeData(id, cust.getKey());
+                Trace.info("RM::deleteCustomer(" + id + ", " + customerId + ") OK.");
+                return true;
             }
-            // Remove the customer from the storage.
-            removeData(id, cust.getKey());
-            Trace.info("RM::deleteCustomer(" + id + ", " + customerId + ") OK.");
-            return true;
+        }
+        catch (DeadlockException dl) {
+            Trace.info("RM::deleteCustomer(" + id + ", " + customerId + ") failed.");
+            return false;
         }
     }
 
@@ -546,7 +593,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 Trace.warn("RM::queryCustomerInfo(" + id + ", "
                         + customerId + ") failed: customer doesn't exist.");
                 // Returning an empty bill means that the customer doesn't exist.
-                return "";
+                return "WARN: RM::queryCustomerInfo(" + id + ", "
+                        + customerId + ") failed: customer doesn't exist.";
             } else {
                 String s = cust.printBill();
                 Trace.info("RM::queryCustomerInfo(" + id + ", " + customerId + "): \n");
@@ -556,27 +604,64 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
         catch (DeadlockException dl) {
             return "WARN: RM::queryCustomerInfo(" + id + ", "
-                    + customerId + ")";
+                    + customerId + ") failed: DeadlockException";
         }
     }
 
     // Add flight reservation to this customer.  
     @Override
     public boolean reserveFlight(int id, int customerId, int flightNumber) {
-        return reserveItem(id, customerId,
-                Flight.getKey(flightNumber), String.valueOf(flightNumber));
+        String flightData = "flight,"+flightNumber;
+        String custData = "customer,"+customerId;
+
+        try {
+            lockServer.Lock(id, flightData, WRITE);
+            lockServer.Lock(id, custData, WRITE);
+            return reserveItem(id, customerId,
+                    Flight.getKey(flightNumber), String.valueOf(flightNumber));
+        }
+        catch (DeadlockException dl) {
+            Trace.warn("RM::reserveItem(" + id + ", "
+                    + customerId + "," + flightNumber + ") failed: DeadlockException.");
+            return false;
+        }
     }
 
     // Add car reservation to this customer. 
     @Override
     public boolean reserveCar(int id, int customerId, String location) {
-        return reserveItem(id, customerId, Car.getKey(location), location);
+        String strCar = "car,"+location;
+        String strCustom = "customer," +customerId;
+        try {
+            lockServer.Lock(id, strCar, WRITE);
+            lockServer.Lock(id, strCustom, WRITE);
+            return reserveItem(id, customerId, Car.getKey(location), location);
+        }
+        catch (DeadlockException dl) {
+            Trace.warn("RM::reserveItem(" + id + ", "
+                    + customerId + "," + location + ") failed: DeadlockException.");
+            return false;
+        }
+
     }
 
     // Add room reservation to this customer.
     @Override
     public boolean reserveRoom(int id, int customerId, String location) {
-        return reserveItem(id, customerId, Room.getKey(location), location);
+
+        String strRoom = "room," +location;
+        String strCustomer = "customer," +customerId;
+        try {
+            lockServer.Lock(id, strRoom, WRITE);
+            lockServer.Lock(id, strCustomer, WRITE);
+            return reserveItem(id, customerId, Room.getKey(location), location);
+        }
+        catch (DeadlockException dl) {
+            Trace.warn("RM::reserveItem(" + id + ", "
+                    + customerId + "," + location + ") failed: DeadlockException.");
+            return false;
+        }
+
     }
     
 
@@ -659,7 +744,15 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     @Override
     public boolean commit(int txnId){
-        return true;
+
+        if (txnId > 0) {
+            Trace.info("RM::COMMIT TRANSACTION ID: "+ txnId);
+            return lockServer.UnlockAll(txnId);
+        }
+        else
+            return false;
+
+
     }
 
     @Override

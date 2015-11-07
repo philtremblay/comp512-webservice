@@ -202,6 +202,7 @@ public class Client extends WSClient {
                 }
                 System.out.println("Deleting a flight using id: " + arguments.elementAt(1));
                 System.out.println("Flight Number: " + arguments.elementAt(2));
+                System.out.println("Waiting for response from the server...");
                 try {
                     id = getInt(arguments.elementAt(1));
                     flightNumber = getInt(arguments.elementAt(2));
@@ -225,6 +226,7 @@ public class Client extends WSClient {
                 }
                 System.out.println("Deleting the cars from a particular location  using id: " + arguments.elementAt(1));
                 System.out.println("car Location: " + arguments.elementAt(2));
+                System.out.println("Waiting for response from the server...");
                 try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
@@ -248,6 +250,7 @@ public class Client extends WSClient {
                 }
                 System.out.println("Deleting all rooms from a particular location  using id: " + arguments.elementAt(1));
                 System.out.println("room Location: " + arguments.elementAt(2));
+                System.out.println("Waiting for response from the server...");
                 try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
@@ -271,6 +274,7 @@ public class Client extends WSClient {
                 }
                 System.out.println("Deleting a customer from the database using id: " + arguments.elementAt(1));
                 System.out.println("Customer id: " + arguments.elementAt(2));
+                System.out.println("Waiting for response from the server...");
                 try {
                     id = getInt(arguments.elementAt(1));
                     int customer = getInt(arguments.elementAt(2));
@@ -303,7 +307,8 @@ public class Client extends WSClient {
                         System.out.println("Number of seats available: " + seats);
                     }
                     else {
-                        System.out.println("ERROR ON LOCKING: Other process is locking on that flight# "+ flightNumber);
+                        System.out.println("ERROR: Other process is locking on that flight# "+ flightNumber
+                        + "or invalid flight");
                     }
                 }
                 catch(Exception e) {
@@ -320,6 +325,7 @@ public class Client extends WSClient {
                 }
                 System.out.println("Querying a car location using id: " + arguments.elementAt(1));
                 System.out.println("car location: " + arguments.elementAt(2));
+                System.out.println("Waiting for response from the server...");
                 try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
@@ -375,12 +381,17 @@ public class Client extends WSClient {
                 }
                 System.out.println("Querying Customer information using id: " + arguments.elementAt(1));
                 System.out.println("Customer id: " + arguments.elementAt(2));
+                System.out.println("Waiting for response from the server...");
                 try {
                     id = getInt(arguments.elementAt(1));
                     int customer = getInt(arguments.elementAt(2));
-
                     String bill = proxy.queryCustomerInfo(id, customer);
-                    System.out.println("Customer info: " + bill);
+                    if (!bill.isEmpty()) {
+                        System.out.println("Customer info: \n" + bill);
+                    }
+                    else {
+                        System.out.println("ERROR: bad return");
+                    }
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -396,12 +407,17 @@ public class Client extends WSClient {
                 }
                 System.out.println("Querying a flight Price using id: " + arguments.elementAt(1));
                 System.out.println("Flight number: " + arguments.elementAt(2));
+                System.out.println("Waiting for response from the server...");
                 try {
                     id = getInt(arguments.elementAt(1));
                     flightNumber = getInt(arguments.elementAt(2));
-
                     price = proxy.queryFlightPrice(id, flightNumber);
-                    System.out.println("Price of a seat: " + price);
+                    if (price > 0) {
+                        System.out.println("Price of a seat: " + price);
+                    }
+                    else {
+                        System.out.println("ERROR: other process is locking on flight# " + flightNumber);
+                    }
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -423,7 +439,12 @@ public class Client extends WSClient {
                     location = getString(arguments.elementAt(2));
 
                     price = proxy.queryCarsPrice(id, location);
-                    System.out.println("Price of a car at this location: " + price);
+                    if (price > 0) {
+                        System.out.println("Price of a car at this location: " + price);
+                    }
+                    else {
+                        System.out.println("ERROR: other process is locking on car location: " + location);
+                    }
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -442,9 +463,13 @@ public class Client extends WSClient {
                 try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
-
                     price = proxy.queryRoomsPrice(id, location);
-                    System.out.println("Price of rooms at this location: " + price);
+                    if (price > 0) {
+                        System.out.println("Price of rooms at this location: " + price);
+                    }
+                    else {
+                        System.out.println("ERROR: other process is locking on room location: " + location);
+                    }
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -607,15 +632,15 @@ public class Client extends WSClient {
                 break;
 
             case 24:
-                if (arguments.size() != 2) { //command was "start"
+                if (arguments.size() != 2) { //command was "commit"
                     wrongNumber();
                     break;
                 }
                 else {
                     try {
                         int transactionID = getInt(arguments.elementAt(1));
-                        if (proxy.abort(transactionID)){
-                            Trace.info("Unlock transaction " + transactionID + "successfully");
+                        if (proxy.commit(transactionID)){
+                            Trace.info("Commit transaction " + transactionID + "successfully");
                         }
                         else {
                             Trace.warn("Invalid transaction ID or failed to unlock");
@@ -624,7 +649,6 @@ public class Client extends WSClient {
                         System.out.println("EXCEPTION: ");
                         e.printStackTrace();
                     }
-                    System.out.println("TRANSACTION ID: " + proxy.start());
 
                 }
                 break;
