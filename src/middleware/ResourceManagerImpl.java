@@ -36,6 +36,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public static final int UNRES = 8;
 
     protected LockManager MWLock;
+    protected BitSet transactionBit;
 
     short f_flag = 1;
     short c_flag = 1;
@@ -89,6 +90,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     //constructor that creates proxies to each server
     public ResourceManagerImpl() {
         this.MWLock = new LockManager();
+        //this is for the method abort
+        //once the method abort is turned on, we stop adding
+        //any additional transactions to the transaction manager
+        this.transactionBit = new BitSet();
+
 
         if (f_flag == 1) {
             try {
@@ -161,11 +167,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 break;
             case CAR:
                 count = carProxy.proxy.queryCars(id,location);
-                price = carProxy.proxy.queryCarsPrice(id,location);
+                price = carProxy.proxy.queryCarsPrice(id, location);
                 break;
             case ROOM:
                 count = roomProxy.proxy.queryRooms(id,location);
-                price = roomProxy.proxy.queryRoomsPrice(id,location);
+                price = roomProxy.proxy.queryRoomsPrice(id, location);
                 break;
         }
 
@@ -208,7 +214,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             }
             else {
                 // Do reservation
-                cust.reserve(key, location, price,itemInfo,id); //change location maybe
+                cust.reserve(key, location, price, itemInfo, id); //change location maybe
                 writeData(id, cust.getKey(), cust);
             }
 
@@ -459,7 +465,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             MWLock.Lock(id,strData,WRITE);
 
         } catch (server.LockManager.DeadlockException e) {
-            e.printStackTrace();
+
             return -1;
         }
 
@@ -477,7 +483,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     @Override
     public boolean newCustomerId(int id, int customerId) {
-        Trace.info("INFO: RM::newCustomer(" + id + ", " + customerId + ") called.");
+        Trace.info("RM::newCustomer(" + id + ", " + customerId + ") called.");
         String strData = "customer,"+customerId;
 
         try {
@@ -492,9 +498,13 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             writeData(id, cust.getKey(), cust);
             Trace.info("INFO: RM::newCustomer(" + id + ", " + customerId + ") OK.");
 
-            Vector cmd = cmdToVect(CUST,DEL,customerId);
-            this.txnManager.setNewUpdateItem(id,cmd);
-            this.txnManager.enlist(id, CUST);
+            //bit is on --> abort method
+            //bit is off --> not abort => add the the transaction manager
+            if (!transactionBit.get(id)) {
+                Vector cmd = cmdToVect(CUST, DEL, customerId);
+                this.txnManager.setNewUpdateItem(id, cmd);
+                this.txnManager.enlist(id, CUST);
+            }
 
             return true;
         } else {
@@ -538,11 +548,13 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 //car
                 if(reservedItem.getType() == 1){
                     if(flightProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count)){
-                        Vector cmd = cmdToVect(FLIGHT,RES,Integer.parseInt(location));
-                        cmd.add(count);
 
-                        this.txnManager.setNewUpdateItem(id,cmd);
-                        this.txnManager.enlist(id,FLIGHT);
+                        if (!transactionBit.get(id)) {
+                            Vector cmd = cmdToVect(FLIGHT, RES, Integer.parseInt(location));
+                            cmd.add(count);
+                            this.txnManager.setNewUpdateItem(id, cmd);
+                            this.txnManager.enlist(id, FLIGHT);
+                        }
 
                         return true;
                     }
@@ -554,12 +566,13 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 //room
                 else if (reservedItem.getType() == 2){
                     if(carProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count)){
-                        Vector cmd = cmdToVect(CAR,RES,Integer.parseInt(location));
-                        cmd.add(count);
 
-                        this.txnManager.setNewUpdateItem(id,cmd);
-                        this.txnManager.enlist(id,CAR);
-
+                        if (!transactionBit.get(id)) {
+                            Vector cmd = cmdToVect(CAR, RES, Integer.parseInt(location));
+                            cmd.add(count);
+                            this.txnManager.setNewUpdateItem(id, cmd);
+                            this.txnManager.enlist(id, CAR);
+                        }
                         return true;
                     }
                     else{
@@ -569,12 +582,13 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 }
                 else if (reservedItem.getType() == 3){
                     if(roomProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count)){
-                        Vector cmd = cmdToVect(CAR,RES,Integer.parseInt(location));
-                        cmd.add(count);
 
-                        this.txnManager.setNewUpdateItem(id,cmd);
-                        this.txnManager.enlist(id,ROOM);
-
+                        if (!transactionBit.get(id)) {
+                            Vector cmd = cmdToVect(ROOM, RES, Integer.parseInt(location));
+                            cmd.add(count);
+                            this.txnManager.setNewUpdateItem(id, cmd);
+                            this.txnManager.enlist(id, ROOM);
+                        }
                         return true;
                     }
                     else{
@@ -586,8 +600,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             }
             // Remove the customer from the storage.
             removeData(id, cust.getKey());
-            Vector cmd = cmdToVect(CUST,ADD,customerId);
-            this.txnManager.setNewUpdateItem(id,cmd);
+
+            if (!transactionBit.get(id)) {
+                Vector cmd = cmdToVect(CUST, ADD, customerId);
+                this.txnManager.setNewUpdateItem(id, cmd);
+            }
+
             Trace.info("RM::deleteCustomer(" + id + ", " + customerId + ") OK.");
             return true;
         }
@@ -600,7 +618,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         try {
             MWLock.Lock(id,strData,READ);
         } catch (server.LockManager.DeadlockException e) {
-            e.printStackTrace();
             return "WARN: RM::queryCustomerInfo(" + id + ", "
                     + customerId + ") failed: DeadlockException";
         }
@@ -779,7 +796,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             RMlist = this.txnManager.activeTxnRM.get(txnId);
         }
         catch (NullPointerException e){
-            e.printStackTrace();
+
             Trace.warn("NEED TO START TRANSACTION BEFORE CALLING COMMIT");
             return false;
         }
@@ -795,19 +812,19 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             switch (RMType) {
                 case FLIGHT:
                     if(!flightProxy.proxy.commit(txnId)){
-                        Trace.warn("ERROR IN FLIGHT RM COMMIT: "+txnId);
+                        Trace.warn("ERROR IN FLIGHT RM COMMIT: " + txnId);
                         return false;
                     }
                     break;
                 case CAR:
                     if(!carProxy.proxy.commit(txnId)){
-                        Trace.warn("ERROR IN CAR RM COMMIT: "+txnId);
+                        Trace.warn("ERROR IN CAR RM COMMIT: " + txnId);
                         return false;
                     }
                     break;
                 case ROOM:
                     if(!roomProxy.proxy.commit(txnId)){
-                        Trace.warn("ERROR IN ROOM RM COMMIT: "+txnId);
+                        Trace.warn("ERROR IN ROOM RM COMMIT: " + txnId);
                         return false;
                     }
                     break;
@@ -853,130 +870,146 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     @Override
     public boolean abort(int txnId){
+
+
+        //turn on the transaction bit
+
+        this.transactionBit.set(txnId);
         //get the commands from the stack of commands and execute them
         Stack cmdList;
+        boolean isStackEmpty;
         try {
              cmdList = this.txnManager.txnCmdList.get(txnId);
+
         }
         catch (NullPointerException e){
             e.printStackTrace();
             Trace.warn("NEED TO START TRANSCATION BEFORE CALLING ABORT");
             return false;
         }
-        while (!cmdList.isEmpty()){
-            Vector cmd = (Vector) cmdList.pop();
-            Integer RMType = (Integer) cmd.get(0);
-            Integer queryType = (Integer) cmd.get(1);
-            Integer location = (Integer) cmd.get(2);
+        try {
+            while (!cmdList.isEmpty()) {
+                Vector cmd = (Vector) cmdList.pop();
+                Integer RMType = (Integer) cmd.get(0);
+                Integer queryType = (Integer) cmd.get(1);
+                Integer location = (Integer) cmd.get(2);
 
-            switch (RMType){
-                case FLIGHT:
-                    switch (queryType){
-                        case ADD:
-                            Integer seats = (Integer) cmd.get(3);
-                            Integer price = (Integer) cmd.get(4);
-                            try {
-                                if (!flightProxy.proxy.addFlight(txnId,location,seats,price)){
-                                    Trace.warn("FAILED TO ADDFLIGHT UPON ABORT: "+txnId);
+                switch (RMType) {
+                    case FLIGHT:
+                        switch (queryType) {
+                            case ADD:
+                                Integer seats = (Integer) cmd.get(3);
+                                Integer price = (Integer) cmd.get(4);
+                                try {
+                                    if (!flightProxy.proxy.addFlight(txnId, location, seats, price)) {
+                                        Trace.warn("FAILED TO ADDFLIGHT UPON ABORT: " + txnId);
+                                        return false;
+                                    }
+                                } catch (DeadlockException_Exception e) {
+                                    Trace.warn("DEADLOCK EXCEPTION UPON ADDFLIGHT IN ABORT: " + txnId);
                                     return false;
                                 }
-                            } catch (DeadlockException_Exception e) {
-                                Trace.warn("DEADLOCK EXCEPTION UPON ADDFLIGHT IN ABORT: "+txnId);
-                                e.printStackTrace();
-                                return false;
-                            }
-                            break;
-                        case DEL:
-                            if(!flightProxy.proxy.deleteFlight(txnId,location)){
-                                Trace.warn("FAILED TO DELETEFLIGHT UPON ABORT: "+txnId);
-                                return false;
-                            }
-                            break;
-                        case UNRES:
-                            String key = flightProxy.proxy.getFlightKey(location);
-                            if(!flightProxy.proxy.updateItemInfo(txnId,key,UNRES)){
-                                Trace.warn("FAILED TO UNRESERVE FLIGHT IN FLIGHT RM UPON ABORT: " + txnId);
-                                return false;
-                            }
-                            break;
-                    }
-                    break;
-                case CAR:
-                    switch (queryType){
-                        case ADD:
-                            Integer numCars = (Integer) cmd.get(3);
-                            Integer price = (Integer) cmd.get(4);
-                            try {
-                                if (!carProxy.proxy.addCars(txnId, String.valueOf(location), numCars, price)) {
-                                    Trace.warn("FAILED TO ADDCAR UPON ABORT: "+txnId);
+                                break;
+                            case DEL:
+                                if (!flightProxy.proxy.deleteFlight(txnId, location)) {
+                                    Trace.warn("FAILED TO DELETEFLIGHT UPON ABORT: " + txnId);
                                     return false;
                                 }
-                            }catch (Exception e){ //why isn't there an exception here?
-                                Trace.warn("DEADLOCK EXCEPTION UPON ADDFLIGHT IN ABORT: "+txnId);
-                                e.printStackTrace();
-                                return false;
-                            }
-                            break;
-                        case DEL:
-                            if(!carProxy.proxy.deleteCars(txnId,String.valueOf(location))){
-                                Trace.warn("FAILED TO DELETECAR UPON ABORT: " +txnId);
-                                return false;
-                            }
-                            break;
-                        case UNRES:
-                            String key = carProxy.proxy.getCarKey(String.valueOf(location));
-                            if(!carProxy.proxy.updateItemInfo(txnId,key,UNRES)){
-                                Trace.warn("FAILED TO UNRESERVE CAR IN CAR RM UPON ABORT: " +txnId);
-                                return false;
-                            }
-                            break;
-                    }
-                    break;
-                case ROOM:
-                    switch (queryType){
-                        case ADD:
-                            Integer numRooms = (Integer) cmd.get(3);
-                            Integer price = (Integer) cmd.get(4);
-                            if (roomProxy.proxy.addRooms(txnId,String.valueOf(location),numRooms,price)){
-                                Trace.warn("FAILED TO ADDROOM UPON ABORT: "+txnId);
-                                return false;
-                            }
-                            break;
-                        case DEL:
-                            if(!roomProxy.proxy.deleteRooms(txnId,String.valueOf(location))){
-                                Trace.warn("FAILED TO DELETEROOM UPON ABORT: "+txnId);
-                                return false;
-                            }
-                            break;
-                        case UNRES:
-                            String key = roomProxy.proxy.getRoomKey(String.valueOf(location));
-                            if (!roomProxy.proxy.updateItemInfo(txnId,key,UNRES)){
-                                Trace.warn("FAILED TO UNRESERVE ROOM UPON ABORT: "+txnId);
-                                return false;
-                            }
-                            break;
-                    }
-                    break;
-                case CUST:
-                    switch (queryType){
-                        case ADD:
-                            //location is the customerId. it gets set in newcustomer
-                            if(!newCustomerId(txnId, location)){
-                                Trace.warn("FAILED TO CREATE NEW CUSTOMER UPON ABORT: "+txnId);
-                                return false;
-                            }
-                            break;
-                        case DEL:
-                            //location is the customerId. it gets set in newcustomer
-                            if(!deleteCustomer(txnId, location)){
-                                Trace.warn("FAILED TO DELETE CUSTOMER UPON ABORT: "+txnId);
-                                return false;
-                            }
-                            break;
-                    }
-                    break;
-            }
-        }//endwhile
+                                break;
+                            case UNRES:
+                                String key = flightProxy.proxy.getFlightKey(location);
+                                if (!flightProxy.proxy.updateItemInfo(txnId, key, UNRES)) {
+                                    Trace.warn("FAILED TO UNRESERVE FLIGHT IN FLIGHT RM UPON ABORT: " + txnId);
+                                    return false;
+                                }
+                                break;
+                        }
+                        break;
+                    case CAR:
+                        switch (queryType) {
+                            case ADD:
+                                Integer numCars = (Integer) cmd.get(3);
+                                Integer price = (Integer) cmd.get(4);
+                                try {
+                                    if (!carProxy.proxy.addCars(txnId, String.valueOf(location), numCars, price)) {
+                                        Trace.warn("FAILED TO ADDCAR UPON ABORT: " + txnId);
+                                        return false;
+                                    }
+                                } catch (Exception e) { //why isn't there an exception here?
+                                    Trace.warn("DEADLOCK EXCEPTION UPON ADDFLIGHT IN ABORT: " + txnId);
+                                    e.printStackTrace();
+                                    return false;
+                                }
+                                break;
+                            case DEL:
+                                if (!carProxy.proxy.deleteCars(txnId, String.valueOf(location))) {
+                                    Trace.warn("FAILED TO DELETECAR UPON ABORT: " + txnId);
+                                    return false;
+                                }
+                                break;
+                            case UNRES:
+                                String key = carProxy.proxy.getCarKey(String.valueOf(location));
+                                if (!carProxy.proxy.updateItemInfo(txnId, key, UNRES)) {
+                                    Trace.warn("FAILED TO UNRESERVE CAR IN CAR RM UPON ABORT: " + txnId);
+                                    return false;
+                                }
+                                break;
+                        }
+                        break;
+                    case ROOM:
+                        switch (queryType) {
+                            case ADD:
+                                Integer numRooms = (Integer) cmd.get(3);
+                                Integer price = (Integer) cmd.get(4);
+                                if (roomProxy.proxy.addRooms(txnId, String.valueOf(location), numRooms, price)) {
+                                    Trace.warn("FAILED TO ADDROOM UPON ABORT: " + txnId);
+                                    return false;
+                                }
+                                break;
+                            case DEL:
+                                if (!roomProxy.proxy.deleteRooms(txnId, String.valueOf(location))) {
+                                    Trace.warn("FAILED TO DELETEROOM UPON ABORT: " + txnId);
+                                    return false;
+                                }
+                                break;
+                            case UNRES:
+                                String key = roomProxy.proxy.getRoomKey(String.valueOf(location));
+                                if (!roomProxy.proxy.updateItemInfo(txnId, key, UNRES)) {
+                                    Trace.warn("FAILED TO UNRESERVE ROOM UPON ABORT: " + txnId);
+                                    return false;
+                                }
+                                break;
+                        }
+                        break;
+                    case CUST:
+                        switch (queryType) {
+                            case ADD:
+                                //location is the customerId. it gets set in newcustomer
+                                if (!newCustomerId(txnId, location)) {
+                                    Trace.warn("FAILED TO CREATE NEW CUSTOMER UPON ABORT: " + txnId);
+                                    return false;
+                                }
+                                break;
+                            case DEL:
+                                //location is the customerId. it gets set in newcustomer
+                                boolean isDeleted = deleteCustomer(txnId, location);
+                                if (!isDeleted) {
+                                    Trace.warn("FAILED TO DELETE CUSTOMER UPON ABORT: " + txnId);
+                                    return false;
+                                }
+                                break;
+                        }
+                        break;
+                }//end of the bigger switch
+            }//endwhile
+        }
+        catch (NullPointerException e){
+            e.printStackTrace();
+            Trace.warn("NEED TO START TRANSCATION BEFORE CALLING ABORT");
+            return false;
+        }
+
+
         //abort in specific RMs
         Vector RMList = this.txnManager.activeTxnRM.get(txnId);
         Iterator it = RMList.iterator();

@@ -91,8 +91,10 @@ public class TxnManager {
     private void appendStack(int txnId, Vector command){
         synchronized (this.txnCmdList){
             Stack cmdList = this.txnCmdList.get(txnId);
-            cmdList.push(command);
-            this.txnCmdList.put(txnId,cmdList);
+            if (!cmdList.contains(command)) {
+                cmdList.push(command);
+                this.txnCmdList.put(txnId, cmdList);
+            }
         }
     }
 }

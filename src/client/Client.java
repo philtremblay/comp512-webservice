@@ -180,7 +180,7 @@ public class Client extends WSClient {
                 try {
                     id = getInt(arguments.elementAt(1));
                     int customer = proxy.newCustomer(id);
-                    if (customer > 0) {
+                    if (customer >= 0) {
                         System.out.println("new customer id: " + customer);
                     }
                     else {
@@ -303,7 +303,7 @@ public class Client extends WSClient {
                     id = getInt(arguments.elementAt(1));
                     flightNumber = getInt(arguments.elementAt(2));
                     int seats = proxy.queryFlight(id, flightNumber);
-                    if (seats > 0) {
+                    if (seats >= 0) {
                         System.out.println("Number of seats available: " + seats);
                     }
                     else {
@@ -331,7 +331,7 @@ public class Client extends WSClient {
                     location = getString(arguments.elementAt(2));
                     System.out.println("Waiting for a response from the server...");
                     numCars = proxy.queryCars(id, location);
-                    if (numCars > 0) {
+                    if (numCars >= 0) {
                         System.out.println("number of cars at this location: " + numCars);
                     }
                     else {
@@ -359,7 +359,7 @@ public class Client extends WSClient {
                     location = getString(arguments.elementAt(2));
 
                     numRooms = proxy.queryRooms(id, location);
-                    if (numRooms > 0) {
+                    if (numRooms >= 0) {
                         System.out.println("number of rooms at this location: " + numRooms);
                     }
                     else {
@@ -390,7 +390,7 @@ public class Client extends WSClient {
                         System.out.println("Customer info: \n" + bill);
                     }
                     else {
-                        System.out.println("ERROR: bad return");
+                        System.out.println("ERROR: no such customer");
                     }
                 }
                 catch(Exception e) {
@@ -412,7 +412,7 @@ public class Client extends WSClient {
                     id = getInt(arguments.elementAt(1));
                     flightNumber = getInt(arguments.elementAt(2));
                     price = proxy.queryFlightPrice(id, flightNumber);
-                    if (price > 0) {
+                    if (price >= 0) {
                         System.out.println("Price of a seat: " + price);
                     }
                     else {
@@ -439,7 +439,7 @@ public class Client extends WSClient {
                     location = getString(arguments.elementAt(2));
 
                     price = proxy.queryCarsPrice(id, location);
-                    if (price > 0) {
+                    if (price >= 0) {
                         System.out.println("Price of a car at this location: " + price);
                     }
                     else {
@@ -464,7 +464,7 @@ public class Client extends WSClient {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
                     price = proxy.queryRoomsPrice(id, location);
-                    if (price > 0) {
+                    if (price >= 0) {
                         System.out.println("Price of rooms at this location: " + price);
                     }
                     else {
@@ -640,7 +640,7 @@ public class Client extends WSClient {
                     try {
                         int transactionID = getInt(arguments.elementAt(1));
                         if (proxy.commit(transactionID)){
-                            Trace.info("Commit transaction " + transactionID + "successfully");
+                            Trace.info("Commit transaction " + transactionID + " successfully");
                         }
                         else {
                             Trace.warn("Invalid transaction ID or failed to unlock");
@@ -654,7 +654,7 @@ public class Client extends WSClient {
                 break;
 
                 case 25:
-                    if (arguments.size() != 2) { //command was "commit"
+                    if (arguments.size() != 2) { //command was "abort"
                         wrongNumber();
                         break;
                     }
@@ -662,7 +662,7 @@ public class Client extends WSClient {
                         try {
                             int transactionID = getInt(arguments.elementAt(1));
                             if (proxy.abort(transactionID)){
-                                Trace.info("Abort transaction " + transactionID + "successfully");
+                                Trace.info("Abort transaction " + transactionID + " successfully");
                             }
                             else {
                                 Trace.warn("Invalid transaction ID or failed to unlock");
