@@ -390,7 +390,7 @@ public class Client extends WSClient {
                         System.out.println("Customer info: \n" + bill);
                     }
                     else {
-                        System.out.println("ERROR: bad return");
+                        System.out.println("ERROR: no such customer");
                     }
                 }
                 catch(Exception e) {
