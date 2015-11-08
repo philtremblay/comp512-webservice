@@ -38,7 +38,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     protected LockManager MWLock;
 
     short f_flag = 1;
-    short c_flag = 1;
+    short c_flag = 0;
     short r_flag = 0;
 
     //flight server properties
@@ -161,11 +161,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 break;
             case CAR:
                 count = carProxy.proxy.queryCars(id,location);
-                price = carProxy.proxy.queryCarsPrice(id,location);
+                price = carProxy.proxy.queryCarsPrice(id, location);
                 break;
             case ROOM:
                 count = roomProxy.proxy.queryRooms(id,location);
-                price = roomProxy.proxy.queryRoomsPrice(id,location);
+                price = roomProxy.proxy.queryRoomsPrice(id, location);
                 break;
         }
 
@@ -208,7 +208,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             }
             else {
                 // Do reservation
-                cust.reserve(key, location, price,itemInfo,id); //change location maybe
+                cust.reserve(key, location, price, itemInfo, id); //change location maybe
                 writeData(id, cust.getKey(), cust);
             }
 
@@ -477,7 +477,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     @Override
     public boolean newCustomerId(int id, int customerId) {
-        Trace.info("INFO: RM::newCustomer(" + id + ", " + customerId + ") called.");
+        Trace.info("RM::newCustomer(" + id + ", " + customerId + ") called.");
         String strData = "customer,"+customerId;
 
         try {
@@ -569,7 +569,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 }
                 else if (reservedItem.getType() == 3){
                     if(roomProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count)){
-                        Vector cmd = cmdToVect(CAR,RES,Integer.parseInt(location));
+                        Vector cmd = cmdToVect(ROOM,RES,Integer.parseInt(location));
                         cmd.add(count);
 
                         this.txnManager.setNewUpdateItem(id,cmd);
@@ -795,19 +795,19 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             switch (RMType) {
                 case FLIGHT:
                     if(!flightProxy.proxy.commit(txnId)){
-                        Trace.warn("ERROR IN FLIGHT RM COMMIT: "+txnId);
+                        Trace.warn("ERROR IN FLIGHT RM COMMIT: " + txnId);
                         return false;
                     }
                     break;
                 case CAR:
                     if(!carProxy.proxy.commit(txnId)){
-                        Trace.warn("ERROR IN CAR RM COMMIT: "+txnId);
+                        Trace.warn("ERROR IN CAR RM COMMIT: " + txnId);
                         return false;
                     }
                     break;
                 case ROOM:
                     if(!roomProxy.proxy.commit(txnId)){
-                        Trace.warn("ERROR IN ROOM RM COMMIT: "+txnId);
+                        Trace.warn("ERROR IN ROOM RM COMMIT: " + txnId);
                         return false;
                     }
                     break;
@@ -853,6 +853,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     @Override
     public boolean abort(int txnId){
+
         //get the commands from the stack of commands and execute them
         Stack cmdList;
         try {
@@ -968,15 +969,19 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                             break;
                         case DEL:
                             //location is the customerId. it gets set in newcustomer
-                            if(!deleteCustomer(txnId, location)){
+                            boolean isDeleted = deleteCustomer(txnId, location);
+                            System.out.println("ENTER HERE!!!!!!!!!!!");
+                            if(!isDeleted){
                                 Trace.warn("FAILED TO DELETE CUSTOMER UPON ABORT: "+txnId);
                                 return false;
                             }
                             break;
                     }
                     break;
-            }
+            }//end of the bigger switch
         }//endwhile
+
+        
         //abort in specific RMs
         Vector RMList = this.txnManager.activeTxnRM.get(txnId);
         Iterator it = RMList.iterator();
