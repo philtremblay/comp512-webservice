@@ -853,18 +853,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             Trace.warn("ERROR WHEN REMOVING TXNMANAGER ENTRIES: "+txnId);
             e.printStackTrace();
         }
-        /*
-        if (txnId > 0) {
-            if (flightProxy.proxy.commit(txnId) && carProxy.proxy.commit(txnId) && roomProxy.proxy.commit(txnId)) {
-                Trace.info("RM::SUCCESSUFULLY COMMIT TRANSACTION ID: " + txnId);
-                return true;
-            }
-            else
-                return false;
-        }else {
-            return false;
-        }
-        */
         return true;
     }
 
