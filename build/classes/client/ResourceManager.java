@@ -85,75 +85,18 @@ public interface ResourceManager {
      * @param arg1
      * @param arg0
      * @return
-     *     returns boolean
-     */
-    @WebMethod
-    @WebResult(targetNamespace = "")
-    @RequestWrapper(localName = "newCustomerId", targetNamespace = "http://ws.server/", className = "client.NewCustomerId")
-    @ResponseWrapper(localName = "newCustomerIdResponse", targetNamespace = "http://ws.server/", className = "client.NewCustomerIdResponse")
-    @Action(input = "http://ws.server/ResourceManager/newCustomerIdRequest", output = "http://ws.server/ResourceManager/newCustomerIdResponse")
-    public boolean newCustomerId(
-        @WebParam(name = "arg0", targetNamespace = "")
-        int arg0,
-        @WebParam(name = "arg1", targetNamespace = "")
-        int arg1);
-
-    /**
-     * 
-     * @param arg1
-     * @param arg0
-     * @return
-     *     returns boolean
-     */
-    @WebMethod
-    @WebResult(targetNamespace = "")
-    @RequestWrapper(localName = "deleteCustomer", targetNamespace = "http://ws.server/", className = "client.DeleteCustomer")
-    @ResponseWrapper(localName = "deleteCustomerResponse", targetNamespace = "http://ws.server/", className = "client.DeleteCustomerResponse")
-    @Action(input = "http://ws.server/ResourceManager/deleteCustomerRequest", output = "http://ws.server/ResourceManager/deleteCustomerResponse")
-    public boolean deleteCustomer(
-        @WebParam(name = "arg0", targetNamespace = "")
-        int arg0,
-        @WebParam(name = "arg1", targetNamespace = "")
-        int arg1);
-
-    /**
-     * 
-     * @param arg2
-     * @param arg1
-     * @param arg0
-     * @return
-     *     returns boolean
-     */
-    @WebMethod
-    @WebResult(targetNamespace = "")
-    @RequestWrapper(localName = "updateDeleteCustomer", targetNamespace = "http://ws.server/", className = "client.UpdateDeleteCustomer")
-    @ResponseWrapper(localName = "updateDeleteCustomerResponse", targetNamespace = "http://ws.server/", className = "client.UpdateDeleteCustomerResponse")
-    @Action(input = "http://ws.server/ResourceManager/updateDeleteCustomerRequest", output = "http://ws.server/ResourceManager/updateDeleteCustomerResponse")
-    public boolean updateDeleteCustomer(
-        @WebParam(name = "arg0", targetNamespace = "")
-        int arg0,
-        @WebParam(name = "arg1", targetNamespace = "")
-        String arg1,
-        @WebParam(name = "arg2", targetNamespace = "")
-        int arg2);
-
-    /**
-     * 
-     * @param arg1
-     * @param arg0
-     * @return
      *     returns int
      */
     @WebMethod
     @WebResult(targetNamespace = "")
-    @RequestWrapper(localName = "queryFlightPrice", targetNamespace = "http://ws.server/", className = "client.QueryFlightPrice")
-    @ResponseWrapper(localName = "queryFlightPriceResponse", targetNamespace = "http://ws.server/", className = "client.QueryFlightPriceResponse")
-    @Action(input = "http://ws.server/ResourceManager/queryFlightPriceRequest", output = "http://ws.server/ResourceManager/queryFlightPriceResponse")
-    public int queryFlightPrice(
+    @RequestWrapper(localName = "queryRoomsPrice", targetNamespace = "http://ws.server/", className = "client.QueryRoomsPrice")
+    @ResponseWrapper(localName = "queryRoomsPriceResponse", targetNamespace = "http://ws.server/", className = "client.QueryRoomsPriceResponse")
+    @Action(input = "http://ws.server/ResourceManager/queryRoomsPriceRequest", output = "http://ws.server/ResourceManager/queryRoomsPriceResponse")
+    public int queryRoomsPrice(
         @WebParam(name = "arg0", targetNamespace = "")
         int arg0,
         @WebParam(name = "arg1", targetNamespace = "")
-        int arg1);
+        String arg1);
 
     /**
      * 
@@ -229,14 +172,14 @@ public interface ResourceManager {
      * @param arg1
      * @param arg0
      * @return
-     *     returns java.lang.String
+     *     returns boolean
      */
     @WebMethod
     @WebResult(targetNamespace = "")
-    @RequestWrapper(localName = "queryCustomerInfo", targetNamespace = "http://ws.server/", className = "client.QueryCustomerInfo")
-    @ResponseWrapper(localName = "queryCustomerInfoResponse", targetNamespace = "http://ws.server/", className = "client.QueryCustomerInfoResponse")
-    @Action(input = "http://ws.server/ResourceManager/queryCustomerInfoRequest", output = "http://ws.server/ResourceManager/queryCustomerInfoResponse")
-    public String queryCustomerInfo(
+    @RequestWrapper(localName = "deleteCustomer", targetNamespace = "http://ws.server/", className = "client.DeleteCustomer")
+    @ResponseWrapper(localName = "deleteCustomerResponse", targetNamespace = "http://ws.server/", className = "client.DeleteCustomerResponse")
+    @Action(input = "http://ws.server/ResourceManager/deleteCustomerRequest", output = "http://ws.server/ResourceManager/deleteCustomerResponse")
+    public boolean deleteCustomer(
         @WebParam(name = "arg0", targetNamespace = "")
         int arg0,
         @WebParam(name = "arg1", targetNamespace = "")
@@ -251,14 +194,53 @@ public interface ResourceManager {
      */
     @WebMethod
     @WebResult(targetNamespace = "")
-    @RequestWrapper(localName = "queryRoomsPrice", targetNamespace = "http://ws.server/", className = "client.QueryRoomsPrice")
-    @ResponseWrapper(localName = "queryRoomsPriceResponse", targetNamespace = "http://ws.server/", className = "client.QueryRoomsPriceResponse")
-    @Action(input = "http://ws.server/ResourceManager/queryRoomsPriceRequest", output = "http://ws.server/ResourceManager/queryRoomsPriceResponse")
-    public int queryRoomsPrice(
+    @RequestWrapper(localName = "queryFlightPrice", targetNamespace = "http://ws.server/", className = "client.QueryFlightPrice")
+    @ResponseWrapper(localName = "queryFlightPriceResponse", targetNamespace = "http://ws.server/", className = "client.QueryFlightPriceResponse")
+    @Action(input = "http://ws.server/ResourceManager/queryFlightPriceRequest", output = "http://ws.server/ResourceManager/queryFlightPriceResponse")
+    public int queryFlightPrice(
         @WebParam(name = "arg0", targetNamespace = "")
         int arg0,
         @WebParam(name = "arg1", targetNamespace = "")
-        String arg1);
+        int arg1);
+
+    /**
+     * 
+     * @param arg1
+     * @param arg0
+     * @return
+     *     returns boolean
+     */
+    @WebMethod
+    @WebResult(targetNamespace = "")
+    @RequestWrapper(localName = "newCustomerId", targetNamespace = "http://ws.server/", className = "client.NewCustomerId")
+    @ResponseWrapper(localName = "newCustomerIdResponse", targetNamespace = "http://ws.server/", className = "client.NewCustomerIdResponse")
+    @Action(input = "http://ws.server/ResourceManager/newCustomerIdRequest", output = "http://ws.server/ResourceManager/newCustomerIdResponse")
+    public boolean newCustomerId(
+        @WebParam(name = "arg0", targetNamespace = "")
+        int arg0,
+        @WebParam(name = "arg1", targetNamespace = "")
+        int arg1);
+
+    /**
+     * 
+     * @param arg2
+     * @param arg1
+     * @param arg0
+     * @return
+     *     returns boolean
+     */
+    @WebMethod
+    @WebResult(targetNamespace = "")
+    @RequestWrapper(localName = "updateDeleteCustomer", targetNamespace = "http://ws.server/", className = "client.UpdateDeleteCustomer")
+    @ResponseWrapper(localName = "updateDeleteCustomerResponse", targetNamespace = "http://ws.server/", className = "client.UpdateDeleteCustomerResponse")
+    @Action(input = "http://ws.server/ResourceManager/updateDeleteCustomerRequest", output = "http://ws.server/ResourceManager/updateDeleteCustomerResponse")
+    public boolean updateDeleteCustomer(
+        @WebParam(name = "arg0", targetNamespace = "")
+        int arg0,
+        @WebParam(name = "arg1", targetNamespace = "")
+        String arg1,
+        @WebParam(name = "arg2", targetNamespace = "")
+        int arg2);
 
     /**
      * 
@@ -286,18 +268,47 @@ public interface ResourceManager {
      * @param arg1
      * @param arg0
      * @return
-     *     returns int
+     *     returns java.lang.String
      */
     @WebMethod
     @WebResult(targetNamespace = "")
-    @RequestWrapper(localName = "queryFlight", targetNamespace = "http://ws.server/", className = "client.QueryFlight")
-    @ResponseWrapper(localName = "queryFlightResponse", targetNamespace = "http://ws.server/", className = "client.QueryFlightResponse")
-    @Action(input = "http://ws.server/ResourceManager/queryFlightRequest", output = "http://ws.server/ResourceManager/queryFlightResponse")
-    public int queryFlight(
+    @RequestWrapper(localName = "queryCustomerInfo", targetNamespace = "http://ws.server/", className = "client.QueryCustomerInfo")
+    @ResponseWrapper(localName = "queryCustomerInfoResponse", targetNamespace = "http://ws.server/", className = "client.QueryCustomerInfoResponse")
+    @Action(input = "http://ws.server/ResourceManager/queryCustomerInfoRequest", output = "http://ws.server/ResourceManager/queryCustomerInfoResponse")
+    public String queryCustomerInfo(
         @WebParam(name = "arg0", targetNamespace = "")
         int arg0,
         @WebParam(name = "arg1", targetNamespace = "")
         int arg1);
+
+    /**
+     * 
+     * @param arg3
+     * @param arg2
+     * @param arg1
+     * @param arg0
+     * @return
+     *     returns boolean
+     * @throws DeadlockException_Exception
+     */
+    @WebMethod
+    @WebResult(targetNamespace = "")
+    @RequestWrapper(localName = "addFlight", targetNamespace = "http://ws.server/", className = "client.AddFlight")
+    @ResponseWrapper(localName = "addFlightResponse", targetNamespace = "http://ws.server/", className = "client.AddFlightResponse")
+    @Action(input = "http://ws.server/ResourceManager/addFlightRequest", output = "http://ws.server/ResourceManager/addFlightResponse", fault = {
+        @FaultAction(className = DeadlockException_Exception.class, value = "http://ws.server/ResourceManager/addFlight/Fault/DeadlockException")
+    })
+    public boolean addFlight(
+        @WebParam(name = "arg0", targetNamespace = "")
+        int arg0,
+        @WebParam(name = "arg1", targetNamespace = "")
+        int arg1,
+        @WebParam(name = "arg2", targetNamespace = "")
+        int arg2,
+        @WebParam(name = "arg3", targetNamespace = "")
+        int arg3)
+        throws DeadlockException_Exception
+    ;
 
     /**
      * 
@@ -319,132 +330,6 @@ public interface ResourceManager {
         int arg1,
         @WebParam(name = "arg2", targetNamespace = "")
         String arg2);
-
-    /**
-     * 
-     * @param arg1
-     * @param arg0
-     * @return
-     *     returns boolean
-     */
-    @WebMethod
-    @WebResult(targetNamespace = "")
-    @RequestWrapper(localName = "deleteFlight", targetNamespace = "http://ws.server/", className = "client.DeleteFlight")
-    @ResponseWrapper(localName = "deleteFlightResponse", targetNamespace = "http://ws.server/", className = "client.DeleteFlightResponse")
-    @Action(input = "http://ws.server/ResourceManager/deleteFlightRequest", output = "http://ws.server/ResourceManager/deleteFlightResponse")
-    public boolean deleteFlight(
-        @WebParam(name = "arg0", targetNamespace = "")
-        int arg0,
-        @WebParam(name = "arg1", targetNamespace = "")
-        int arg1);
-
-    /**
-     * 
-     * @param arg2
-     * @param arg1
-     * @param arg0
-     * @return
-     *     returns boolean
-     */
-    @WebMethod
-    @WebResult(targetNamespace = "")
-    @RequestWrapper(localName = "reserveRoom", targetNamespace = "http://ws.server/", className = "client.ReserveRoom")
-    @ResponseWrapper(localName = "reserveRoomResponse", targetNamespace = "http://ws.server/", className = "client.ReserveRoomResponse")
-    @Action(input = "http://ws.server/ResourceManager/reserveRoomRequest", output = "http://ws.server/ResourceManager/reserveRoomResponse")
-    public boolean reserveRoom(
-        @WebParam(name = "arg0", targetNamespace = "")
-        int arg0,
-        @WebParam(name = "arg1", targetNamespace = "")
-        int arg1,
-        @WebParam(name = "arg2", targetNamespace = "")
-        String arg2);
-
-    /**
-     * 
-     * @param arg0
-     * @return
-     *     returns java.lang.String
-     */
-    @WebMethod
-    @WebResult(targetNamespace = "")
-    @RequestWrapper(localName = "getFlightKey", targetNamespace = "http://ws.server/", className = "client.GetFlightKey")
-    @ResponseWrapper(localName = "getFlightKeyResponse", targetNamespace = "http://ws.server/", className = "client.GetFlightKeyResponse")
-    @Action(input = "http://ws.server/ResourceManager/getFlightKeyRequest", output = "http://ws.server/ResourceManager/getFlightKeyResponse")
-    public String getFlightKey(
-        @WebParam(name = "arg0", targetNamespace = "")
-        int arg0);
-
-    /**
-     * 
-     * @param arg0
-     * @return
-     *     returns int
-     */
-    @WebMethod
-    @WebResult(targetNamespace = "")
-    @RequestWrapper(localName = "newCustomer", targetNamespace = "http://ws.server/", className = "client.NewCustomer")
-    @ResponseWrapper(localName = "newCustomerResponse", targetNamespace = "http://ws.server/", className = "client.NewCustomerResponse")
-    @Action(input = "http://ws.server/ResourceManager/newCustomerRequest", output = "http://ws.server/ResourceManager/newCustomerResponse")
-    public int newCustomer(
-        @WebParam(name = "arg0", targetNamespace = "")
-        int arg0);
-
-    /**
-     * 
-     * @param arg1
-     * @param arg0
-     * @return
-     *     returns int
-     */
-    @WebMethod
-    @WebResult(targetNamespace = "")
-    @RequestWrapper(localName = "queryRooms", targetNamespace = "http://ws.server/", className = "client.QueryRooms")
-    @ResponseWrapper(localName = "queryRoomsResponse", targetNamespace = "http://ws.server/", className = "client.QueryRoomsResponse")
-    @Action(input = "http://ws.server/ResourceManager/queryRoomsRequest", output = "http://ws.server/ResourceManager/queryRoomsResponse")
-    public int queryRooms(
-        @WebParam(name = "arg0", targetNamespace = "")
-        int arg0,
-        @WebParam(name = "arg1", targetNamespace = "")
-        String arg1);
-
-    /**
-     * 
-     * @param arg3
-     * @param arg2
-     * @param arg1
-     * @param arg0
-     * @return
-     *     returns boolean
-     */
-    @WebMethod
-    @WebResult(targetNamespace = "")
-    @RequestWrapper(localName = "addCars", targetNamespace = "http://ws.server/", className = "client.AddCars")
-    @ResponseWrapper(localName = "addCarsResponse", targetNamespace = "http://ws.server/", className = "client.AddCarsResponse")
-    @Action(input = "http://ws.server/ResourceManager/addCarsRequest", output = "http://ws.server/ResourceManager/addCarsResponse")
-    public boolean addCars(
-        @WebParam(name = "arg0", targetNamespace = "")
-        int arg0,
-        @WebParam(name = "arg1", targetNamespace = "")
-        String arg1,
-        @WebParam(name = "arg2", targetNamespace = "")
-        int arg2,
-        @WebParam(name = "arg3", targetNamespace = "")
-        int arg3);
-
-    /**
-     * 
-     * @param arg0
-     * @return
-     *     returns java.lang.String
-     */
-    @WebMethod
-    @WebResult(targetNamespace = "")
-    @RequestWrapper(localName = "getRoomKey", targetNamespace = "http://ws.server/", className = "client.GetRoomKey")
-    @ResponseWrapper(localName = "getRoomKeyResponse", targetNamespace = "http://ws.server/", className = "client.GetRoomKeyResponse")
-    @Action(input = "http://ws.server/ResourceManager/getRoomKeyRequest", output = "http://ws.server/ResourceManager/getRoomKeyResponse")
-    public String getRoomKey(
-        @WebParam(name = "arg0", targetNamespace = "")
-        String arg0);
 
     /**
      * 
@@ -487,26 +372,129 @@ public interface ResourceManager {
      * @param arg0
      * @return
      *     returns boolean
-     * @throws DeadlockException_Exception
      */
     @WebMethod
     @WebResult(targetNamespace = "")
-    @RequestWrapper(localName = "addFlight", targetNamespace = "http://ws.server/", className = "client.AddFlight")
-    @ResponseWrapper(localName = "addFlightResponse", targetNamespace = "http://ws.server/", className = "client.AddFlightResponse")
-    @Action(input = "http://ws.server/ResourceManager/addFlightRequest", output = "http://ws.server/ResourceManager/addFlightResponse", fault = {
-        @FaultAction(className = DeadlockException_Exception.class, value = "http://ws.server/ResourceManager/addFlight/Fault/DeadlockException")
-    })
-    public boolean addFlight(
+    @RequestWrapper(localName = "addCars", targetNamespace = "http://ws.server/", className = "client.AddCars")
+    @ResponseWrapper(localName = "addCarsResponse", targetNamespace = "http://ws.server/", className = "client.AddCarsResponse")
+    @Action(input = "http://ws.server/ResourceManager/addCarsRequest", output = "http://ws.server/ResourceManager/addCarsResponse")
+    public boolean addCars(
+        @WebParam(name = "arg0", targetNamespace = "")
+        int arg0,
+        @WebParam(name = "arg1", targetNamespace = "")
+        String arg1,
+        @WebParam(name = "arg2", targetNamespace = "")
+        int arg2,
+        @WebParam(name = "arg3", targetNamespace = "")
+        int arg3);
+
+    /**
+     * 
+     * @param arg1
+     * @param arg0
+     * @return
+     *     returns int
+     */
+    @WebMethod
+    @WebResult(targetNamespace = "")
+    @RequestWrapper(localName = "queryFlight", targetNamespace = "http://ws.server/", className = "client.QueryFlight")
+    @ResponseWrapper(localName = "queryFlightResponse", targetNamespace = "http://ws.server/", className = "client.QueryFlightResponse")
+    @Action(input = "http://ws.server/ResourceManager/queryFlightRequest", output = "http://ws.server/ResourceManager/queryFlightResponse")
+    public int queryFlight(
+        @WebParam(name = "arg0", targetNamespace = "")
+        int arg0,
+        @WebParam(name = "arg1", targetNamespace = "")
+        int arg1);
+
+    /**
+     * 
+     * @param arg1
+     * @param arg0
+     * @return
+     *     returns boolean
+     */
+    @WebMethod
+    @WebResult(targetNamespace = "")
+    @RequestWrapper(localName = "deleteFlight", targetNamespace = "http://ws.server/", className = "client.DeleteFlight")
+    @ResponseWrapper(localName = "deleteFlightResponse", targetNamespace = "http://ws.server/", className = "client.DeleteFlightResponse")
+    @Action(input = "http://ws.server/ResourceManager/deleteFlightRequest", output = "http://ws.server/ResourceManager/deleteFlightResponse")
+    public boolean deleteFlight(
+        @WebParam(name = "arg0", targetNamespace = "")
+        int arg0,
+        @WebParam(name = "arg1", targetNamespace = "")
+        int arg1);
+
+    /**
+     * 
+     * @param arg0
+     * @return
+     *     returns java.lang.String
+     */
+    @WebMethod
+    @WebResult(targetNamespace = "")
+    @RequestWrapper(localName = "getRoomKey", targetNamespace = "http://ws.server/", className = "client.GetRoomKey")
+    @ResponseWrapper(localName = "getRoomKeyResponse", targetNamespace = "http://ws.server/", className = "client.GetRoomKeyResponse")
+    @Action(input = "http://ws.server/ResourceManager/getRoomKeyRequest", output = "http://ws.server/ResourceManager/getRoomKeyResponse")
+    public String getRoomKey(
+        @WebParam(name = "arg0", targetNamespace = "")
+        String arg0);
+
+    /**
+     * 
+     * @param arg1
+     * @param arg0
+     * @return
+     *     returns int
+     */
+    @WebMethod
+    @WebResult(targetNamespace = "")
+    @RequestWrapper(localName = "queryRooms", targetNamespace = "http://ws.server/", className = "client.QueryRooms")
+    @ResponseWrapper(localName = "queryRoomsResponse", targetNamespace = "http://ws.server/", className = "client.QueryRoomsResponse")
+    @Action(input = "http://ws.server/ResourceManager/queryRoomsRequest", output = "http://ws.server/ResourceManager/queryRoomsResponse")
+    public int queryRooms(
+        @WebParam(name = "arg0", targetNamespace = "")
+        int arg0,
+        @WebParam(name = "arg1", targetNamespace = "")
+        String arg1);
+
+    /**
+     * 
+     * @param arg2
+     * @param arg1
+     * @param arg0
+     * @return
+     *     returns boolean
+     */
+    @WebMethod
+    @WebResult(targetNamespace = "")
+    @RequestWrapper(localName = "reserveRoom", targetNamespace = "http://ws.server/", className = "client.ReserveRoom")
+    @ResponseWrapper(localName = "reserveRoomResponse", targetNamespace = "http://ws.server/", className = "client.ReserveRoomResponse")
+    @Action(input = "http://ws.server/ResourceManager/reserveRoomRequest", output = "http://ws.server/ResourceManager/reserveRoomResponse")
+    public boolean reserveRoom(
         @WebParam(name = "arg0", targetNamespace = "")
         int arg0,
         @WebParam(name = "arg1", targetNamespace = "")
         int arg1,
         @WebParam(name = "arg2", targetNamespace = "")
-        int arg2,
-        @WebParam(name = "arg3", targetNamespace = "")
-        int arg3)
-        throws DeadlockException_Exception
-    ;
+        String arg2);
+
+    /**
+     * 
+     * @param arg1
+     * @param arg0
+     * @return
+     *     returns int
+     */
+    @WebMethod
+    @WebResult(targetNamespace = "")
+    @RequestWrapper(localName = "queryCars", targetNamespace = "http://ws.server/", className = "client.QueryCars")
+    @ResponseWrapper(localName = "queryCarsResponse", targetNamespace = "http://ws.server/", className = "client.QueryCarsResponse")
+    @Action(input = "http://ws.server/ResourceManager/queryCarsRequest", output = "http://ws.server/ResourceManager/queryCarsResponse")
+    public int queryCars(
+        @WebParam(name = "arg0", targetNamespace = "")
+        int arg0,
+        @WebParam(name = "arg1", targetNamespace = "")
+        String arg1);
 
     /**
      * 
@@ -525,6 +513,21 @@ public interface ResourceManager {
         int arg0,
         @WebParam(name = "arg1", targetNamespace = "")
         String arg1);
+
+    /**
+     * 
+     * @param arg0
+     * @return
+     *     returns java.lang.String
+     */
+    @WebMethod
+    @WebResult(targetNamespace = "")
+    @RequestWrapper(localName = "getFlightKey", targetNamespace = "http://ws.server/", className = "client.GetFlightKey")
+    @ResponseWrapper(localName = "getFlightKeyResponse", targetNamespace = "http://ws.server/", className = "client.GetFlightKeyResponse")
+    @Action(input = "http://ws.server/ResourceManager/getFlightKeyRequest", output = "http://ws.server/ResourceManager/getFlightKeyResponse")
+    public String getFlightKey(
+        @WebParam(name = "arg0", targetNamespace = "")
+        int arg0);
 
     /**
      * 
@@ -552,20 +555,17 @@ public interface ResourceManager {
 
     /**
      * 
-     * @param arg1
      * @param arg0
      * @return
      *     returns int
      */
     @WebMethod
     @WebResult(targetNamespace = "")
-    @RequestWrapper(localName = "queryCars", targetNamespace = "http://ws.server/", className = "client.QueryCars")
-    @ResponseWrapper(localName = "queryCarsResponse", targetNamespace = "http://ws.server/", className = "client.QueryCarsResponse")
-    @Action(input = "http://ws.server/ResourceManager/queryCarsRequest", output = "http://ws.server/ResourceManager/queryCarsResponse")
-    public int queryCars(
+    @RequestWrapper(localName = "newCustomer", targetNamespace = "http://ws.server/", className = "client.NewCustomer")
+    @ResponseWrapper(localName = "newCustomerResponse", targetNamespace = "http://ws.server/", className = "client.NewCustomerResponse")
+    @Action(input = "http://ws.server/ResourceManager/newCustomerRequest", output = "http://ws.server/ResourceManager/newCustomerResponse")
+    public int newCustomer(
         @WebParam(name = "arg0", targetNamespace = "")
-        int arg0,
-        @WebParam(name = "arg1", targetNamespace = "")
-        String arg1);
+        int arg0);
 
 }

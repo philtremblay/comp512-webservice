@@ -43,6 +43,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     short c_flag = 1;
     short r_flag = 1;
 
+
     //flight server properties
     String f_name = "flight";
     String f_host = "localhost";

@@ -3,7 +3,6 @@ package client;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.util.Timer;
 import java.util.Vector;
 
 /**
@@ -51,6 +50,7 @@ public class TestClient extends WSClient{
         try {
             writer = new PrintWriter("perf_analysis_singleClient.txt","UTF-8");
             writer.println("Test");
+            writer.println("Single RM");
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (UnsupportedEncodingException e) {
@@ -59,7 +59,7 @@ public class TestClient extends WSClient{
 
         int txnId = proxy.start();
         try {
-            proxy.addFlight(txnId,flightNum,2*testSize,1);
+            proxy.addFlight(txnId,flightNum,4*testSize,1);
             proxy.addCars(txnId,location,testSize,1);
             proxy.addRooms(txnId,location,testSize,1);
             proxy.newCustomerId(txnId,customerId);
@@ -68,19 +68,16 @@ public class TestClient extends WSClient{
         }
         proxy.commit(txnId);
 
+        //Single RM
+        txnId = proxy.start();
         //reserve a flight and itinerary
-        for (int i = 0; i<testSize ; i++){
-            //create new customer
-            txnId = proxy.start();
+        for (int i = 0; i< 3*testSize ; i++){
 
             //reserve flight
             //start timer
             StopWatch stopWatch = new StopWatch();
-            proxy.reserveFlight(txnId,i,flightNum);
+            proxy.reserveFlight(txnId,customerId,flightNum);
 
-            //reserve itinerary
-            proxy.reserveItinerary(txnId,customerId,flight,location,true,true);
-            proxy.commit(txnId);
             double time = stopWatch.elapsedTime();
             if (writer != null) {
                 writer.print(time + ",");
@@ -90,6 +87,38 @@ public class TestClient extends WSClient{
                 return;
             }
         }
+        proxy.commit(txnId);
+
+        if (writer != null) {
+            writer.println("");
+            writer.println("All three RMs");
+        }
+        else{
+            //NullPointerException
+            return;
+        }
+
+        //All three RM
+        txnId = proxy.start();
+        //reserve a flight and itinerary
+        for (int i = 0; i<testSize ; i++){
+
+            //reserve flight
+            //start timer
+            StopWatch stopWatch = new StopWatch();
+
+            //reserve itinerary
+            proxy.reserveItinerary(txnId,customerId,flight,location,true,true);
+            double time = stopWatch.elapsedTime();
+            if (writer != null) {
+                writer.print(time + ",");
+            }
+            else{
+                //NullPointerException
+                return;
+            }
+        }
+        proxy.commit(txnId);
         writer.close();
     }
 }
