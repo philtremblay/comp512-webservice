@@ -11,6 +11,7 @@ import client.WSClient;
 import server.Trace;
 
 import javax.jws.WebService;
+import javax.lang.model.util.ElementScanner6;
 import java.net.MalformedURLException;
 import java.util.*;
 
@@ -39,7 +40,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     protected BitSet transactionBit;
 
     short f_flag = 1;
-    short c_flag = 0;
+    short c_flag = 1;
     short r_flag = 0;
 
     //flight server properties
@@ -332,12 +333,13 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public boolean deleteFlight(int id, int flightNumber) {
 
         boolean flightDeleted;
+        //check price and number of seats before deleting
+        int seats = flightProxy.proxy.queryFlight(id,flightNumber);
+        int price = flightProxy.proxy.queryFlightPrice(id,flightNumber);
 
         flightDeleted = flightProxy.proxy.deleteFlight(id, flightNumber);
 
         if (flightDeleted) {
-            int seats = flightProxy.proxy.queryFlight(id,flightNumber);
-            int price = flightProxy.proxy.queryFlightPrice(id,flightNumber);
             Vector cmd = cmdToVect(FLIGHT,ADD,flightNumber);
             cmd.add(seats);
             cmd.add(price);
@@ -404,11 +406,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public boolean deleteCars(int id, String location) {
 
         boolean carsDeleted;
-        carsDeleted = carProxy.proxy.deleteCars(id, location);
+        int num = carProxy.proxy.queryCars(id,location);
+        int price = carProxy.proxy.queryCarsPrice(id,location);
 
+        carsDeleted = carProxy.proxy.deleteCars(id, location);
         if(carsDeleted) {
-            int num = carProxy.proxy.queryCars(id,location);
-            int price = carProxy.proxy.queryCarsPrice(id,location);
             Vector cmd = cmdToVect(CAR,ADD,Integer.parseInt(location));
             cmd.add(num);
             cmd.add(price);
@@ -470,12 +472,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     @Override
     public boolean deleteRooms(int id, String location) {
+        int num = roomProxy.proxy.queryRooms(id,location);
+        int price = roomProxy.proxy.queryRoomsPrice(id,location);
 
         boolean roomDeleted = roomProxy.proxy.deleteRooms(id, location);
-
         if (roomDeleted) {
-            int num = roomProxy.proxy.queryRooms(id,location);
-            int price = roomProxy.proxy.queryRoomsPrice(id,location);
+
             Vector cmd = cmdToVect(ROOM,ADD,Integer.parseInt(location));
             cmd.add(num);
             cmd.add(price);
@@ -763,40 +765,24 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         /** call methods from all three servers to execute actions **/
         Iterator it = flightNumbers.iterator();
 
-        boolean carflag = false;
-        boolean roomflag = false;
-
         while(it.hasNext()){
             if(!(reserveFlight(id,customerId,Integer.parseInt((String)it.next())))){
                 //error
                 Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " + location + ") failed: no more seats available.");            }
-                return false;
         }
         //there is a car and room
         if (car  &&  room) {
-            carflag = reserveCar(id, customerId, location);
-            roomflag = reserveRoom(id, customerId, location);
-            //failed to reserve car or room
-            if (! (carflag && roomflag)) {
-                return false;
-            }
-
+            reserveCar(id, customerId, location);
+            reserveRoom(id, customerId, location);
         }
         //there is a room
         else if (room){
-
-            roomflag = reserveRoom(id, customerId, location);
-            //fail to reserve room
-            if (!roomflag) {
-                return false;
-            }
+            reserveRoom(id, customerId, location);
         }
         //if there is a car
         else if(car){
-            carflag = reserveCar(id, customerId, location);
-            if (!carflag) {
-                return false;
-            }
+            reserveCar(id, customerId, location);
+
         }
         return true;
     }
@@ -943,6 +929,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                                     Trace.warn("DEADLOCK EXCEPTION UPON ADDFLIGHT IN ABORT: " + txnId);
                                     return false;
                                 }
+                                Trace.info("ADDED NEW FLIGHT WHEN ABORTING: "+txnId);
                                 break;
                             case DEL:
                                 if (!flightProxy.proxy.deleteFlight(txnId, location)) {
@@ -1081,27 +1068,45 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         //check if both txn tables are empty, if they are, we can shutdown the RMs
         if (this.txnManager.txnCmdList.isEmpty() && this.txnManager.activeTxnRM.isEmpty()){
             if (f_flag == 1) {
-                if(!this.flightProxy.proxy.shutdown()){
-                    Trace.warn("ERROR WHEN SHUTTING DOWN FLIGHT RM");
-                    return false;
+                boolean exit;
+                try {
+                    exit = this.flightProxy.proxy.shutdown();
+                    if(!exit){
+                        Trace.warn("ERROR WHEN SHUTTING DOWN FLIGHT RM");
+                        return false;
+                    }
+                }catch (Exception e){
+                    Trace.info("SHUTTING DOWN GRACEFULLY");
                 }
             }
             else{
                 Trace.warn("FLIGHT RM IS NOT RUNNING");
             }
             if (c_flag == 1) {
-                if(!this.carProxy.proxy.shutdown()){
-                    Trace.warn("ERROR WHEN SHUTTING DOWN CAR RM");
-                    return false;
+                boolean exit;
+                try {
+                    exit = this.carProxy.proxy.shutdown();
+                    if (!exit) {
+                        Trace.warn("ERROR WHEN SHUTTING DOWN CAR RM");
+                        return false;
+                    }
+                }catch (Exception e){
+                    Trace.info("SHUTTING DOWN GRACEFULLY");
                 }
             }
             else{
                 Trace.warn("CAR RM IS NOT RUNNING");
             }
             if (r_flag == 1){
-                if(!this.roomProxy.proxy.shutdown()){
-                    Trace.warn("ERROR WHEN SHUTTING DOWN ROOM RM");
-                    return false;
+                boolean exit;
+                try {
+                    exit = this.roomProxy.proxy.shutdown();
+                    if (!exit) {
+                        Trace.warn("ERROR WHEN SHUTTING DOWN ROOM RM");
+                        return false;
+                    }
+                }catch (Exception e){
+                    Trace.info("SHUTTING DOWN GRACEFULLY");
                 }
             }
             else {

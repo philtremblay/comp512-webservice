@@ -676,10 +676,20 @@ public class Client extends WSClient {
 
                     break;
                 case 26:
-                    //implement shutdown
+                    if (arguments.size() == 1) { //command was "shutdown"
+                        try{
+                            if(!proxy.shutdown()){
+                                System.out.println("CANT SHUTDOWN; SOME TRANSACTIONS ARE STILL ACTIVE");
+                            }
+                        }catch (Exception e){
+                            System.out.println("SHUTTING DOWN GRACEFULLY");
+                            return;
+                        }
+                    }
+
+                    else  //wrong use of shutdown command
+                        System.out.println("Improper use of shutdown command. Type help or help, <commandname>");
                     break;
-
-
 
             default:
                 System.out.println("The interface does not support this command.");
