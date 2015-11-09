@@ -41,7 +41,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     short f_flag = 1;
     short c_flag = 1;
-    short r_flag = 0;
+    short r_flag = 1;
 
     //flight server properties
     String f_name = "flight";
@@ -766,7 +766,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         Iterator it = flightNumbers.iterator();
 
         while(it.hasNext()){
-            if(!(reserveFlight(id,customerId,Integer.parseInt((String)it.next())))){
+            if(!(reserveFlight(id,customerId,(Integer)it.next()))){
                 //error
                 Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " + location + ") failed: no more seats available.");            }
         }

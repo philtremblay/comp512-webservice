@@ -29,9 +29,9 @@ public class ReserveItinerary {
     @XmlElement(name = "arg3", namespace = "")
     private String arg3;
     @XmlElement(name = "arg4", namespace = "")
-    private int arg4;
+    private boolean arg4;
     @XmlElement(name = "arg5", namespace = "")
-    private int arg5;
+    private boolean arg5;
 
     /**
      * 
@@ -108,9 +108,9 @@ public class ReserveItinerary {
     /**
      * 
      * @return
-     *     returns int
+     *     returns boolean
      */
-    public int getArg4() {
+    public boolean isArg4() {
         return this.arg4;
     }
 
@@ -119,16 +119,16 @@ public class ReserveItinerary {
      * @param arg4
      *     the value for the arg4 property
      */
-    public void setArg4(int arg4) {
+    public void setArg4(boolean arg4) {
         this.arg4 = arg4;
     }
 
     /**
      * 
      * @return
-     *     returns int
+     *     returns boolean
      */
-    public int getArg5() {
+    public boolean isArg5() {
         return this.arg5;
     }
 
@@ -137,7 +137,7 @@ public class ReserveItinerary {
      * @param arg5
      *     the value for the arg5 property
      */
-    public void setArg5(int arg5) {
+    public void setArg5(boolean arg5) {
         this.arg5 = arg5;
     }
 
