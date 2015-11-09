@@ -39,7 +39,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     protected BitSet transactionBit;
 
     short f_flag = 1;
-    short c_flag = 1;
+    short c_flag = 0;
     short r_flag = 0;
 
     //flight server properties
@@ -216,6 +216,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 // Do reservation
                 cust.reserve(key, location, price, itemInfo, id); //change location maybe
                 writeData(id, cust.getKey(), cust);
+                Vector cmd = cmdToVect(CUST,UNRES,customerId);
+                cmd.add(Integer.parseInt(location));
+                cmd.add(key);
+                cmd.add(itemInfo);
+                this.txnManager.setNewUpdateItem(id,cmd);
             }
 
             Trace.info("RM::reserveItem(" + id + ", " + customerId + ", "
@@ -224,6 +229,64 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
     }
 
+    protected boolean unReserveItem(int id, int customerId, String location, String key, int itemInfo) {
+        //get item info
+        int count = -1;
+        switch(itemInfo){
+            case FLIGHT:
+                count = flightProxy.proxy.queryFlight(id, Integer.parseInt(location));
+                break;
+            case CAR:
+                count = carProxy.proxy.queryCars(id,location);
+                break;
+            case ROOM:
+                count = roomProxy.proxy.queryRooms(id,location);
+                break;
+        }
+
+        /*if (count == -1) {
+            Trace.warn("RM::unreserveItem(" + id + ", " + customerId + ", "
+                    + key  + ") failed: item doesn't exist.");
+            return false;
+        }*/
+        Trace.info("RM::unreserveItem(" + id + ", " + customerId + ", "
+                + key + ", " + location + ") called.");
+        // Read customer object if it exists (and read lock it).
+        Customer cust = (Customer) readData(id, Customer.getKey(customerId));
+        if (cust == null) {
+            Trace.warn("RM::unreserveItem(" + id + ", " + customerId + ", "
+                    + key + ", " + location + ") failed: customer doesn't exist.");
+            return false;
+        } else {
+
+
+            // Decrease the number of available items in the storage.
+            boolean update = true;
+            switch(itemInfo){
+                case FLIGHT: update = flightProxy.proxy.updateItemInfo(id,key,UNRES);
+                    break;
+                case CAR: update = carProxy.proxy.updateItemInfo(id,key,UNRES);
+                    break;
+                case ROOM: update = roomProxy.proxy.updateItemInfo(id,key,UNRES);
+                    break;
+            }
+            if (!update){
+                Trace.warn("RM::unreserveItem(" + id + ", " + customerId + ", "
+                        + key + ", " + location + ") failed: update item info.");
+                return false;
+            }
+            else {
+                // Do unreservation
+                cust.unreserve(key); //change location maybe
+                writeData(id, cust.getKey(), cust);
+
+            }
+
+            Trace.info("RM::reserveItem(" + id + ", " + customerId + ", "
+                    + key + ", " + location + ") OK.");
+            return true;
+        }
+    }
     protected Vector cmdToVect(int RMType, int queryType, int itemNumOrLocation){
         Vector cmd = new Vector();
         cmd.add(RMType);
@@ -656,13 +719,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         String key = flightProxy.proxy.getFlightKey(flightNumber);
         if (reserveItem(id,customerId,String.valueOf(flightNumber),key,FLIGHT )){
             System.out.println("RESERVATION ADDED TO THE CUSTOMER!!!!!");
-            Vector cmd = cmdToVect(FLIGHT,UNRES,flightNumber);
-            cmd.add(customerId);
-            cmd.add(key);
-            this.txnManager.setNewUpdateItem(id,cmd);
-
             this.txnManager.enlist(id,FLIGHT);
-            txnManager.enlist(id,CUST);
+
             return true;
         }
         else{
@@ -676,13 +734,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         /** call methods from the car server to execute actions **/
         String key = carProxy.proxy.getCarKey(location);
         if (reserveItem(id,customerId,location,key,CAR)){
-            Vector cmd = cmdToVect(CAR,UNRES,Integer.parseInt(location));
-            cmd.add(customerId);
-            cmd.add(key);
-            this.txnManager.setNewUpdateItem(id,cmd);
-
             this.txnManager.enlist(id,CAR);
-            this.txnManager.enlist(id,CUST);
             return true;
         }
         else{
@@ -696,13 +748,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         /** call methods from the room server to execute actions **/
         String key = roomProxy.proxy.getRoomKey(location);
         if (reserveItem(id, customerId,location, key, ROOM)){
-            Vector cmd = cmdToVect(CAR,UNRES,Integer.parseInt(location));
-            cmd.add(customerId);
-            cmd.add(key);
-            this.txnManager.setNewUpdateItem(id,cmd);
 
             this.txnManager.enlist(id,ROOM);
-            this.txnManager.enlist(id,CUST);
             return true;
         }
         else{
@@ -850,7 +897,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             this.txnManager.activeTxnRM.remove(txnId);
             this.txnManager.txnCmdList.remove(txnId);
         }catch (NullPointerException e) {
-            Trace.warn("ERROR WHEN REMOVING TXNMANAGER ENTRIES: "+txnId);
+            Trace.warn("ERROR WHEN REMOVING TXNMANAGER ENTRIES AT COMMIT: "+txnId);
             e.printStackTrace();
         }
         return true;
@@ -865,7 +912,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         this.transactionBit.set(txnId);
         //get the commands from the stack of commands and execute them
         Stack cmdList;
-        boolean isStackEmpty;
         try {
              cmdList = this.txnManager.txnCmdList.get(txnId);
 
@@ -904,13 +950,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                                     return false;
                                 }
                                 break;
-                            case UNRES:
-                                String key = flightProxy.proxy.getFlightKey(location);
-                                if (!flightProxy.proxy.updateItemInfo(txnId, key, UNRES)) {
-                                    Trace.warn("FAILED TO UNRESERVE FLIGHT IN FLIGHT RM UPON ABORT: " + txnId);
-                                    return false;
-                                }
-                                break;
                         }
                         break;
                     case CAR:
@@ -935,13 +974,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                                     return false;
                                 }
                                 break;
-                            case UNRES:
-                                String key = carProxy.proxy.getCarKey(String.valueOf(location));
-                                if (!carProxy.proxy.updateItemInfo(txnId, key, UNRES)) {
-                                    Trace.warn("FAILED TO UNRESERVE CAR IN CAR RM UPON ABORT: " + txnId);
-                                    return false;
-                                }
-                                break;
                         }
                         break;
                     case ROOM:
@@ -957,13 +989,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                             case DEL:
                                 if (!roomProxy.proxy.deleteRooms(txnId, String.valueOf(location))) {
                                     Trace.warn("FAILED TO DELETEROOM UPON ABORT: " + txnId);
-                                    return false;
-                                }
-                                break;
-                            case UNRES:
-                                String key = roomProxy.proxy.getRoomKey(String.valueOf(location));
-                                if (!roomProxy.proxy.updateItemInfo(txnId, key, UNRES)) {
-                                    Trace.warn("FAILED TO UNRESERVE ROOM UPON ABORT: " + txnId);
                                     return false;
                                 }
                                 break;
@@ -983,6 +1008,15 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                                 boolean isDeleted = deleteCustomer(txnId, location);
                                 if (!isDeleted) {
                                     Trace.warn("FAILED TO DELETE CUSTOMER UPON ABORT: " + txnId);
+                                    return false;
+                                }
+                                break;
+                            case UNRES:
+                                String objLocation = String.valueOf(cmd.get(3));
+                                String objKey = (String) cmd.get(4);
+                                Integer itemInfo = (Integer) cmd.get(5);
+                                if (!unReserveItem(txnId,location,objLocation,objKey,itemInfo)){
+                                    Trace.warn("FAILED UNRERSERVE CUSTOMER UPON ABORT: " + txnId);
                                     return false;
                                 }
                                 break;
@@ -1030,13 +1064,59 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                     break;
             }
         }
+        //clean up entries in txnmanager upon success
+        try {
+            this.txnManager.activeTxnRM.remove(txnId);
+            this.txnManager.txnCmdList.remove(txnId);
+        }catch (NullPointerException e) {
+            Trace.warn("ERROR WHEN REMOVING TXNMANAGER ENTRIES AT ABORT: "+txnId);
+            e.printStackTrace();
+        }
 
         return true;
     }
 
     @Override
     public boolean shutdown(){
-        return true;
+        //check if both txn tables are empty, if they are, we can shutdown the RMs
+        if (this.txnManager.txnCmdList.isEmpty() && this.txnManager.activeTxnRM.isEmpty()){
+            if (f_flag == 1) {
+                if(!this.flightProxy.proxy.shutdown()){
+                    Trace.warn("ERROR WHEN SHUTTING DOWN FLIGHT RM");
+                    return false;
+                }
+            }
+            else{
+                Trace.warn("FLIGHT RM IS NOT RUNNING");
+            }
+            if (c_flag == 1) {
+                if(!this.carProxy.proxy.shutdown()){
+                    Trace.warn("ERROR WHEN SHUTTING DOWN CAR RM");
+                    return false;
+                }
+            }
+            else{
+                Trace.warn("CAR RM IS NOT RUNNING");
+            }
+            if (r_flag == 1){
+                if(!this.roomProxy.proxy.shutdown()){
+                    Trace.warn("ERROR WHEN SHUTTING DOWN ROOM RM");
+                    return false;
+                }
+            }
+            else {
+                Trace.warn("ROOM RM IS NOT RUNNING");
+            }
+
+            //all RMs have been shut down. We can exit the middleware
+            System.exit(0);
+            return true;
+        }
+        //if not we cannot shutdown now, there are still transactions running
+        else{
+            Trace.warn("CANNOT SHUTDOWN AT THE MOMENT, TRANSACTIONS ARE STILL ACTIVE");
+            return false;
+        }
     }
 
 }
