@@ -1,6 +1,7 @@
 package client;
 
 
+import middleware.TimeToLive;
 import server.Trace;
 
 import java.util.*;
@@ -10,7 +11,7 @@ import java.io.*;
 
 public class Client extends WSClient {
 
-    TimeToLive[] ttl = new TimeToLive[1024];
+    middleware.TimeToLive.TimeToLive[] ttl = new middleware.TimeToLive.TimeToLive[1024];
 
     public Client(String serviceName, String serviceHost, int servicePort)
             throws Exception {
@@ -651,7 +652,7 @@ public class Client extends WSClient {
                     int transId = proxy.start();
                     System.out.println("TRANSACTION ID: " + transId);
 
-                    ttl[transId-1] = new TimeToLive(transId, proxy);
+                    ttl[transId-1] = new TimeToLive.TimeToLive(transId, proxy);
 
                     Thread t = new Thread(ttl[transId-1]);
                     t.start();

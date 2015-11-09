@@ -3,15 +3,10 @@ package middleware;
 import client.DeadlockException_Exception;
 import server.LockManager.*;
 
-import client.DeadlockException;
-
-import client.DeadlockException_Exception;
-
 import client.WSClient;
 import server.Trace;
 
 import javax.jws.WebService;
-import javax.lang.model.util.ElementScanner6;
 import java.net.MalformedURLException;
 import java.util.*;
 
@@ -63,6 +58,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     //code for Client imported from server
     protected RMHashtable m_itemHT = new RMHashtable();
 
+    TimeToLive[] ttl = new TimeToLive[1024];
     //Transaction Manager
     TxnManager txnManager = new TxnManager();
 
@@ -817,6 +813,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public int start(){
         int txnId = txnManager.newTxn();
+
+        ttl[txnId-1] = new TimeToLive(txnId, this);
+        Thread t = new Thread(ttl[txnId-1]);
+        t.start();
+
         Trace.info("Starting a new transaction with ID : "+txnId);
 
         return txnId;
