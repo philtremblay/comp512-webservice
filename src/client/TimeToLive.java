@@ -60,12 +60,18 @@ public class TimeToLive implements Runnable {
 
         return pushed;
     }
-
-    public boolean empty(int txnid) {
+    public boolean pushAbort(int txnid) {
+        boolean pushed = false;
         synchronized (this.activeTransaction) {
-            return this.activeTransaction.get(txnid).empty();
+            if (this.activeTransaction.containsKey(txnid)) {
+                this.activeTransaction.get(txnid).push(new Integer(-1));
+                pushed = true;
+            }
         }
+
+        return pushed;
     }
+
 
 
     @Override
@@ -82,8 +88,6 @@ public class TimeToLive implements Runnable {
 
         public RemindTask(Stack<Integer> s) {
             this.sTran = s;
-
-
         }
 
         @Override
@@ -94,15 +98,25 @@ public class TimeToLive implements Runnable {
                 if (!this.sTran.empty()) {
                     //pop everything
 
+                    while (!this.sTran.empty()) {
 
-                    int object = sTran.pop();
-                    this.sTran.clear();
+                        int object = sTran.pop();
 
                         //System.out.println("POP object "+ object + ", wait for 30 seconds");
-                    if (object == 0) {
-                        System.out.println("TIME OUT --> ready to commit TRANSACTION ID " + txnid);
-                        timer.cancel();
-                        Thread.currentThread().interrupt();
+                        if (object == 0) {
+                            System.out.println("TIME OUT --> already committed TRANSACTION ID " + txnid);
+                            timer.cancel();
+                            Thread.currentThread().interrupt();
+                            break;
+                        } else if (object == -1) {
+                            System.out.println("TIME OUT --> already aborted TRANSACTION ID " + txnid);
+                            timer.cancel();
+                            Thread.currentThread().interrupt();
+                            break;
+                        }
+                        else {
+                            continue;
+                        }
                     }
 
                 }
