@@ -230,9 +230,21 @@
         </java>
     </target>
 
+    <target name="groupClient" depends="build-client">
+        <java classname="client.GroupClient">
+            <classpath>
+                <path refid="jaxws.classpath"/>
+                <pathelement location="${basedir}/build/classes"/>
+            </classpath>
+            <arg value="${service.name}"/>
+            <arg value="${service.host}"/>
+            <arg value="${service.port}"/>
+        </java>
+    </target>
+
     <target name="help">
         <echo message="server:  Builds and deploys the service"/>
         <echo message="client:  Builds and runs the client"/>
     </target>
-    
+
 </project>
