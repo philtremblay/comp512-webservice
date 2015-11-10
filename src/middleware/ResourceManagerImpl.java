@@ -35,8 +35,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     protected BitSet transactionBit;
 
     short f_flag = 1;
-    short c_flag = 0;
-    short r_flag = 0;
+    short c_flag = 1;
+    short r_flag = 1;
 
 
     //flight server properties
