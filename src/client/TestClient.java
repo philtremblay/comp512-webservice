@@ -69,15 +69,18 @@ public class TestClient extends WSClient{
         proxy.commit(txnId);
 
         //Single RM
-        txnId = proxy.start();
         //reserve a flight and itinerary
-        for (int i = 0; i< 3*testSize ; i++){
-
+        StopWatch totalTime = new StopWatch();
+        StopWatch singleRMTotal = new StopWatch();
+        for (int i = 0; i< testSize ; i++){
             //reserve flight
             //start timer
+            txnId = proxy.start();
             StopWatch stopWatch = new StopWatch();
             proxy.reserveFlight(txnId,customerId,flightNum);
-
+            proxy.reserveFlight(txnId,customerId,flightNum);
+            proxy.reserveFlight(txnId,customerId,flightNum);
+            proxy.commit(txnId);
             double time = stopWatch.elapsedTime();
             if (writer != null) {
                 writer.print(time + ",");
@@ -87,10 +90,12 @@ public class TestClient extends WSClient{
                 return;
             }
         }
-        proxy.commit(txnId);
 
+        double totalSingRM = singleRMTotal.elapsedTime();
         if (writer != null) {
             writer.println("");
+            writer.println("Total time for single RM: "+totalSingRM);
+            writer.println("Average time for single RM: "+ totalSingRM/testSize);
             writer.println("All three RMs");
         }
         else{
@@ -99,26 +104,39 @@ public class TestClient extends WSClient{
         }
 
         //All three RM
-        txnId = proxy.start();
-        //reserve a flight and itinerary
-        for (int i = 0; i<testSize ; i++){
 
+        //reserve a flight and itinerary
+        StopWatch threeRM = new StopWatch();
+        for (int i = 0; i<testSize ; i++) {
             //reserve flight
             //start timer
             StopWatch stopWatch = new StopWatch();
-
+            txnId = proxy.start();
             //reserve itinerary
-            proxy.reserveItinerary(txnId,customerId,flight,location,true,true);
+            proxy.reserveItinerary(txnId, customerId, flight, location, true, true);
+            proxy.commit(txnId);
             double time = stopWatch.elapsedTime();
             if (writer != null) {
                 writer.print(time + ",");
-            }
-            else{
+            } else {
                 //NullPointerException
                 return;
             }
         }
-        proxy.commit(txnId);
-        writer.close();
+        double totalThreeRM = threeRM.elapsedTime();
+        double overallTime = totalTime.elapsedTime();
+        if (writer != null) {
+
+            writer.println("");
+            writer.println("Total time for all 3 RMs: " + totalThreeRM);
+            writer.println("Average time for all 3 RMs :" + totalThreeRM);
+            writer.println("Total analysis time: " + overallTime);
+            writer.println("Total analysis average time: " + overallTime / (2 * testSize));
+
+            writer.close();
+        }
+        else {
+            return;
+        }
     }
 }
