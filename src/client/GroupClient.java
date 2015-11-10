@@ -46,7 +46,7 @@ public class GroupClient extends WSClient {
         //for 1tps, adjust numSeconds = 10
         //for 10 tps, adjust the numSeconds = 1
 
-        int numClients = 3;
+        int numClients = 1;
         int numSeconds = 1;
         int testSize = 500;
         String location1 = "1";
@@ -88,7 +88,7 @@ public class GroupClient extends WSClient {
         SampleClient[] clients = new SampleClient[numClients];
         for (int i = 0; i < numClients; i++) {
 
-            clients[i] = new SampleClient(proxy, numSeconds, (char)i);
+            clients[i] = new SampleClient(proxy, numSeconds, i);
             t[i] =new Thread(clients[i]);
             t[i].start();
         }
@@ -110,8 +110,8 @@ class SampleClient implements Runnable {
     client.ResourceManager proxy;
     int tps;
     int numSeconds;
-    char name;
-    public SampleClient(client.ResourceManager proxy, int seconds, char i) {
+    int name;
+    public SampleClient(client.ResourceManager proxy, int seconds, int i) {
         this.proxy = proxy;
         this.numSeconds = seconds;
         this.name = i;
@@ -137,23 +137,20 @@ class SampleClient implements Runnable {
     public void run() {
         //define transaction
         int i = 0;
-        String filename = "client_" + name+".txt";
+        String filename = "client" + name + ".csv";
 
         //file to write results
-        FileWriter writer = null;
 
+        FileWriter f = null;
+        PrintWriter writer = null;
+        try {
+            f = new FileWriter(filename, true);
+            writer = new PrintWriter(f);
+            writer.println("GROUP CLIENT TEST RESULTS");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        //try {
-
-        //    writer = new FileWriter(filename);
-        //    writer.append("Transaction response time for single Client");
-        //    writer.append("\n");
-
-        //} catch (FileNotFoundException e) {
-        //    e.printStackTrace();
-        //} catch (IOException e) {
-        //    e.printStackTrace();
-        //}
 
         while(i < 50) {
             StopWatch watch = new StopWatch();
@@ -169,13 +166,9 @@ class SampleClient implements Runnable {
             proxy.commit(trxnId);
 
             double time = watch.elapsedTime();
-            //try {
-            //    writer.append(Double.toString(time));
-            //    writer.append(",");
 
-            //} catch (IOException e) {
-            //    e.printStackTrace();
-            //}
+            writer.print(time + ",");
+            writer.println();
 
 
             try {
@@ -187,12 +180,8 @@ class SampleClient implements Runnable {
             i++;
         }
 
-        //try {
-        //    writer.flush();
-        //    writer.close();
-        //} catch (IOException e) {
-        //    e.printStackTrace();
-        //}
+        writer.close();
+
 
         System.out.println("CLIENT IS FINISHED");
         Thread.currentThread().interrupt();
