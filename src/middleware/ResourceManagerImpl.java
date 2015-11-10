@@ -3,15 +3,10 @@ package middleware;
 import client.DeadlockException_Exception;
 import server.LockManager.*;
 
-import client.DeadlockException;
-
-import client.DeadlockException_Exception;
-
 import client.WSClient;
 import server.Trace;
 
 import javax.jws.WebService;
-import javax.lang.model.util.ElementScanner6;
 import java.net.MalformedURLException;
 import java.util.*;
 
@@ -40,8 +35,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     protected BitSet transactionBit;
 
     short f_flag = 1;
-    short c_flag = 1;
-    short r_flag = 1;
+    short c_flag = 0;
+    short r_flag = 0;
 
 
     //flight server properties
@@ -63,6 +58,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     //code for Client imported from server
     protected RMHashtable m_itemHT = new RMHashtable();
 
+    TimeToLive[] ttl = new TimeToLive[1024];
     //Transaction Manager
     TxnManager txnManager = new TxnManager();
 
@@ -310,6 +306,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             return false;
         }
 
+        ttl[id-1].pushItem(id);
 
         if (flightAdded) {
             System.out.println("SENT the addFlight command to the flight server:" + f_host + ":" + f_port);
@@ -339,7 +336,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         int price = flightProxy.proxy.queryFlightPrice(id,flightNumber);
 
         flightDeleted = flightProxy.proxy.deleteFlight(id, flightNumber);
-
+        ttl[id-1].pushItem(id);
         if (flightDeleted) {
             Vector cmd = cmdToVect(FLIGHT,ADD,flightNumber);
             cmd.add(seats);
@@ -361,6 +358,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public int queryFlight(int id, int flightNumber) {
 
         int flightNum = flightProxy.proxy.queryFlight(id, flightNumber);
+        ttl[id-1].pushItem(id);
         if (flightNum > 0) {
             System.out.println("QUERY the flight with ID:" + id);
         }
@@ -375,7 +373,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public int queryFlightPrice(int id, int flightNumber) {
 
         int flightPrice = flightProxy.proxy.queryFlightPrice(id, flightNumber);
-
+        ttl[id-1].pushItem(id);
         System.out.println("QUERY the flight price with ID: " + id);
 
         this.txnManager.enlist(id,FLIGHT);
@@ -388,6 +386,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         boolean carsAdded;
         carsAdded = carProxy.proxy.addCars(id,location, numCars, carPrice);
+        ttl[id-1].pushItem(id);
         if (carsAdded) {
             System.out.println("SENT the addCar command to the car server:" + c_host + ":" + c_port);
             //Set the cmd to delete because it needs to be deleted in the rollback
@@ -411,6 +410,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         int price = carProxy.proxy.queryCarsPrice(id,location);
 
         carsDeleted = carProxy.proxy.deleteCars(id, location);
+        ttl[id-1].pushItem(id);
         if(carsDeleted) {
             Vector cmd = cmdToVect(CAR,ADD,Integer.parseInt(location));
             cmd.add(num);
@@ -432,7 +432,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public int queryCars(int id, String location) {
 
         int carNum = carProxy.proxy.queryCars(id, location);
-
+        ttl[id-1].pushItem(id);
         System.out.println("QUERY the car with ID: " + id);
 
         this.txnManager.enlist(id,CAR);
@@ -444,7 +444,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public int queryCarsPrice(int id, String location) {
 
         int carPrice = carProxy.proxy.queryCarsPrice(id, location);
-
+        ttl[id-1].pushItem(id);
         System.out.println("QUERY the car price with ID: " + id);
 
         this.txnManager.enlist(id,CAR);
@@ -456,7 +456,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public boolean addRooms(int id, String location, int numRooms, int roomPrice) {
 
         boolean roomsAdded = roomProxy.proxy.addRooms(id, location, numRooms, roomPrice);
-
+        ttl[id-1].pushItem(id);
         if (roomsAdded) {
             System.out.println("EXECUTE the addRoom command to the room server: "+r_host +":"+r_port);
             Vector cmd = cmdToVect(ROOM,DEL,Integer.parseInt(location));
@@ -477,6 +477,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         int price = roomProxy.proxy.queryRoomsPrice(id,location);
 
         boolean roomDeleted = roomProxy.proxy.deleteRooms(id, location);
+        ttl[id-1].pushItem(id);
         if (roomDeleted) {
 
             Vector cmd = cmdToVect(ROOM,ADD,Integer.parseInt(location));
@@ -500,6 +501,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public int queryRooms(int id, String location) {
 
         int roomquery = roomProxy.proxy.queryRooms(id, location);
+        ttl[id-1].pushItem(id);
+
         System.out.println("QUERY the room with ID: " + id);
 
         this.txnManager.enlist(id,ROOM);
@@ -510,6 +513,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public int queryRoomsPrice(int id, String location) {
         int roomPrice = roomProxy.proxy.queryRoomsPrice(id,location);
+        ttl[id-1].pushItem(id);
         System.out.println("QUERY the room PRICE with ID:" + id);
 
         this.txnManager.enlist(id,ROOM);
@@ -536,6 +540,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
 
         Customer cust = new Customer(customerId);
+        ttl[id-1].pushItem(id);
         writeData(id, cust.getKey(), cust);
         Trace.info("RM::newCustomer(" + id + ") OK: " + customerId);
         //add command to txn command list
@@ -559,6 +564,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             return false;
         }
         Customer cust = (Customer) readData(id, Customer.getKey(customerId));
+        ttl[id-1].pushItem(id);
         if (cust == null) {
             cust = new Customer(customerId);
             writeData(id, cust.getKey(), cust);
@@ -592,6 +598,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             return false;
         }
         Customer cust = (Customer) readData(id, Customer.getKey(customerId));
+        ttl[id-1].pushItem(id);
         if (cust == null) {
             Trace.warn("RM::deleteCustomer(" + id + ", "
                     + customerId + ") failed: customer doesn't exist.");
@@ -689,6 +696,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
 
         Customer cust = (Customer) readData(id, Customer.getKey(customerId));
+        ttl[id-1].pushItem(id);
         if (cust == null) {
             Trace.warn("RM::queryCustomerInfo(" + id + ", "
                     + customerId + ") failed: customer doesn't exist.");
@@ -720,6 +728,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         /** call methods from the flight server to execute actions **/
         //get flight key
         String key = flightProxy.proxy.getFlightKey(flightNumber);
+        ttl[id-1].pushItem(id);
         if (reserveItem(id,customerId,String.valueOf(flightNumber),key,FLIGHT )){
             System.out.println("RESERVATION ADDED TO THE CUSTOMER!!!!!");
             this.txnManager.enlist(id,FLIGHT);
@@ -736,6 +745,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public boolean reserveCar(int id, int customerId, String location) {
         /** call methods from the car server to execute actions **/
         String key = carProxy.proxy.getCarKey(location);
+        ttl[id-1].pushItem(id);
         if (reserveItem(id,customerId,location,key,CAR)){
             this.txnManager.enlist(id,CAR);
             return true;
@@ -750,6 +760,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public boolean reserveRoom(int id, int customerId, String location) {
         /** call methods from the room server to execute actions **/
         String key = roomProxy.proxy.getRoomKey(location);
+        ttl[id-1].pushItem(id);
         if (reserveItem(id, customerId,location, key, ROOM)){
 
             this.txnManager.enlist(id,ROOM);
@@ -765,7 +776,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public boolean reserveItinerary(int id, int customerId, Vector flightNumbers, String location, boolean car, boolean room) {
         /** call methods from all three servers to execute actions **/
         Iterator it = flightNumbers.iterator();
-
+        ttl[id-1].pushItem(id);
         while(it.hasNext()){
             if(!(reserveFlight(id,customerId,(Integer)it.next()))){
                 //error
@@ -817,6 +828,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public int start(){
         int txnId = txnManager.newTxn();
+
+        ttl[txnId-1] = new TimeToLive(txnId, this);
+        Thread t = new Thread(ttl[txnId-1]);
+        t.start();
+
         Trace.info("Starting a new transaction with ID : "+txnId);
 
         return txnId;
@@ -825,6 +841,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean commit(int txnId) {
         //iterate through active RM list and release locks
+        ttl[txnId-1].pushCommit(txnId);
         Vector RMlist;
         try{
             RMlist = this.txnManager.activeTxnRM.get(txnId);
@@ -895,7 +912,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
 
         //turn on the transaction bit
-
+        ttl[txnId-1].pushAbort(txnId);
         this.transactionBit.set(txnId);
         //get the commands from the stack of commands and execute them
         Stack cmdList;

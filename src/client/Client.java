@@ -1,6 +1,7 @@
 package client;
 
 
+import middleware.TimeToLive;
 import server.Trace;
 
 import java.util.*;
@@ -10,7 +11,7 @@ import java.io.*;
 
 public class Client extends WSClient {
 
-    TimeToLive[] ttl = new TimeToLive[1024];
+
 
     public Client(String serviceName, String serviceHost, int servicePort)
             throws Exception {
@@ -109,7 +110,7 @@ public class Client extends WSClient {
                     else
                         System.out.println("Flight could not be added");
 
-                    ttl[id-1].pushItem(id);
+
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -139,7 +140,7 @@ public class Client extends WSClient {
                     else
                         System.out.println("cars could not be added");
 
-                    ttl[id-1].pushItem(id);
+
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -169,7 +170,6 @@ public class Client extends WSClient {
                     else
                         System.out.println("rooms could not be added");
 
-                    ttl[id-1].pushItem(id);
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -195,7 +195,7 @@ public class Client extends WSClient {
                         Trace.warn("Fail to generate a new customer");
                     }
 
-                    ttl[id-1].pushItem(id);
+
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -220,7 +220,7 @@ public class Client extends WSClient {
                         System.out.println("Flight Deleted");
                     else
                         System.out.println("Flight could not be deleted");
-                    ttl[id-1].pushItem(id);
+
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -245,7 +245,7 @@ public class Client extends WSClient {
                         System.out.println("cars Deleted");
                     else
                         System.out.println("cars could not be deleted");
-                    ttl[id-1].pushItem(id);
+
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -270,7 +270,7 @@ public class Client extends WSClient {
                         System.out.println("rooms Deleted");
                     else
                         System.out.println("rooms could not be deleted");
-                    ttl[id-1].pushItem(id);
+
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -295,7 +295,7 @@ public class Client extends WSClient {
                         System.out.println("Customer Deleted");
                     else
                         System.out.println("Customer could not be deleted");
-                    ttl[id-1].pushItem(id);
+
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -323,7 +323,6 @@ public class Client extends WSClient {
                         System.out.println("ERROR: Other process is locking on that flight# "+ flightNumber
                         + "or invalid flight");
                     }
-                    ttl[id-1].pushItem(id);
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -352,7 +351,6 @@ public class Client extends WSClient {
                         System.out.println("ERROR: some other process might lock on that car location " + location);
                     }
 
-                    ttl[id-1].pushItem(id);
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -381,7 +379,7 @@ public class Client extends WSClient {
                         System.out.println("ERROR: Some other process is locking on the room location " + location);
                     }
 
-                    ttl[id-1].pushItem(id);
+
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -408,7 +406,7 @@ public class Client extends WSClient {
                     else {
                         System.out.println("ERROR: no such customer");
                     }
-                    ttl[id-1].pushItem(id);
+
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -462,7 +460,6 @@ public class Client extends WSClient {
                     else {
                         System.out.println("ERROR: other process is locking on car location: " + location);
                     }
-                    ttl[id-1].pushItem(id);
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -488,7 +485,7 @@ public class Client extends WSClient {
                     else {
                         System.out.println("ERROR: other process is locking on room location: " + location);
                     }
-                    ttl[id-1].pushItem(id);
+
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -514,7 +511,6 @@ public class Client extends WSClient {
                         System.out.println("Flight Reserved");
                     else
                         System.out.println("Flight could not be reserved.");
-                    ttl[id-1].pushItem(id);
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -540,7 +536,7 @@ public class Client extends WSClient {
                         System.out.println("car Reserved");
                     else
                         System.out.println("car could not be reserved.");
-                    ttl[id-1].pushItem(id);
+
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -566,7 +562,7 @@ public class Client extends WSClient {
                         System.out.println("room Reserved");
                     else
                         System.out.println("room could not be reserved.");
-                    ttl[id-1].pushItem(id);
+
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -601,7 +597,7 @@ public class Client extends WSClient {
                         System.out.println("Itinerary Reserved");
                     else
                         System.out.println("Itinerary could not be reserved.");
-                    ttl[id-1].pushItem(id);
+
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -636,7 +632,6 @@ public class Client extends WSClient {
                     else {
                         Trace.warn("Customer already exists");
                     }
-                    ttl[id-1].pushItem(id);
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
@@ -651,10 +646,6 @@ public class Client extends WSClient {
                     int transId = proxy.start();
                     System.out.println("TRANSACTION ID: " + transId);
 
-                    ttl[transId-1] = new TimeToLive(transId, proxy);
-
-                    Thread t = new Thread(ttl[transId-1]);
-                    t.start();
 
 
                 }
@@ -673,7 +664,7 @@ public class Client extends WSClient {
                         int transactionID = getInt(arguments.elementAt(1));
                         if (proxy.commit(transactionID)){
                             Trace.info("Commit transaction " + transactionID + " successfully");
-                            ttl[transactionID-1].pushCommit(transactionID);
+
                         }
                         else {
                             Trace.warn("Invalid transaction ID or failed to unlock");
@@ -695,7 +686,7 @@ public class Client extends WSClient {
                         try {
                             int transactionID = getInt(arguments.elementAt(1));
                             if (proxy.abort(transactionID)){
-                                ttl[transactionID-1].pushAbort(transactionID);
+
                                 Trace.info("Abort transaction " + transactionID + " successfully");
                             }
                             else {
