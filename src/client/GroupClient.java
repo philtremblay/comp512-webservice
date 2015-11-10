@@ -41,40 +41,37 @@ public class GroupClient extends WSClient {
     public void startTest() {
         //fill up the servers with planes
 
-        //spawn off 10 clients threads
+        //spawn off 3 clients threads
 
-        //for 1tps, adjust numSeconds = 10
-        //for 10 tps, adjust the numSeconds = 1
+        //for 1tps, adjust numSeconds = 3
+        //for 3 tps, adjust the numSeconds = 1
 
-        int numClients = 1;
+        int numClients = 3;
         int numSeconds = 1;
         int testSize = 500;
-        String location1 = "1";
-        String location2 = "2";
-        String location3 = "3";
+        String[] locations = {"1", "2", "3", "4"};
+
 
 
 
         int trxnid = proxy.start();
-        //fill up the tank with 150 *3 planes, cars and rooms
+        //start with 4 customers
+        //fill up the tank with 150 *4 planes, cars and rooms
         proxy.newCustomerId(trxnid, 1);
         proxy.newCustomerId(trxnid, 2);
         proxy.newCustomerId(trxnid, 3);
+        proxy.newCustomerId(trxnid, 4);
 
+        //create 4 types of planes and 4 types of cars + rooms
         try {
-            proxy.addFlight(trxnid, 1, testSize, 1);
-            proxy.addFlight(trxnid, 2, testSize, 1);
-            proxy.addFlight(trxnid, 3, testSize, 1);
+            for (int i = 1; i < 5; i++) {
+                proxy.addFlight(trxnid, i, testSize, 1);
+            }
 
-            proxy.addCars(trxnid, location1, testSize, 1);
-            proxy.addCars(trxnid, location2, testSize, 1);
-            proxy.addCars(trxnid, location3, testSize, 1);
-
-
-            proxy.addRooms(trxnid, location1, testSize, 1);
-            proxy.addRooms(trxnid, location2, testSize, 1);
-            proxy.addRooms(trxnid, location3, testSize, 1);
-
+            for (int j = 0; j < locations.length; j++) {
+                proxy.addCars(trxnid, locations[j], testSize, 1);
+                proxy.addRooms(trxnid, locations[j], testSize, 1);
+            }
 
         } catch (client.DeadlockException_Exception e) {
             e.printStackTrace();
@@ -87,7 +84,7 @@ public class GroupClient extends WSClient {
         Thread[] t = new Thread[numClients];
         SampleClient[] clients = new SampleClient[numClients];
         for (int i = 0; i < numClients; i++) {
-
+            System.out.println("Client " + (i +1));
             clients[i] = new SampleClient(proxy, numSeconds, i);
             t[i] =new Thread(clients[i]);
             t[i].start();
@@ -108,7 +105,6 @@ public class GroupClient extends WSClient {
 class SampleClient implements Runnable {
 
     client.ResourceManager proxy;
-    int tps;
     int numSeconds;
     int name;
     public SampleClient(client.ResourceManager proxy, int seconds, int i) {
@@ -124,7 +120,7 @@ class SampleClient implements Runnable {
         int id;
         Random r = new Random();
 
-        int High = 3;
+        int High = 4;
         int Low = 1;
         id = r.nextInt(High-Low) + Low;
 
@@ -137,7 +133,7 @@ class SampleClient implements Runnable {
     public void run() {
         //define transaction
         int i = 0;
-        String filename = "client" + name + ".csv";
+        String filename = "client" + (name+1) + ".csv";
 
         //file to write results
 
@@ -153,13 +149,14 @@ class SampleClient implements Runnable {
 
 
         while(i < 50) {
-            StopWatch watch = new StopWatch();
 
-            int trxnId = proxy.start();
+
             int customerid = RandomNumber();
             int flightid = RandomNumber();
             String location = Integer.toString(RandomNumber());
 
+            StopWatch watch = new StopWatch();
+            int trxnId = proxy.start();
             proxy.reserveFlight(trxnId, customerid, flightid);
             proxy.reserveCar(trxnId, customerid, location);
             proxy.reserveRoom(trxnId, customerid, location);
