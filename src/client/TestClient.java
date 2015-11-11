@@ -36,7 +36,7 @@ public class TestClient extends WSClient{
     }
     public void runSingleClient(){
         //create flights and cars and rooms.
-        int testSize = 100;
+        int testSize = 500;
         int flightNum = 1;
         String location = "1";
         int customerId = 1;
@@ -48,7 +48,7 @@ public class TestClient extends WSClient{
         //file to write results
         PrintWriter writer = null;
         try {
-            writer = new PrintWriter("perf_analysis_singleClient.txt","UTF-8");
+            writer = new PrintWriter("perf_analysis_singleClient.csv","UTF-8");
             writer.println("Test");
             writer.println("Single RM");
         } catch (FileNotFoundException e) {
@@ -128,10 +128,14 @@ public class TestClient extends WSClient{
         if (writer != null) {
 
             writer.println("");
-            writer.println("Total time for all 3 RMs: " + totalThreeRM);
-            writer.println("Average time for all 3 RMs :" + totalThreeRM);
-            writer.println("Total analysis time: " + overallTime);
-            writer.println("Total analysis average time: " + overallTime / (2 * testSize));
+            writer.println("Total time for all 3 RMs: ");
+            writer.println(totalThreeRM);
+            writer.println("Average time for all 3 RMs :");
+            writer.println(totalThreeRM/testSize);
+            writer.println("Total analysis time: ");
+            writer.println(overallTime);
+            writer.println("Total analysis average time: ");
+            writer.println(overallTime / (2 * testSize));
 
             writer.close();
         }
