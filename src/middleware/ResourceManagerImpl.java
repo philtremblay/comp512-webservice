@@ -229,7 +229,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     protected boolean unReserveItem(int id, int customerId, String location, String key, int itemInfo) {
         //get item info
-        int count = -1;
+        /*int count = -1;
         switch(itemInfo){
             case FLIGHT:
                 count = flightProxy.proxy.queryFlight(id, Integer.parseInt(location));
@@ -242,7 +242,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 break;
         }
 
-        /*if (count == -1) {
+        if (count == -1) {
             Trace.warn("RM::unreserveItem(" + id + ", " + customerId + ", "
                     + key  + ") failed: item doesn't exist.");
             return false;
@@ -741,12 +741,42 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
     }
 
+    protected boolean unReserveFlight(int id, int customerId, int flightNumber) {
+        /** call methods from the flight server to execute actions **/
+        //get flight key
+        String key = flightProxy.proxy.getFlightKey(flightNumber);
+        ttl[id-1].pushItem(id);
+        if (unReserveItem(id, customerId, String.valueOf(flightNumber), key, FLIGHT)){
+            this.txnManager.enlist(id,FLIGHT);
+
+            return true;
+        }
+        else{
+            //error
+            return false;
+        }
+    }
+
     @Override
     public boolean reserveCar(int id, int customerId, String location) {
         /** call methods from the car server to execute actions **/
         String key = carProxy.proxy.getCarKey(location);
         ttl[id-1].pushItem(id);
         if (reserveItem(id,customerId,location,key,CAR)){
+            this.txnManager.enlist(id,CAR);
+            return true;
+        }
+        else{
+            //error
+            return false;
+        }
+    }
+
+    protected boolean unReserveCar(int id, int customerId, String location) {
+        /** call methods from the car server to execute actions **/
+        String key = carProxy.proxy.getCarKey(location);
+        ttl[id-1].pushItem(id);
+        if (unReserveItem(id, customerId, location, key, CAR)){
             this.txnManager.enlist(id,CAR);
             return true;
         }
@@ -771,31 +801,97 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             return false;
         }
     }
+    protected boolean unReserveRoom(int id, int customerId, String location) {
+        /** call methods from the room server to execute actions **/
+        String key = roomProxy.proxy.getRoomKey(location);
+        ttl[id-1].pushItem(id);
+        if (unReserveItem(id, customerId, location, key, ROOM)){
+
+            this.txnManager.enlist(id,ROOM);
+            return true;
+        }
+        else{
+            //error
+            return false;
+        }
+    }
 
     @Override
     public boolean reserveItinerary(int id, int customerId, Vector flightNumbers, String location, boolean car, boolean room) {
         /** call methods from all three servers to execute actions **/
         Iterator it = flightNumbers.iterator();
         ttl[id-1].pushItem(id);
+
+        //for atomicity
+        BitSet flights = new BitSet();
+        boolean carPassed = false;
+        boolean roomPassed = false;
+        int i = 0;
+
         while(it.hasNext()){
-            if(!(reserveFlight(id,customerId,(Integer)it.next()))){
-                //error
-                Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " + location + ") failed: no more seats available.");            }
+            i++;
+            if(!(reserveFlight(id,customerId,Integer.parseInt((String) it.next())))){
+                flights.set(i);
+                //Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " + location + ") failed: no more seats available.");
+            }else {
+                Trace.info("RESERVED FLIGHT + " + i);
+            }
         }
         //there is a car and room
         if (car  &&  room) {
-            reserveCar(id, customerId, location);
-            reserveRoom(id, customerId, location);
+            carPassed = reserveCar(id, customerId, location);
+            roomPassed = reserveRoom(id, customerId, location);
+            if(carPassed && roomPassed){
+                Trace.info("RESERVED CAR AND ROOM");
+            }
         }
         //there is a room
         else if (room){
-            reserveRoom(id, customerId, location);
+            roomPassed = reserveRoom(id, customerId, location);
+            if(roomPassed) {
+                Trace.info("RESERVED ROOM");
+            }
         }
         //if there is a car
         else if(car){
-            reserveCar(id, customerId, location);
-
+            carPassed = reserveCar(id, customerId, location);
+            if(carPassed) {
+                Trace.info("RESERVED CAR");
+            }
         }
+
+        //if any of the reservation fails, undo all reservations
+        if (flights.nextSetBit(0) != -1 || !carPassed || !roomPassed){
+            Iterator it2 = flightNumbers.iterator();
+            int j =0;
+            int failedFlight = flights.nextSetBit(0);
+            //unreserve all flights
+            while (it2.hasNext()){
+                //if the flight did not reserve, do not unreserve
+                if (j == failedFlight){
+                    failedFlight = flights.nextSetBit(j);
+                    j++;
+                    continue;
+                }
+                j++;
+                unReserveFlight(id, customerId,Integer.parseInt((String) it2.next()));
+                Trace.info("UNRESERVED FLIGHT "+j +" UPON NON-ATOMIC RESERVE ITINERARY FOR TRANSACTION: "+  id);
+
+            }
+            //unreserve the car if there was a reservation
+            if (carPassed){
+                unReserveCar(id,customerId,location);
+                Trace.info("UNRESERVED CAR "+location +" UPON NON-ATOMIC RESERVE ITINERARY FOR TRANSACTION: "+  id);
+
+            }
+            //unreserve the room if there was a reservation
+            else if (roomPassed){
+                unReserveRoom(id,customerId,location);
+                Trace.info("UNRESERVED ROOM "+location +" UPON NON-ATOMIC RESERVE ITINERARY FOR TRANSACTION: "+  id);
+            }
+            return false;
+        }
+
         return true;
     }
 
