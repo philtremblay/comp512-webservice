@@ -228,25 +228,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     }
 
     protected boolean unReserveItem(int id, int customerId, String location, String key, int itemInfo) {
-        //get item info
-        /*int count = -1;
-        switch(itemInfo){
-            case FLIGHT:
-                count = flightProxy.proxy.queryFlight(id, Integer.parseInt(location));
-                break;
-            case CAR:
-                count = carProxy.proxy.queryCars(id,location);
-                break;
-            case ROOM:
-                count = roomProxy.proxy.queryRooms(id,location);
-                break;
-        }
-
-        if (count == -1) {
-            Trace.warn("RM::unreserveItem(" + id + ", " + customerId + ", "
-                    + key  + ") failed: item doesn't exist.");
-            return false;
-        }*/
         Trace.info("RM::unreserveItem(" + id + ", " + customerId + ", "
                 + key + ", " + location + ") called.");
         // Read customer object if it exists (and read lock it).
