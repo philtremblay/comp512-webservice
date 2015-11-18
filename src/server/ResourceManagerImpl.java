@@ -694,6 +694,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                     lockServer.Lock(id, strData, WRITE);
                     item.setCount(item.getCount() - 1);
                     item.setReserved(item.getReserved() + 1);
+                    writeData(id,key,item);
                     return true;
                 } catch (DeadlockException e) {
 
@@ -715,6 +716,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                     lockServer.Lock(id, strData, WRITE);
                     item.setCount(item.getCount() + 1);
                     item.setReserved(item.getReserved() - 1);
+                    writeData(id,key,item);
                     return true;
                 } catch (DeadlockException e) {
 
