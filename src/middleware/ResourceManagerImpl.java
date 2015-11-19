@@ -35,8 +35,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     protected BitSet transactionBit;
 
     short f_flag = 1;
-    short c_flag = 1;
-    short r_flag = 1;
+    short c_flag = 0;
+    short r_flag = 0;
 
 
     //flight server properties
@@ -722,7 +722,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
     }
 
-    protected boolean unReserveFlight(int id, int customerId, int flightNumber) {
+    private boolean unReserveFlight(int id, int customerId, int flightNumber) {
         /** call methods from the flight server to execute actions **/
         //get flight key
         String key = flightProxy.proxy.getFlightKey(flightNumber);
@@ -753,7 +753,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
     }
 
-    protected boolean unReserveCar(int id, int customerId, String location) {
+    private boolean unReserveCar(int id, int customerId, String location) {
         /** call methods from the car server to execute actions **/
         String key = carProxy.proxy.getCarKey(location);
         ttl[id-1].pushItem(id);
@@ -782,7 +782,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             return false;
         }
     }
-    protected boolean unReserveRoom(int id, int customerId, String location) {
+    private boolean unReserveRoom(int id, int customerId, String location) {
         /** call methods from the room server to execute actions **/
         String key = roomProxy.proxy.getRoomKey(location);
         ttl[id-1].pushItem(id);
@@ -995,7 +995,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         Stack cmdList;
         try {
              cmdList = this.txnManager.txnCmdList.get(txnId);
-
         }
         catch (NullPointerException e){
             e.printStackTrace();
