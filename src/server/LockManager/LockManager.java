@@ -11,7 +11,7 @@ public class LockManager
     public static final int WRITE = 1;
     
     private static int TABLE_SIZE = 2039;
-    private static int DEADLOCK_TIMEOUT = 10000;
+    private static int DEADLOCK_TIMEOUT = 60000;
     
     private static TPHashTable lockTable = new TPHashTable(LockManager.TABLE_SIZE);
     private static TPHashTable stampTable = new TPHashTable(LockManager.TABLE_SIZE);
@@ -43,8 +43,6 @@ public class LockManager
         TrxnObj trxnObj2;
         DataObj dataObj2;
 
-        System.out.println("MESSAGE: " + dataObj.toString());
-        
         // return true when there is no lock conflict or throw a deadlock exception.
         try {
             boolean bConflict = true;
@@ -93,6 +91,7 @@ public class LockManager
                     }
                 }
                 if (bConflict) {
+                    System.out.println("LM: TRANSACTION ID "+ xid + " WAITING FOR A LOCK");
                     // lock conflict exists, wait
                     WaitLock(dataObj);
                 }
@@ -112,7 +111,6 @@ public class LockManager
     
     // remove all locks for this transaction in the lock table.
     public boolean  UnlockAll(int xid) {
-
         // if any parameter is invalid, then return false
         if (xid < 0) {
             return false;
@@ -128,7 +126,7 @@ public class LockManager
             int size = vect.size();
                                                 
             for (int i = (size - 1); i >= 0; i--) {
-                
+
                 trxnObj = (TrxnObj) vect.elementAt(i);
                 this.lockTable.remove(trxnObj);
 
@@ -140,19 +138,19 @@ public class LockManager
                     // get all the transactions waiting on this dataObj
                     waitVector = this.waitTable.elements(dataObj);
                     int waitSize = waitVector.size();
+                    //list all the transactions that are waiting to lock on the object
                     for (int j = 0; j < waitSize; j++) {
                         waitObj = (WaitObj) waitVector.elementAt(j);
                         if (waitObj.getLockType() == LockManager.WRITE) {
+
                             if (j == 0) {
                                 // get all other transactions which have locks on the
                                 // data item just unlocked. 
                                 Vector vect1 = this.lockTable.elements(dataObj);
-                                
                                 // remove interrupted thread from waitTable only if no
                                 // other transaction has locked this data item
                                 if (vect1.size () == 0) {
-                                    this.waitTable.remove(waitObj);     
-                                    
+                                    this.waitTable.remove(waitObj);
                                     try {
                                         synchronized (waitObj.getThread())    {
                                             waitObj.getThread().notify();
@@ -162,7 +160,31 @@ public class LockManager
                                         System.out.println("Exception on unlock\n" + e.getMessage());
                                     }        
                                 }
+                                else if (vect1.size() == 1) {
+                                    //if there is still one transaction that is holding onto the the object
+                                    //compare the id that is still hold onto the object with
+                                    //the one that is waiting
+                                    //if the previous lock was a read lock:
+                                    // delete the thread so that the write lock can be promoted
+                                    TrxnObj otherTxn = (TrxnObj) vect1.elementAt(0);
+                                    if (waitObj.getXId() == otherTxn.getXId() && otherTxn.getLockType() == LockManager.READ) {
+
+                                        try {
+                                            synchronized (waitObj.getThread())    {
+                                                waitObj.getThread().notify();
+                                            }
+                                        }
+                                        catch (Exception e)    {
+                                            System.out.println("Exception on unlock\n" + e.getMessage());
+                                        }
+                                        this.waitTable.remove(waitObj);
+
+                                    }
+                                    break;
+
+                                }
                                 else {
+                                    // more than one transactions holding onto that object
                                     // some other transaction still has a lock on
                                     // the data item just unlocked. So, WRITE lock
                                     // cannot be granted.
@@ -175,8 +197,7 @@ public class LockManager
                             break;
                         } else if (waitObj.getLockType() == LockManager.READ) {
                             // remove interrupted thread from waitTable.
-                            this.waitTable.remove(waitObj);    
-                            
+                            this.waitTable.remove(waitObj);
                             try {
                                 synchronized (waitObj.getThread()) {
                                     waitObj.getThread().notify();
@@ -328,6 +349,7 @@ public class LockManager
         // suspend thread and wait until notified...
 
         synchronized (this.waitTable) {
+
             if (! this.waitTable.contains(waitObj)) {
                 // register this transaction in the waitTable if it is not already there 
                 this.waitTable.add(waitObj);
