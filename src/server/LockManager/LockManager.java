@@ -145,7 +145,8 @@ public class LockManager
 
                             if (j == 0) {
                                 // get all other transactions which have locks on the
-                                // data item just unlocked. 
+                                // data item just unlocked.
+                                // vect1 contains all the locks that is currently on that data object
                                 Vector vect1 = this.lockTable.elements(dataObj);
                                 // remove interrupted thread from waitTable only if no
                                 // other transaction has locked this data item
@@ -159,7 +160,7 @@ public class LockManager
                                     catch (Exception e)    {
                                         System.out.println("Exception on unlock\n" + e.getMessage());
                                     }        
-                                }
+                                }//added the portion (case)
                                 else if (vect1.size() == 1) {
                                     //if there is still one transaction that is holding onto the the object
                                     //compare the id that is still hold onto the object with
