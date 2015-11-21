@@ -4,6 +4,9 @@ package client;
 import middleware.TimeToLive;
 import server.Trace;
 
+import java.net.ConnectException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.*;
 import java.io.*;
 
@@ -12,11 +15,18 @@ import java.io.*;
 public class Client {
 
     WSClient client = null;
+    WSClient backup = null;
+    WSClient primary = null;
 
     public Client(String serviceName, String serviceHost, int servicePort)
             throws Exception {
-        
-        client = new WSClient(serviceName, serviceHost, servicePort);
+        //primary proxy for the client
+        primary = new WSClient(serviceName, serviceHost, servicePort);
+
+
+        backup = new WSClient(serviceName, serviceHost, 8082);
+
+        client = primary;
     }
 
     public static void main(String[] args) {
@@ -44,16 +54,16 @@ public class Client {
 
     public void run() {
     
-        int id;
-        int flightNumber;
-        int flightPrice;
-        int numSeats;
+        int id = -1;
+        int flightNumber = -1;
+        int flightPrice = -1;
+        int numSeats = -1;
         boolean room;
         boolean car;
-        int price;
-        int numRooms;
-        int numCars;
-        String location;
+        int price = -1;
+        int numRooms = -1;
+        int numCars = -1;
+        String location = null;
 
         String command = "";
         Vector arguments = new Vector();
@@ -65,7 +75,11 @@ public class Client {
         System.out.println("Type \"help\" for list of supported commands");
 
         while (true) {
-        
+
+
+
+
+
             try {
                 //read the next command
                 command = stdin.readLine();
@@ -100,23 +114,57 @@ public class Client {
                 System.out.println("Add Flight Seats: " + arguments.elementAt(3));
                 System.out.println("Set Flight Price: " + arguments.elementAt(4));
                 System.out.println("Waiting for response from server...");
+
                 try {
                     id = getInt(arguments.elementAt(1));
                     flightNumber = getInt(arguments.elementAt(2));
                     numSeats = getInt(arguments.elementAt(3));
                     flightPrice = getInt(arguments.elementAt(4));
-                    
-                    if (client.proxy.addFlight(id, flightNumber, numSeats, flightPrice))
-                        System.out.println("Flight added");
-                    else
-                        System.out.println("Flight could not be added");
-
-
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                try {
+                    if (id  >= 0 && flightNumber >=0 && numSeats>=0 && flightNumber >=0) {
+                        if (client.proxy.addFlight(id, flightNumber, numSeats, flightPrice))
+                            System.out.println("Flight added");
+                        else
+                            System.out.println("Flight could not be added");
+                    }
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        if (getStatusCode(backup.wsdlLocation) == 200) {
+                            client = backup;
+                        }
+                        System.out.println("connected to its replica");
+                        if (id  >= 0 && flightNumber >=0 && numSeats>=0 && flightNumber >=0) {
+                            if (client.proxy.addFlight(id, flightNumber, numSeats, flightPrice))
+                                System.out.println("Flight added");
+                            else
+                                System.out.println("Flight could not be added");
+                        }
+                    } catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(primary.wsdlLocation) == 200) {
+                                client = primary;
+                                if (id  >= 0 && flightNumber >=0 && numSeats>=0 && flightNumber >=0) {
+                                    if (client.proxy.addFlight(id, flightNumber, numSeats, flightPrice))
+                                        System.out.println("Flight added");
+                                    else
+                                        System.out.println("Flight could not be added");
+                                }
+                            }
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                            return;
+                        } catch (client.DeadlockException_Exception e2) {
+                            e2.printStackTrace();
+                        }
+                    } catch (client.DeadlockException_Exception e1) {
+                        e1.printStackTrace();
+                    }
                 }
                 break;
                 
@@ -1012,6 +1060,14 @@ public class Client {
             System.out.println("The interface does not support this command.");
             break;
         }
+    }
+
+    public int getStatusCode(URL url) throws IOException {
+
+        HttpURLConnection http = (HttpURLConnection)url.openConnection();
+        http.connect();
+        int statusCode = http.getResponseCode();
+        return statusCode;
     }
     
     public void wrongNumber() {

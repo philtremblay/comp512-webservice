@@ -3,7 +3,6 @@ package main;
 import java.io.File;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.startup.Tomcat;
-import server.Car;
 
 public class Main {
 
