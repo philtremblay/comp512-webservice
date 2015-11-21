@@ -1209,7 +1209,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             }
 
             //all RMs have been shut down. We can exit the middleware
-            System.exit(0);
+            System.exit(1);
             return true;
         }
         //if not we cannot shutdown now, there are still transactions running

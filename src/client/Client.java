@@ -20,12 +20,17 @@ public class Client {
 
     public Client(String serviceName, String serviceHost, int servicePort)
             throws Exception {
-        //primary proxy for the client
+
+        int hasbackup = 0;
+
         primary = new WSClient(serviceName, serviceHost, servicePort);
-
-
-        backup = new WSClient(serviceName, serviceHost, 8082);
-
+        if (hasbackup == 1) {
+            backup = new WSClient("middlerep", serviceHost, 6667);
+        }
+        else {
+            backup = primary;
+        }
+        //primary proxy for the client
         client = primary;
     }
 
@@ -133,6 +138,7 @@ public class Client {
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+
                     try {
                         if (getStatusCode(backup.wsdlLocation) == 200) {
                             client = backup;
@@ -165,6 +171,7 @@ public class Client {
                     } catch (client.DeadlockException_Exception e1) {
                         e1.printStackTrace();
                     }
+
                 }
                 break;
                 
@@ -178,23 +185,56 @@ public class Client {
                 System.out.println("Add Number of cars: " + arguments.elementAt(3));
                 System.out.println("Set Price: " + arguments.elementAt(4));
                 System.out.println("Waiting for a response from the server...");
+
                 try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
                     numCars = getInt(arguments.elementAt(3));
                     price = getInt(arguments.elementAt(4));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
 
-                    if (client.proxy.addCars(id, location, numCars, price))
-                        System.out.println("cars added");
-                    else
-                        System.out.println("cars could not be added");
-
-
+                try {
+                    if (id  >= 0 && location !=null && numCars>=0 && price >=0) {
+                        if (client.proxy.addCars(id, location, numCars, price))
+                            System.out.println("cars added");
+                        else
+                            System.out.println("cars could not be added");
+                    }
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        //conect to its backup
+                        if (getStatusCode(backup.wsdlLocation) == 200) {
+                            client = backup;
+                        }
+                        System.out.println("connected to its replica");
+                        if (id  >= 0 && location !=null && numCars>=0 && price >=0) {
+                            if (client.proxy.addCars(id, location, numCars, price))
+                                System.out.println("cars added");
+                            else
+                                System.out.println("cars could not be added");
+                        }
+                    } catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(primary.wsdlLocation) == 200) {
+                                client = primary;
+                                if (id  >= 0 && location !=null && numCars>=0 && price >=0) {
+                                    if (client.proxy.addCars(id, location, numCars, price))
+                                        System.out.println("cars added");
+                                    else
+                                        System.out.println("cars could not be added");
+                                }
+                            }
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                            return;
+                        }
+                    }
+
                 }
                 break;
                 
@@ -208,22 +248,55 @@ public class Client {
                 System.out.println("Add Number of rooms: " + arguments.elementAt(3));
                 System.out.println("Set Price: " + arguments.elementAt(4));
                 System.out.println("Waiting for a response from the server...");
+
                 try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
                     numRooms = getInt(arguments.elementAt(3));
                     price = getInt(arguments.elementAt(4));
-
-                    if (client.proxy.addRooms(id, location, numRooms, price))
-                        System.out.println("rooms added");
-                    else
-                        System.out.println("rooms could not be added");
-
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                try {
+                    if (id >= 0 && location != null && numRooms >=0 && price >= 0) {
+                        if (client.proxy.addRooms(id, location, numRooms, price))
+                            System.out.println("rooms added");
+                        else
+                            System.out.println("rooms could not be added");
+                    }
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        //conect to its backup
+                        if (getStatusCode(backup.wsdlLocation) == 200) {
+                            client = backup;
+                        }
+                        System.out.println("connected to its replica");
+                        if (id >= 0 && location != null && numRooms >=0 && price >= 0) {
+                            if (client.proxy.addRooms(id, location, numRooms, price))
+                                System.out.println("rooms added");
+                            else
+                                System.out.println("rooms could not be added");
+                        }
+                    } catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            //try to conect to its primary again
+                            if (getStatusCode(primary.wsdlLocation) == 200) {
+                                client = primary;
+                                if (id >= 0 && location != null && numRooms >=0 && price >= 0) {
+                                    if (client.proxy.addRooms(id, location, numRooms, price))
+                                        System.out.println("rooms added");
+                                    else
+                                        System.out.println("rooms could not be added");
+                                }
+                            }
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                            return;
+                        }
+                    }
                 }
                 break;
                 
@@ -236,6 +309,11 @@ public class Client {
                 System.out.println("Waiting for response from server...");
                 try {
                     id = getInt(arguments.elementAt(1));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                try {
                     int customer = client.proxy.newCustomer(id);
                     if (customer >= 0) {
                         System.out.println("new customer id: " + customer);
@@ -243,14 +321,43 @@ public class Client {
                     else {
                         Trace.warn("Fail to generate a new customer");
                     }
-
-
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        //conect to its backup
+                        if (getStatusCode(backup.wsdlLocation) == 200) {
+                            client = backup;
+                        }
+                        System.out.println("connected to its replica");
+                        int customer = client.proxy.newCustomer(id);
+                        if (customer >= 0) {
+                            System.out.println("new customer id: " + customer);
+                        }
+                        else {
+                            Trace.warn("Fail to generate a new customer");
+                        }
+                    }catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(primary.wsdlLocation) == 200) {
+                                client = primary;
+                            }
+                            int customer = client.proxy.newCustomer(id);
+                            if (customer >= 0) {
+                                System.out.println("new customer id: " + customer);
+                            }
+                            else {
+                                Trace.warn("Fail to generate a new customer");
+                            }
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                            return;
+                        }
+
+                    }
                 }
+
                 break;
                 
             case 6: //delete Flight
@@ -261,20 +368,54 @@ public class Client {
                 System.out.println("Deleting a flight using id: " + arguments.elementAt(1));
                 System.out.println("Flight Number: " + arguments.elementAt(2));
                 System.out.println("Waiting for response from the server...");
+
                 try {
                     id = getInt(arguments.elementAt(1));
                     flightNumber = getInt(arguments.elementAt(2));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
 
-                    if (client.proxy.deleteFlight(id, flightNumber))
-                        System.out.println("Flight Deleted");
-                    else
-                        System.out.println("Flight could not be deleted");
-
+                try {
+                    if (id >= 0 && flightNumber >=0) {
+                        if (client.proxy.deleteFlight(id, flightNumber))
+                            System.out.println("Flight Deleted");
+                        else
+                            System.out.println("Flight could not be deleted");
+                    }
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        //conect to its backup
+                        if (getStatusCode(backup.wsdlLocation) == 200) {
+                            client = backup;
+                        }
+                        System.out.println("connected to its replica");
+                        if (id >= 0 && flightNumber >=0) {
+                            if (client.proxy.deleteFlight(id, flightNumber))
+                                System.out.println("Flight Deleted");
+                            else
+                                System.out.println("Flight could not be deleted");
+                        }
+                    }catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(primary.wsdlLocation) == 200) {
+                                client = primary;
+                            }
+                            System.out.println("connected to its replica2");
+                            if (id >= 0 && flightNumber >=0) {
+                                if (client.proxy.deleteFlight(id, flightNumber))
+                                    System.out.println("Flight Deleted");
+                                else
+                                    System.out.println("Flight could not be deleted");
+                            }
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                            return;
+                        }
+                    }
                 }
                 break;
                 
@@ -286,20 +427,55 @@ public class Client {
                 System.out.println("Deleting the cars from a particular location  using id: " + arguments.elementAt(1));
                 System.out.println("car Location: " + arguments.elementAt(2));
                 System.out.println("Waiting for response from the server...");
+
                 try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                try {
 
-                    if (client.proxy.deleteCars(id, location))
-                        System.out.println("cars Deleted");
-                    else
-                        System.out.println("cars could not be deleted");
+                    if (id >=0 && location != null) {
+                        if (client.proxy.deleteCars(id, location))
+                            System.out.println("cars Deleted");
+                        else
+                            System.out.println("cars could not be deleted");
+                    }
 
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        //conect to its backup
+                        if (getStatusCode(backup.wsdlLocation) == 200) {
+                            client = backup;
+                        }
+                        System.out.println("connected to its replica");
+                        if (id >=0 && location != null) {
+                            if (client.proxy.deleteCars(id, location))
+                                System.out.println("cars Deleted");
+                            else
+                                System.out.println("cars could not be deleted");
+                        }
+                    }catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(primary.wsdlLocation) == 200) {
+                                client = primary;
+                            }
+                            System.out.println("connected to its replica2");
+                            if (id >=0 && location != null) {
+                                if (client.proxy.deleteCars(id, location))
+                                    System.out.println("cars Deleted");
+                                else
+                                    System.out.println("cars could not be deleted");
+                            }
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                            return;
+                        }
+                    }
                 }
                 break;
                 
@@ -314,17 +490,49 @@ public class Client {
                 try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
-
-                    if (client.proxy.deleteRooms(id, location))
-                        System.out.println("rooms Deleted");
-                    else
-                        System.out.println("rooms could not be deleted");
-
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                try {
+                    if (id >= 0 && location != null) {
+                        if (client.proxy.deleteRooms(id, location))
+                            System.out.println("rooms Deleted");
+                        else
+                            System.out.println("rooms could not be deleted");
+                    }
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        //conect to its backup
+                        if (getStatusCode(backup.wsdlLocation) == 200) {
+                            client = backup;
+                        }
+                        System.out.println("connected to its replica");
+                        if (id >= 0 && location != null) {
+                            if (client.proxy.deleteRooms(id, location))
+                                System.out.println("rooms Deleted");
+                            else
+                                System.out.println("rooms could not be deleted");
+                        }
+                    }catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(primary.wsdlLocation) == 200) {
+                                client = primary;
+                            }
+                            System.out.println("connected to its replica2");
+                            if (id >= 0 && location != null) {
+                                if (client.proxy.deleteRooms(id, location))
+                                    System.out.println("rooms Deleted");
+                                else
+                                    System.out.println("rooms could not be deleted");
+                            }
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                            return;
+                        }
+                    }
                 }
                 break;
                 
@@ -336,20 +544,55 @@ public class Client {
                 System.out.println("Deleting a customer from the database using id: " + arguments.elementAt(1));
                 System.out.println("Customer id: " + arguments.elementAt(2));
                 System.out.println("Waiting for response from the server...");
+
+                int customer = -1;
                 try {
                     id = getInt(arguments.elementAt(1));
-                    int customer = getInt(arguments.elementAt(2));
-
-                    if (client.proxy.deleteCustomer(id, customer))
-                        System.out.println("Customer Deleted");
-                    else
-                        System.out.println("Customer could not be deleted");
-
+                    customer = getInt(arguments.elementAt(2));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                try {
+                    if (id >= 0 && customer >= 0) {
+                        if (client.proxy.deleteCustomer(id, customer))
+                            System.out.println("Customer Deleted");
+                        else
+                            System.out.println("Customer could not be deleted");
+                    }
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        //conect to its backup
+                        if (getStatusCode(backup.wsdlLocation) == 200) {
+                            client = backup;
+                        }
+                        System.out.println("connected to its replica");
+                        if (id >= 0 && customer >= 0) {
+                            if (client.proxy.deleteCustomer(id, customer))
+                                System.out.println("Customer Deleted");
+                            else
+                                System.out.println("Customer could not be deleted");
+                        }
+                    }catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(primary.wsdlLocation) == 200) {
+                                client = primary;
+                            }
+                            System.out.println("connected to its replica2");
+                            if (id >= 0 && customer >= 0) {
+                                if (client.proxy.deleteCustomer(id, customer))
+                                    System.out.println("Customer Deleted");
+                                else
+                                    System.out.println("Customer could not be deleted");
+                            }
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                            return;
+                        }
+                    }
+
                 }
                 break;
                 
@@ -361,22 +604,63 @@ public class Client {
                 System.out.println("Querying a flight using id: " + arguments.elementAt(1));
                 System.out.println("Flight number: " + arguments.elementAt(2));
                 System.out.println("Waiting for response from the server...");
+
                 try {
                     id = getInt(arguments.elementAt(1));
                     flightNumber = getInt(arguments.elementAt(2));
-                    int seats = client.proxy.queryFlight(id, flightNumber);
-                    if (seats >= 0) {
-                        System.out.println("Number of seats available: " + seats);
-                    }
-                    else {
-                        System.out.println("ERROR: Other process is locking on that flight# "+ flightNumber
-                        + "or invalid flight");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                try {
+                    if (id >= 0 && flightNumber >= 0) {
+                        int seats = client.proxy.queryFlight(id, flightNumber);
+                        if (seats >= 0) {
+                            System.out.println("Number of seats available: " + seats);
+                        } else {
+                            System.out.println("ERROR: Other process is locking on that flight# " + flightNumber
+                                    + "or invalid flight");
+                        }
                     }
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        //conect to its backup
+                        if (getStatusCode(backup.wsdlLocation) == 200) {
+                            client = backup;
+                        }
+                        System.out.println("connected to its replica");
+                        if (id >= 0 && flightNumber >= 0) {
+                            int seats = client.proxy.queryFlight(id, flightNumber);
+                            if (seats >= 0) {
+                                System.out.println("Number of seats available: " + seats);
+                            } else {
+                                System.out.println("ERROR: Other process is locking on that flight# " + flightNumber
+                                        + "or invalid flight");
+                            }
+                        }
+                    }catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(primary.wsdlLocation) == 200) {
+                                client = primary;
+                            }
+                            System.out.println("connected to its replica2");
+                            if (id >= 0 && flightNumber >= 0) {
+                                int seats = client.proxy.queryFlight(id, flightNumber);
+                                if (seats >= 0) {
+                                    System.out.println("Number of seats available: " + seats);
+                                } else {
+                                    System.out.println("ERROR: Other process is locking on that flight# " + flightNumber
+                                            + "or invalid flight");
+                                }
+                            }
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                            return;
+                        }
+                    }
                 }
                 break;
                 
@@ -388,23 +672,59 @@ public class Client {
                 System.out.println("Querying a car location using id: " + arguments.elementAt(1));
                 System.out.println("car location: " + arguments.elementAt(2));
                 System.out.println("Waiting for response from the server...");
+
                 try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
-                    System.out.println("Waiting for a response from the server...");
-                    numCars = client.proxy.queryCars(id, location);
-                    if (numCars >= 0) {
-                        System.out.println("number of cars at this location: " + numCars);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                try {
+                    if (id >= 0 && location != null) {
+                        numCars = client.proxy.queryCars(id, location);
+                        if (numCars >= 0) {
+                            System.out.println("number of cars at this location: " + numCars);
+                        } else {
+                            System.out.println("ERROR: some other process might lock on that car location " + location);
+                        }
                     }
-                    else {
-                        System.out.println("ERROR: some other process might lock on that car location " + location);
-                    }
-
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        //conect to its backup
+                        if (getStatusCode(backup.wsdlLocation) == 200) {
+                            client = backup;
+                        }
+                        System.out.println("connected to its replica");
+                        if (id >= 0 && location != null) {
+                            numCars = client.proxy.queryCars(id, location);
+                            if (numCars >= 0) {
+                                System.out.println("number of cars at this location: " + numCars);
+                            } else {
+                                System.out.println("ERROR: some other process might lock on that car location " + location);
+                            }
+                        }
+                    }catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(primary.wsdlLocation) == 200) {
+                                client = primary;
+                            }
+                            System.out.println("connected to its replica2");
+                            if (id >= 0 && location != null) {
+                                numCars = client.proxy.queryCars(id, location);
+                                if (numCars >= 0) {
+                                    System.out.println("number of cars at this location: " + numCars);
+                                } else {
+                                    System.out.println("ERROR: some other process might lock on that car location " + location);
+                                }
+                            }
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                            return;
+                        }
+                    }
                 }
                 break;
                 
@@ -416,24 +736,60 @@ public class Client {
                 System.out.println("Querying a room location using id: " + arguments.elementAt(1));
                 System.out.println("room location: " + arguments.elementAt(2));
                 System.out.println("Waiting for response from server...");
+
                 try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                try {
 
-                    numRooms = client.proxy.queryRooms(id, location);
-                    if (numRooms >= 0) {
-                        System.out.println("number of rooms at this location: " + numRooms);
+                    if (id >=0 && numRooms >= 0) {
+                        numRooms = client.proxy.queryRooms(id, location);
+                        if (numRooms >= 0) {
+                            System.out.println("number of rooms at this location: " + numRooms);
+                        } else {
+                            System.out.println("ERROR: Some other process is locking on the room location " + location);
+                        }
                     }
-                    else {
-                        System.out.println("ERROR: Some other process is locking on the room location " + location);
-                    }
-
-
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        //conect to its backup
+                        if (getStatusCode(backup.wsdlLocation) == 200) {
+                            client = backup;
+                        }
+                        System.out.println("connected to its replica");
+                        if (id >=0 && numRooms >= 0) {
+                            numRooms = client.proxy.queryRooms(id, location);
+                            if (numRooms >= 0) {
+                                System.out.println("number of rooms at this location: " + numRooms);
+                            } else {
+                                System.out.println("ERROR: Some other process is locking on the room location " + location);
+                            }
+                        }
+                    }catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(primary.wsdlLocation) == 200) {
+                                client = primary;
+                            }
+                            System.out.println("connected to its replica2");
+                            if (id >=0 && numRooms >= 0) {
+                                numRooms = client.proxy.queryRooms(id, location);
+                                if (numRooms >= 0) {
+                                    System.out.println("number of rooms at this location: " + numRooms);
+                                } else {
+                                    System.out.println("ERROR: Some other process is locking on the room location " + location);
+                                }
+                            }
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                            return;
+                        }
+                    }
                 }
                 break;
                 
@@ -445,22 +801,61 @@ public class Client {
                 System.out.println("Querying Customer information using id: " + arguments.elementAt(1));
                 System.out.println("Customer id: " + arguments.elementAt(2));
                 System.out.println("Waiting for response from the server...");
+
+                customer = -1;
                 try {
                     id = getInt(arguments.elementAt(1));
-                    int customer = getInt(arguments.elementAt(2));
-                    String bill = client.proxy.queryCustomerInfo(id, customer);
-                    if (!bill.isEmpty()) {
-                        System.out.println("Customer info: \n" + bill);
-                    }
-                    else {
-                        System.out.println("ERROR: no such customer");
-                    }
+                    customer = getInt(arguments.elementAt(2));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                try {
 
+                    if (id >= 0 && customer >= 0) {
+                        String bill = client.proxy.queryCustomerInfo(id, customer);
+                        if (!bill.isEmpty()) {
+                            System.out.println("Customer info: \n" + bill);
+                        } else {
+                            System.out.println("ERROR: no such customer");
+                        }
+                    }
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        //conect to its backup
+                        if (getStatusCode(backup.wsdlLocation) == 200) {
+                            client = backup;
+                        }
+                        System.out.println("connected to its replica");
+                        if (id >= 0 && customer >= 0) {
+                            String bill = client.proxy.queryCustomerInfo(id, customer);
+                            if (!bill.isEmpty()) {
+                                System.out.println("Customer info: \n" + bill);
+                            } else {
+                                System.out.println("ERROR: no such customer");
+                            }
+                        }
+                    }catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(primary.wsdlLocation) == 200) {
+                                client = primary;
+                            }
+                            System.out.println("connected to its replica2");
+                            if (id >= 0 && customer >= 0) {
+                                String bill = client.proxy.queryCustomerInfo(id, customer);
+                                if (!bill.isEmpty()) {
+                                    System.out.println("Customer info: \n" + bill);
+                                } else {
+                                    System.out.println("ERROR: no such customer");
+                                }
+                            }
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                            return;
+                        }
+                    }
                 }
                 break;               
                 
@@ -472,21 +867,59 @@ public class Client {
                 System.out.println("Querying a flight Price using id: " + arguments.elementAt(1));
                 System.out.println("Flight number: " + arguments.elementAt(2));
                 System.out.println("Waiting for response from the server...");
+
                 try {
                     id = getInt(arguments.elementAt(1));
                     flightNumber = getInt(arguments.elementAt(2));
-                    price = client.proxy.queryFlightPrice(id, flightNumber);
-                    if (price >= 0) {
-                        System.out.println("Price of a seat: " + price);
-                    }
-                    else {
-                        System.out.println("ERROR: other process is locking on flight# " + flightNumber);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                try {
+                    if (id >= 0 && flightNumber >= 0) {
+                        price = client.proxy.queryFlightPrice(id, flightNumber);
+                        if (price >= 0) {
+                            System.out.println("Price of a seat: " + price);
+                        } else {
+                            System.out.println("ERROR: other process is locking on flight# " + flightNumber);
+                        }
                     }
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        //conect to its backup
+                        if (getStatusCode(backup.wsdlLocation) == 200) {
+                            client = backup;
+                        }
+                        System.out.println("connected to its replica");
+                        if (id >= 0 && flightNumber >= 0) {
+                            price = client.proxy.queryFlightPrice(id, flightNumber);
+                            if (price >= 0) {
+                                System.out.println("Price of a seat: " + price);
+                            } else {
+                                System.out.println("ERROR: other process is locking on flight# " + flightNumber);
+                            }
+                        }
+                    }catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(primary.wsdlLocation) == 200) {
+                                client = primary;
+                            }
+                            System.out.println("connected to its replica2");
+                            if (id >= 0 && flightNumber >= 0) {
+                                price = client.proxy.queryFlightPrice(id, flightNumber);
+                                if (price >= 0) {
+                                    System.out.println("Price of a seat: " + price);
+                                } else {
+                                    System.out.println("ERROR: other process is locking on flight# " + flightNumber);
+                                }
+                            }
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                            return;
+                        }
+                    }
                 }
                 break;
                 
@@ -498,22 +931,61 @@ public class Client {
                 System.out.println("Querying a car price using id: " + arguments.elementAt(1));
                 System.out.println("car location: " + arguments.elementAt(2));
                 System.out.println("Waiting for response from server...");
+
                 try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
 
-                    price = client.proxy.queryCarsPrice(id, location);
-                    if (price >= 0) {
-                        System.out.println("Price of a car at this location: " + price);
-                    }
-                    else {
-                        System.out.println("ERROR: other process is locking on car location: " + location);
+                try {
+
+                    if (id >= 0 && location != null) {
+                        price = client.proxy.queryCarsPrice(id, location);
+                        if (price >= 0) {
+                            System.out.println("Price of a car at this location: " + price);
+                        } else {
+                            System.out.println("ERROR: other process is locking on car location: " + location);
+                        }
                     }
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        //connect to its backup
+                        if (getStatusCode(backup.wsdlLocation) == 200) {
+                            client = backup;
+                        }
+                        System.out.println("connected to its replica");
+                        if (id >= 0 && location != null) {
+                            price = client.proxy.queryCarsPrice(id, location);
+                            if (price >= 0) {
+                                System.out.println("Price of a car at this location: " + price);
+                            } else {
+                                System.out.println("ERROR: other process is locking on car location: " + location);
+                            }
+                        }
+                    }catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(primary.wsdlLocation) == 200) {
+                                client = primary;
+                            }
+                            System.out.println("connected to its replica2");
+                            if (id >= 0 && location != null) {
+                                price = client.proxy.queryCarsPrice(id, location);
+                                if (price >= 0) {
+                                    System.out.println("Price of a car at this location: " + price);
+                                } else {
+                                    System.out.println("ERROR: other process is locking on car location: " + location);
+                                }
+                            }
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                            return;
+                        }
+                    }
                 }                
                 break;
 
@@ -527,19 +999,55 @@ public class Client {
                 try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
-                    price = client.proxy.queryRoomsPrice(id, location);
-                    if (price >= 0) {
-                        System.out.println("Price of rooms at this location: " + price);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                try {
+                    if (id >= 0 && location != null) {
+                        price = client.proxy.queryRoomsPrice(id, location);
+                        if (price >= 0) {
+                            System.out.println("Price of rooms at this location: " + price);
+                        } else {
+                            System.out.println("ERROR: other process is locking on room location: " + location);
+                        }
                     }
-                    else {
-                        System.out.println("ERROR: other process is locking on room location: " + location);
-                    }
-
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        //connect to its backup
+                        if (getStatusCode(backup.wsdlLocation) == 200) {
+                            client = backup;
+                        }
+                        System.out.println("connected to its replica");
+                        if (id >= 0 && location != null) {
+                            price = client.proxy.queryRoomsPrice(id, location);
+                            if (price >= 0) {
+                                System.out.println("Price of rooms at this location: " + price);
+                            } else {
+                                System.out.println("ERROR: other process is locking on room location: " + location);
+                            }
+                        }
+                    }catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(primary.wsdlLocation) == 200) {
+                                client = primary;
+                            }
+                            System.out.println("connected to its replica2");
+                            if (id >= 0 && location != null) {
+                                price = client.proxy.queryRoomsPrice(id, location);
+                                if (price >= 0) {
+                                    System.out.println("Price of rooms at this location: " + price);
+                                } else {
+                                    System.out.println("ERROR: other process is locking on room location: " + location);
+                                }
+                            }
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                            return;
+                        }
+                    }
                 }
                 break;
                 
@@ -551,20 +1059,56 @@ public class Client {
                 System.out.println("Reserving a seat on a flight using id: " + arguments.elementAt(1));
                 System.out.println("Customer id: " + arguments.elementAt(2));
                 System.out.println("Flight number: " + arguments.elementAt(3));
+                System.out.println("Waiting a response from the server...");
+                customer = -1;
                 try {
                     id = getInt(arguments.elementAt(1));
-                    int customer = getInt(arguments.elementAt(2));
+                    customer = getInt(arguments.elementAt(2));
                     flightNumber = getInt(arguments.elementAt(3));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
 
-                    if (client.proxy.reserveFlight(id, customer, flightNumber))
-                        System.out.println("Flight Reserved");
-                    else
-                        System.out.println("Flight could not be reserved.");
+                try {
+                    if (id >= 0 && customer >= 0 ) {
+                        if (client.proxy.reserveFlight(id, customer, flightNumber))
+                            System.out.println("Flight Reserved");
+                        else
+                            System.out.println("Flight could not be reserved.");
+                    }
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        //connect to its backup
+                        if (getStatusCode(backup.wsdlLocation) == 200) {
+                            client = backup;
+                        }
+                        System.out.println("connected to its replica");
+                        if (id >= 0 && customer >= 0 ) {
+                            if (client.proxy.reserveFlight(id, customer, flightNumber))
+                                System.out.println("Flight Reserved");
+                            else
+                                System.out.println("Flight could not be reserved.");
+                        }
+                    }catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(primary.wsdlLocation) == 200) {
+                                client = primary;
+                            }
+                            System.out.println("connected to its replica2");
+                            if (id >= 0 && customer >= 0 ) {
+                                if (client.proxy.reserveFlight(id, customer, flightNumber))
+                                    System.out.println("Flight Reserved");
+                                else
+                                    System.out.println("Flight could not be reserved.");
+                            }
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                            return;
+                        }
+                    }
                 }
                 break;
                 
@@ -576,21 +1120,58 @@ public class Client {
                 System.out.println("Reserving a car at a location using id: " + arguments.elementAt(1));
                 System.out.println("Customer id: " + arguments.elementAt(2));
                 System.out.println("Location: " + arguments.elementAt(3));
+                System.out.println("Waiting a response from the server...");
+
+                customer = -1;
                 try {
                     id = getInt(arguments.elementAt(1));
-                    int customer = getInt(arguments.elementAt(2));
+                    customer = getInt(arguments.elementAt(2));
                     location = getString(arguments.elementAt(3));
-                    
-                    if (client.proxy.reserveCar(id, customer, location))
-                        System.out.println("car Reserved");
-                    else
-                        System.out.println("car could not be reserved.");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
 
+
+                try {
+                    if (id >= 0 && customer >= 0 && location != null) {
+                        if (client.proxy.reserveCar(id, customer, location))
+                            System.out.println("car Reserved");
+                        else
+                            System.out.println("car could not be reserved.");
+                    }
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        //connect to its backup
+                        if (getStatusCode(backup.wsdlLocation) == 200) {
+                            client = backup;
+                        }
+                        System.out.println("connected to its replica");
+                        if (id >= 0 && customer >= 0 && location != null) {
+                            if (client.proxy.reserveCar(id, customer, location))
+                                System.out.println("car Reserved");
+                            else
+                                System.out.println("car could not be reserved.");
+                        }
+                    }catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(primary.wsdlLocation) == 200) {
+                                client = primary;
+                            }
+                            System.out.println("connected to its replica2");
+                            if (id >= 0 && customer >= 0 && location != null) {
+                                if (client.proxy.reserveCar(id, customer, location))
+                                    System.out.println("car Reserved");
+                                else
+                                    System.out.println("car could not be reserved.");
+                            }
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                            return;
+                        }
+                    }
                 }
                 break;
                 
@@ -602,21 +1183,59 @@ public class Client {
                 System.out.println("Reserving a room at a location using id: " + arguments.elementAt(1));
                 System.out.println("Customer id: " + arguments.elementAt(2));
                 System.out.println("Location: " + arguments.elementAt(3));
+                System.out.println("Waiting a response from the server... ");
+
+
+                customer = -1;
                 try {
                     id = getInt(arguments.elementAt(1));
-                    int customer = getInt(arguments.elementAt(2));
+                    customer = getInt(arguments.elementAt(2));
                     location = getString(arguments.elementAt(3));
-                    
-                    if (client.proxy.reserveRoom(id, customer, location))
-                        System.out.println("room Reserved");
-                    else
-                        System.out.println("room could not be reserved.");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
 
+
+                try {
+                    if (id >= 0 && customer >= 0 && location != null) {
+                        if (client.proxy.reserveRoom(id, customer, location))
+                            System.out.println("room Reserved");
+                        else
+                            System.out.println("room could not be reserved.");
+                    }
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        //connect to its backup
+                        if (getStatusCode(backup.wsdlLocation) == 200) {
+                            client = backup;
+                        }
+                        System.out.println("connected to its replica");
+                        if (id >= 0 && customer >= 0 && location != null) {
+                            if (client.proxy.reserveRoom(id, customer, location))
+                                System.out.println("room Reserved");
+                            else
+                                System.out.println("room could not be reserved.");
+                        }
+                    }catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(primary.wsdlLocation) == 200) {
+                                client = primary;
+                            }
+                            System.out.println("connected to its replica2");
+                            if (id >= 0 && customer >= 0 && location != null) {
+                                if (client.proxy.reserveRoom(id, customer, location))
+                                    System.out.println("room Reserved");
+                                else
+                                    System.out.println("room could not be reserved.");
+                            }
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                            return;
+                        }
+                    }
                 }
                 break;
                 
@@ -632,29 +1251,80 @@ public class Client {
                 System.out.println("Location for car/room booking: " + arguments.elementAt(arguments.size()-3));
                 System.out.println("car to book?: " + arguments.elementAt(arguments.size()-2));
                 System.out.println("room to book?: " + arguments.elementAt(arguments.size()-1));
+
+                boolean carBool = false;
+                boolean roomBool = false;
+                boolean reserveFlag = true;
+                customer = -1;
                 try {
                     id = getInt(arguments.elementAt(1));
-                    int customer = getInt(arguments.elementAt(2));
-                    Vector flightNumbers = new Vector();
-                    for (int i = 0; i < arguments.size()-6; i++)
-                        flightNumbers.addElement(arguments.elementAt(3 + i));
+                    customer = getInt(arguments.elementAt(2));
                     location = getString(arguments.elementAt(arguments.size()-3));
                     car = getBoolean(arguments.elementAt(arguments.size()-2));
+                    carBool = car;
                     room = getBoolean(arguments.elementAt(arguments.size()-1));
-                    
-                    if (client.proxy.reserveItinerary(id, customer, flightNumbers, location, car, room))
-                        System.out.println("Itinerary Reserved");
-                    else
-                        System.out.println("Itinerary could not be reserved.");
+                    roomBool = room;
+
+                } catch (Exception e) {
+                    reserveFlag = false;
+                    e.printStackTrace();
+                }
+                Vector flightNumbers = new Vector();
+                try {
+                    for (int i = 0; i < arguments.size()-6; i++)
+                        flightNumbers.addElement(arguments.elementAt(3 + i));
+                    if (id >= 0 && customer >=0 && location != null && carBool && roomBool && reserveFlag) {
+                        if (client.proxy.reserveItinerary(id, customer, flightNumbers, location, carBool, roomBool))
+                            System.out.println("Itinerary Reserved");
+                        else
+                            System.out.println("Itinerary could not be reserved.");
+                    }
+                    else {
+                        System.out.println("Itinerary could not be reserved: Invalid command");
+                    }
 
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        //connect to its backup
+                        if (getStatusCode(backup.wsdlLocation) == 200) {
+                            client = backup;
+                        }
+                        System.out.println("connected to its replica");
+                        if (id >= 0 && customer >=0 && location != null && carBool && roomBool && reserveFlag) {
+                            if (client.proxy.reserveItinerary(id, customer, flightNumbers, location, carBool, roomBool))
+                                System.out.println("Itinerary Reserved");
+                            else
+                                System.out.println("Itinerary could not be reserved.");
+                        }
+                        else {
+                            System.out.println("Itinerary could not be reserved: Invalid command");
+                        }
+                    }catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(primary.wsdlLocation) == 200) {
+                                client = primary;
+                            }
+                            System.out.println("connected to its replica2");
+                            if (id >= 0 && customer >=0 && location != null && carBool && roomBool && reserveFlag) {
+                                if (client.proxy.reserveItinerary(id, customer, flightNumbers, location, carBool, roomBool))
+                                    System.out.println("Itinerary Reserved");
+                                else
+                                    System.out.println("Itinerary could not be reserved.");
+                            }
+                            else {
+                                System.out.println("Itinerary could not be reserved: Invalid command");
+                            }
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                            return;
+                        }
+                    }
                 }
                 break;
-                            
+
             case 21:  //quit the client
                 if (arguments.size() != 1) {
                     wrongNumber();
@@ -671,36 +1341,103 @@ public class Client {
                 System.out.println("Adding a new Customer using id: "
                         + arguments.elementAt(1)  +  " and cid "  + arguments.elementAt(2));
                 System.out.println("Waiting for response from server...");
+
+                customer = -1;
                 try {
                     id = getInt(arguments.elementAt(1));
-                    int customer = getInt(arguments.elementAt(2));
+                    customer = getInt(arguments.elementAt(2));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
 
-                    if (client.proxy.newCustomerId(id, customer)) {
-                        System.out.println("new customer id: " + customer);
-                    }
-                    else {
-                        Trace.warn("Customer already exists");
+                try {
+                    if (id >= 0 && customer >= 0) {
+                        if (client.proxy.newCustomerId(id, customer)) {
+                            System.out.println("new customer id: " + customer);
+                        } else {
+                            Trace.warn("Customer already exists");
+                        }
                     }
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        //connect to its backup
+                        if (getStatusCode(backup.wsdlLocation) == 200) {
+                            client = backup;
+                        }
+                        System.out.println("connected to its replica");
+                        if (id >= 0 && customer >= 0) {
+                            if (client.proxy.newCustomerId(id, customer)) {
+                                System.out.println("new customer id: " + customer);
+                            } else {
+                                Trace.warn("Customer already exists");
+                            }
+                        }
+                    }catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(primary.wsdlLocation) == 200) {
+                                client = primary;
+                            }
+                            System.out.println("connected to its replica2");
+                            if (id >= 0 && customer >= 0) {
+                                if (client.proxy.newCustomerId(id, customer)) {
+                                    System.out.println("new customer id: " + customer);
+                                } else {
+                                    Trace.warn("Customer already exists");
+                                }
+                            }
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                            return;
+                        }
+                    }
                 }
                 break;
 
             case 23:
-                if (arguments.size() == 1) { //command was "start"
 
-                    int transId = client.proxy.start();
-                    System.out.println("TRANSACTION ID: " + transId);
-
-
-
+                try {
+                    if (arguments.size() == 1) { //command was "start"
+                        int transId = client.proxy.start();
+                        System.out.println("TRANSACTION ID: " + transId);
+                    } else {//wrong use of start command
+                        System.out.println("Improper use of help command. Type help or help, <commandname>");
+                    }
+                }catch(Exception e) {
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        //connect to its backup
+                        if (getStatusCode(backup.wsdlLocation) == 200) {
+                            client = backup;
+                        }
+                        System.out.println("connected to its replica");
+                        if (arguments.size() == 1) { //command was "start"
+                            int transId = client.proxy.start();
+                            System.out.println("TRANSACTION ID: " + transId);
+                        } else {//wrong use of start command
+                            System.out.println("Improper use of help command. Type help or help, <commandname>");
+                        }
+                    }catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(primary.wsdlLocation) == 200) {
+                                client = primary;
+                            }
+                            System.out.println("connected to its replica2");
+                            if (arguments.size() == 1) { //command was "start"
+                                int transId = client.proxy.start();
+                                System.out.println("TRANSACTION ID: " + transId);
+                            } else {//wrong use of start command
+                                System.out.println("Improper use of help command. Type help or help, <commandname>");
+                            }
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                            return;
+                        }
+                    }
                 }
-
-                else  //wrong use of help command
-                    System.out.println("Improper use of help command. Type help or help, <commandname>");
                 break;
 
             case 24:
@@ -709,20 +1446,59 @@ public class Client {
                     break;
                 }
                 else {
-                    try {
-                        int transactionID = getInt(arguments.elementAt(1));
-                        if (client.proxy.commit(transactionID)){
-                            Trace.info("Commit transaction " + transactionID + " successfully");
 
-                        }
-                        else {
-                            Trace.warn("Invalid transaction ID or failed to unlock");
-                        }
+                    int transactionID = 0;
+                    try {
+                        transactionID = getInt(arguments.elementAt(1));
                     } catch (Exception e) {
-                        System.out.println("EXCEPTION: ");
                         e.printStackTrace();
                     }
 
+                    try {
+                        if (transactionID > 0) {
+                            if (client.proxy.commit(transactionID)) {
+                                Trace.info("Commit transaction " + transactionID + " successfully");
+
+                            } else {
+                                Trace.warn("Invalid transaction ID or failed to unlock");
+                            }
+                        }
+                    } catch (Exception e) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                        try {
+                            //connect to its backup
+                            if (getStatusCode(backup.wsdlLocation) == 200) {
+                                client = backup;
+                            }
+                            System.out.println("connected to its replica");
+                            if (transactionID > 0) {
+                                if (client.proxy.commit(transactionID)) {
+                                    Trace.info("Commit transaction " + transactionID + " successfully");
+
+                                } else {
+                                    Trace.warn("Invalid transaction ID or failed to unlock");
+                                }
+                            }
+                        }catch (IOException e1) {
+                            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                            try {
+                                if (getStatusCode(primary.wsdlLocation) == 200) {
+                                    client = primary;
+                                }
+                                System.out.println("connected to its replica2");
+                                if (transactionID > 0) {
+                                    if (client.proxy.commit(transactionID)) {
+                                        Trace.info("Commit transaction " + transactionID + " successfully");
+                                    } else {
+                                        Trace.warn("Invalid transaction ID or failed to unlock");
+                                    }
+                                }
+                            } catch (IOException e2) {
+                                e2.printStackTrace();
+                                return;
+                            }
+                        }
+                    }
                 }
                 break;
 
@@ -732,20 +1508,66 @@ public class Client {
                         break;
                     }
                     else {
-                        try {
-                            int transactionID = getInt(arguments.elementAt(1));
-                            if (client.proxy.abort(transactionID)){
 
-                                Trace.info("Abort transaction " + transactionID + " successfully");
-                            }
-                            else {
-                                Trace.warn("Invalid transaction ID or failed to unlock");
-                            }
+                        int transactionID = 0;
+                        try {
+                            transactionID = getInt(arguments.elementAt(1));
                         } catch (Exception e) {
-                            System.out.println("EXCEPTION: ");
                             e.printStackTrace();
                         }
 
+                        try {
+                            if (transactionID >0) {
+                                if (client.proxy.abort(transactionID)) {
+
+                                    Trace.info("Abort transaction " + transactionID + " successfully");
+                                } else {
+                                    Trace.warn("Invalid transaction ID or failed to unlock");
+                                }
+                            }
+                            else
+                                System.out.println("Invalid Transaction ID :" + transactionID);
+                        } catch (Exception e) {
+                            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                            try {
+                                //connect to its backup
+                                if (getStatusCode(backup.wsdlLocation) == 200) {
+                                    client = backup;
+                                }
+                                System.out.println("connected to its replica");
+                                if (transactionID >0) {
+                                    if (client.proxy.abort(transactionID)) {
+
+                                        Trace.info("Abort transaction " + transactionID + " successfully");
+                                    } else {
+                                        Trace.warn("Invalid transaction ID or failed to unlock");
+                                    }
+                                }
+                                else
+                                    System.out.println("Invalid Transaction ID :" + transactionID);
+                            }catch (IOException e1) {
+                                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                                try {
+                                    if (getStatusCode(primary.wsdlLocation) == 200) {
+                                        client = primary;
+                                    }
+                                    System.out.println("connected to its replica2");
+                                    if (transactionID >0) {
+                                        if (client.proxy.abort(transactionID)) {
+
+                                            Trace.info("Abort transaction " + transactionID + " successfully");
+                                        } else {
+                                            Trace.warn("Invalid transaction ID or failed to unlock");
+                                        }
+                                    }
+                                    else
+                                        System.out.println("Invalid Transaction ID :" + transactionID);
+                                } catch (IOException e2) {
+                                    e2.printStackTrace();
+                                    return;
+                                }
+                            }
+                        }
                     }
 
                     break;
@@ -756,8 +1578,31 @@ public class Client {
                                 System.out.println("CANT SHUTDOWN; SOME TRANSACTIONS ARE STILL ACTIVE");
                             }
                         }catch (Exception e){
-                            System.out.println("SHUTTING DOWN GRACEFULLY");
-                            return;
+                            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                            try {
+                                //connect to its backup
+                                if (getStatusCode(backup.wsdlLocation) == 200) {
+                                    client = backup;
+                                }
+                                System.out.println("connected to its replica");
+                                if(!client.proxy.shutdown()){
+                                    System.out.println("CANT SHUTDOWN; SOME TRANSACTIONS ARE STILL ACTIVE");
+                                }
+                            }catch (IOException e1) {
+                                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                                try {
+                                    if (getStatusCode(primary.wsdlLocation) == 200) {
+                                        client = primary;
+                                    }
+                                    System.out.println("connected to its replica2");
+                                    if(!client.proxy.shutdown()){
+                                        System.out.println("CANT SHUTDOWN; SOME TRANSACTIONS ARE STILL ACTIVE");
+                                    }
+                                } catch (IOException e2) {
+                                    e2.printStackTrace();
+                                    return;
+                                }
+                            }
                         }
                     }
 

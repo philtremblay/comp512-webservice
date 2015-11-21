@@ -778,7 +778,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     @Override
     public boolean shutdown(){
-        System.exit(0);
+        System.exit(1);
         return true;
     }
 
