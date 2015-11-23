@@ -22,6 +22,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     protected LockManager lockServer;
 
     Broadcast broadcaster;
+    String configFile = "flightudp.xml";
+
     /**
      * Constructor
      */
@@ -30,17 +32,14 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         //initialize the lock manager
         this.lockServer = new LockManager();
+
         try {
-            this.broadcaster = new Broadcast(this, m_itemHT);
+            this.broadcaster = new Broadcast(configFile, m_itemHT);
             Thread t = new Thread(broadcaster);
             t.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-
-
-
     }
 
     // Basic operations on RMItem //
@@ -179,6 +178,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 writeData(id, newObj.getKey(), newObj);
                 Trace.info("RM::addFlight(" + id + ", " + flightNumber
                         + ", $" + flightPrice + ", " + numSeats + ") OK.");
+                //turn on multicast
                 broadcaster.bit.set(0);
             } else {
                 // Add seats to existing flight and update the price.
@@ -190,10 +190,10 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 Trace.info("RM::addFlight(" + id + ", " + flightNumber
                         + ", $" + flightPrice + ", " + numSeats + ") OK: "
                         + "seats = " + curObj.getCount() + ", price = $" + flightPrice);
+                //turn on multicast
                 broadcaster.bit.set(0);
             }
 
-            broadcaster.bit.flip(0);
 
             return true;
         }
@@ -214,14 +214,14 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         String strData = "flight,"+flightNumber;
         try {
             lockServer.Lock(id, strData, WRITE);
-            return deleteItem(id, Flight.getKey(flightNumber));
+            boolean isDeleted = deleteItem(id, Flight.getKey(flightNumber));
+            broadcaster.bit.set(0);
+            return isDeleted;
         }
         catch (DeadlockException dl) {
             Trace.warn("RM::deleteItem(" + id + ", flight " + flightNumber+ ") failed: ");
             return false;
         }
-        
-
     }
 
     // Returns the number of empty seats on this flight.
@@ -318,6 +318,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 writeData(id, newObj.getKey(), newObj);
                 Trace.info("RM::addCars(" + id + ", " + location + ", "
                         + numCars + ", $" + carPrice + ") OK.");
+                broadcaster.bit.set(0);
             } else {
                 // Add count to existing object and update price.
                 curObj.setCount(curObj.getCount() + numCars);
@@ -328,6 +329,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 Trace.info("RM::addCars(" + id + ", " + location + ", "
                         + numCars + ", $" + carPrice + ") OK: "
                         + "cars = " + curObj.getCount() + ", price = $" + carPrice);
+                broadcaster.bit.set(0);
             }
             return(true);
 
@@ -348,7 +350,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         try {
 
             lockServer.Lock(id, strData, WRITE);
-            return deleteItem(id, Car.getKey(location));
+            boolean isDeleted = deleteItem(id, Car.getKey(location));
+            broadcaster.bit.set(0);
+            return isDeleted;
         }
         catch (DeadlockException dl) {
             Trace.warn("RM::deleteItem(" + id + ", car " + location + ") failed: ");
@@ -408,6 +412,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 writeData(id, newObj.getKey(), newObj);
                 Trace.info("RM::addRooms(" + id + ", " + location + ", "
                         + numRooms + ", $" + roomPrice + ") OK.");
+                broadcaster.bit.set(0);
             } else {
                 // Add count to existing object and update price.
                 curObj.setCount(curObj.getCount() + numRooms);
@@ -418,6 +423,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 Trace.info("RM::addRooms(" + id + ", " + location + ", "
                         + numRooms + ", $" + roomPrice + ") OK: "
                         + "rooms = " + curObj.getCount() + ", price = $" + roomPrice);
+                broadcaster.bit.set(0);
             }
 
             return true;
@@ -436,7 +442,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         String strData = "room," + location;
         try {
             lockServer.Lock(id, strData, WRITE);
-            return deleteItem(id, Room.getKey(location));
+            boolean isDeleted = deleteItem(id, Room.getKey(location));
+            broadcaster.bit.set(0);
+            return isDeleted;
         }
         catch (DeadlockException dl) {
             return false;
@@ -494,6 +502,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             Customer cust = new Customer(customerId);
             writeData(id, cust.getKey(), cust);
             Trace.info("RM::newCustomer(" + id + ") OK: " + customerId);
+            broadcaster.bit.set(0);
             return customerId;
         }
         catch (DeadlockException dl) {
@@ -515,6 +524,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 cust = new Customer(customerId);
                 writeData(id, cust.getKey(), cust);
                 Trace.info("INFO: RM::newCustomer(" + id + ", " + customerId + ") OK.");
+                broadcaster.bit.set(0);
                 return true;
             } else {
                 Trace.info("INFO: RM::newCustomer(" + id + ", " +
@@ -563,6 +573,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 // Remove the customer from the storage.
                 removeData(id, cust.getKey());
                 Trace.info("RM::deleteCustomer(" + id + ", " + customerId + ") OK.");
+
+                broadcaster.bit.set(0);
                 return true;
             }
         }
@@ -625,8 +637,10 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         try {
             lockServer.Lock(id, flightData, WRITE);
             lockServer.Lock(id, custData, WRITE);
-            return reserveItem(id, customerId,
+            boolean isReserved = reserveItem(id, customerId,
                     Flight.getKey(flightNumber), String.valueOf(flightNumber));
+            broadcaster.bit.set(0);
+            return isReserved;
         }
         catch (DeadlockException dl) {
             Trace.warn("RM::reserveItem(" + id + ", "
@@ -643,7 +657,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         try {
             lockServer.Lock(id, strCar, WRITE);
             lockServer.Lock(id, strCustom, WRITE);
-            return reserveItem(id, customerId, Car.getKey(location), location);
+            boolean isReserved = reserveItem(id, customerId, Car.getKey(location), location);
+            broadcaster.bit.set(0);
+            return isReserved;
         }
         catch (DeadlockException dl) {
             Trace.warn("RM::reserveItem(" + id + ", "
@@ -662,7 +678,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         try {
             lockServer.Lock(id, strRoom, WRITE);
             lockServer.Lock(id, strCustomer, WRITE);
-            return reserveItem(id, customerId, Room.getKey(location), location);
+            boolean isReserved = reserveItem(id, customerId, Room.getKey(location), location);
+            broadcaster.bit.set(0);
+            return isReserved;
         }
         catch (DeadlockException dl) {
             Trace.warn("RM::reserveItem(" + id + ", "

@@ -24,13 +24,14 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
     private RMHashtable tempTable;
 
     public BitSet bit = new BitSet(2);
-    ResourceManagerImpl m_resourceManager;
+    String configFile = null;
     File history = new File("hist.ser");
 
-    public Broadcast(ResourceManagerImpl resourceManager, RMHashtable m_itemHT) {
+    public Broadcast(String xmlfile, RMHashtable m_itemHT) {
         System.setProperty("java.net.preferIPv4Stack" , "true");
-        m_resourceManager = resourceManager;
+
         tempTable = m_itemHT;
+        this.configFile = xmlfile;
     }
 
 
@@ -73,7 +74,7 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
 
 
     public void getState(OutputStream output) throws Exception {
-        System.out.println("\n\n\nSENDING THE STATE!!!!\n\n\n");
+        //System.out.println("\n\n\nSENDING THE STATE!!!!\n\n\n");
 
         synchronized(tempTable) {
             FileOutputStream fileOut = new FileOutputStream(history);
@@ -92,12 +93,12 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
+
         synchronized(tempTable) {
             tempTable.clear();
             tempTable.putAll(list);
         }
-        System.out.println("\n\n\n\nreceived state (messages in chat history):\n\n\n\n");
+        //System.out.println("\n\n\n\nreceived state (messages in chat history):\n\n\n\n");
 
     }
 
@@ -108,15 +109,17 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
         while(true) {
             try {
                 if(bit.get(0) && !bit.get(1)) {
-                    //byte[] mybytearray = new byte[1024];
+
                     File file = new File ("h.ser");
                     FileOutputStream fileOut = new FileOutputStream(file);
                     ObjectOutputStream out = new ObjectOutputStream(fileOut);
                     out.writeObject(tempTable);
-                    System.out.println("SENDING THE MESSAGE!!!!!!");
+                    //System.out.println("SENDING THE MESSAGE!!!!!!");
 
                     Message msg = new Message(null, null, file);
                     channel.send(msg);
+                    //turn off after sending the message
+                    bit.flip(0);
                 }
                 else if (bit.get(1)) {
                     break;
@@ -132,7 +135,7 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
     @Override
     public void run() {
         String workingDir = System.getProperty("user.dir");
-        String serverConfig = workingDir+"/conf/"+"flightudp.xml";
+        String serverConfig = workingDir+"/conf/" + configFile;
         try {
             channel = new JChannel(serverConfig);
             channel.setReceiver(this);
