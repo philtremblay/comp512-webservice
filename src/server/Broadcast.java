@@ -6,12 +6,9 @@ import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
 import org.jgroups.util.Util;
 import java.io.*;
-import java.util.Hashtable;
-import server.RMHashtable;
-import java.util.BitSet;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
+import server.RMHashtable;
 
 
 /**
@@ -26,21 +23,27 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
     String user_name=System.getProperty("user.name", "n/a");
 
 
+    Hashtable<String, RMItem> tempTable = new Hashtable<String, RMItem>();
+
     public BitSet bit = new BitSet(2);
 
     public Broadcast(RMHashtable m_itemHT) throws Exception {
         System.setProperty("java.net.preferIPv4Stack" , "true");
         this.m_itemHT = m_itemHT;
 
-
+        for (Object key: m_itemHT.keySet()) {
+            tempTable.put((String) key, readData((String) key));
+        }
 
     }
 
     public void receive(Message msg) {
-        RMHashtable dataReceived = (RMHashtable) msg.getObject();
-        synchronized(m_itemHT) {
-            m_itemHT.putAll(dataReceived);
+        Hashtable<String, RMItem> dataReceived = (Hashtable<String, RMItem>) msg.getObject();
+        synchronized(tempTable) {
+            tempTable.putAll(dataReceived);
+            m_itemHT.putAll(tempTable);
         }
+
 
     }
 
@@ -48,7 +51,7 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
     public void viewAccepted(View new_view) {
         System.out.println("** view: " + new_view);
     }
-
+    /*
     public void getState(OutputStream output) throws Exception {
         synchronized(m_itemHT) {
             Util.objectToStream(m_itemHT, new DataOutputStream(output));
@@ -66,13 +69,14 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
 
         System.out.println(list.toString());
     }
+    */
 
     private void multicast() {
         while(true) {
             try {
 
                 if(bit.get(0) && !bit.get(1)) {
-                    Message msg = new Message(null, null, m_itemHT);
+                    Message msg = new Message(null, null, tempTable);
                     channel.send(msg);
                 }
                 else if (bit.get(1)) {
