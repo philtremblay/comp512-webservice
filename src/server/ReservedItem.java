@@ -10,7 +10,9 @@ package server;
 // Note: if a customer reserves more than one item of the same kind, this is 
 // stored as a single instance of ReservedItem reflecting the *latest price*.
 
-public class ReservedItem extends RMItem {
+import java.io.Serializable;
+
+public class ReservedItem extends RMItem implements Serializable{
 
     private int m_nCount;
     private int m_nPrice;

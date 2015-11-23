@@ -17,37 +17,50 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
 
 
 
-    RMHashtable m_itemHT;
+
     JChannel channel;
-    String user_name=System.getProperty("user.name", "n/a");
 
 
-    Hashtable<String, RMItem> tempTable = new Hashtable<String, RMItem>();
+    private RMHashtable tempTable;
 
     public BitSet bit = new BitSet(2);
-
-    public Broadcast(RMHashtable m_itemHT) throws Exception {
+    ResourceManagerImpl m_resourceManager;
+    public Broadcast(ResourceManagerImpl resourceManager, RMHashtable m_itemHT) {
         System.setProperty("java.net.preferIPv4Stack" , "true");
-        this.m_itemHT = m_itemHT;
-        Object key =null;
-        for (Enumeration e = m_itemHT.keys(); e.hasMoreElements();) {
-            key = e.nextElement();
-            String value = (String) m_itemHT.get(key);
-            //s = s + "  [key = " + key + "] " + value + "\n";
-        }
-
+        m_resourceManager = resourceManager;
+        tempTable = m_itemHT;
     }
 
-    public void receive(Message msg) {
-        Hashtable<String, RMItem> dataReceived = (Hashtable<String, RMItem>) msg.getObject();
-        System.out.println("\n\n\n"+msg.getSrc() + "\n\n\n");
-        synchronized(tempTable) {
-            tempTable.putAll(dataReceived);
-            m_itemHT.putAll(tempTable);
-        }
-        System.out.println(m_itemHT.size());
-        System.out.println(tempTable.toString());
 
+
+
+
+
+    public void receive(Message msg) {
+        System.out.println("RECEIVER SIDE!!!!");
+
+        FileInputStream fileIn = null;
+        RMHashtable e1 = null;
+        try {
+            fileIn = new FileInputStream((File) msg.getObject());
+            ObjectInputStream in = new ObjectInputStream(fileIn);
+            e1 = (RMHashtable) in.readObject();
+            in.close();
+            fileIn.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+
+        //System.out.println("\n\n\n"+msg.getSrc() + "\n\n\n");
+        tempTable.putAll(e1);
+
+        System.out.println(e1.size());
 
     }
 
@@ -76,11 +89,19 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
     */
 
     private void multicast() {
+
+        BufferedInputStream bis = null;
         while(true) {
             try {
-
                 if(bit.get(0) && !bit.get(1)) {
-                    Message msg = new Message(null, null, tempTable);
+                    //byte[] mybytearray = new byte[1024];
+                    File file = new File ("h.ser");
+                    FileOutputStream fileOut = new FileOutputStream(file);
+                    ObjectOutputStream out = new ObjectOutputStream(fileOut);
+                    out.writeObject(tempTable);
+                    System.out.println("SENDING THE MESSAGE!!!!!!");
+
+                    Message msg = new Message(null, null, file);
                     channel.send(msg);
                 }
                 else if (bit.get(1)) {
@@ -88,9 +109,11 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                 }
             }
             catch(Exception e) {
+
             }
         }
     }
+
 
     @Override
     public void run() {
@@ -101,7 +124,7 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
             channel.setReceiver(this);
             channel.connect("Flight-Cluster");
             channel.getState(null, 10000);
-
+            //copyFrom(m_itemHT);
             multicast();
             channel.close();
         } catch (Exception e) {
@@ -109,26 +132,7 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
         }
 
     }
-    // Read a data item.
-    private RMItem readData(String key) {
-        synchronized(m_itemHT) {
-            return (RMItem) m_itemHT.get(key);
-        }
-    }
 
-    // Write a data item.
-    private void writeData(String key, RMItem value) {
-        synchronized(tempTable) {
-            tempTable.put(key, value);
-        }
-    }
-
-    // Remove the item out of storage.
-    protected RMItem removeData(String key) {
-        synchronized(m_itemHT) {
-            return (RMItem) m_itemHT.remove(key);
-        }
-    }
 
 
 }

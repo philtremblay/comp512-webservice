@@ -31,7 +31,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         //initialize the lock manager
         this.lockServer = new LockManager();
         try {
-            this.broadcaster = new Broadcast(m_itemHT);
+            this.broadcaster = new Broadcast(this, m_itemHT);
             Thread t = new Thread(broadcaster);
             t.start();
         } catch (Exception e) {
