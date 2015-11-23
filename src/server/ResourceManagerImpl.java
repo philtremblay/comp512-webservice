@@ -7,7 +7,6 @@ package server;
 
 import server.LockManager.DeadlockException;
 import server.LockManager.LockManager;
-
 import java.util.*;
 import javax.jws.WebService;
 
@@ -15,12 +14,34 @@ import javax.jws.WebService;
 @WebService(endpointInterface = "server.ws.ResourceManager")
 public class ResourceManagerImpl implements server.ws.ResourceManager {
     
-    protected RMHashtable m_itemHT = new RMHashtable();
+    public RMHashtable m_itemHT = new RMHashtable();
 
     private static final int READ = 0;
     private static final int WRITE = 1;
 
     protected LockManager lockServer;
+
+    Broadcast broadcaster;
+    /**
+     * Constructor
+     */
+    //constructor here: initialize the lock manager
+    public ResourceManagerImpl() {
+
+        //initialize the lock manager
+        this.lockServer = new LockManager();
+        try {
+            this.broadcaster = new Broadcast(m_itemHT);
+            Thread t = new Thread(broadcaster);
+            t.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+
+
+    }
 
     // Basic operations on RMItem //
     
@@ -46,13 +67,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     }
 
 
-    //constructor here: initialize the lock manager
-    public ResourceManagerImpl() {
 
-        //initialize the lock manager
-        this.lockServer = new LockManager();
-
-    }
 
     
     // Basic operations on ReservableItem //
@@ -164,6 +179,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 writeData(id, newObj.getKey(), newObj);
                 Trace.info("RM::addFlight(" + id + ", " + flightNumber
                         + ", $" + flightPrice + ", " + numSeats + ") OK.");
+                broadcaster.bit.set(0);
             } else {
                 // Add seats to existing flight and update the price.
                 curObj.setCount(curObj.getCount() + numSeats);
@@ -174,7 +190,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 Trace.info("RM::addFlight(" + id + ", " + flightNumber
                         + ", $" + flightPrice + ", " + numSeats + ") OK: "
                         + "seats = " + curObj.getCount() + ", price = $" + flightPrice);
+                broadcaster.bit.set(0);
             }
+
+            broadcaster.bit.flip(0);
+
             return true;
         }
         catch (DeadlockException dl) {
@@ -189,6 +209,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     @Override
     public boolean deleteFlight(int id, int flightNumber) {
+
 
         String strData = "flight,"+flightNumber;
         try {
