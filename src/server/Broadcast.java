@@ -7,7 +7,6 @@ import org.jgroups.View;
 import org.jgroups.util.Util;
 import java.io.*;
 import java.util.*;
-
 import server.RMHashtable;
 
 
@@ -30,19 +29,24 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
     public Broadcast(RMHashtable m_itemHT) throws Exception {
         System.setProperty("java.net.preferIPv4Stack" , "true");
         this.m_itemHT = m_itemHT;
-
-        for (Object key: m_itemHT.keySet()) {
-            tempTable.put((String) key, readData((String) key));
+        Object key =null;
+        for (Enumeration e = m_itemHT.keys(); e.hasMoreElements();) {
+            key = e.nextElement();
+            String value = (String) m_itemHT.get(key);
+            //s = s + "  [key = " + key + "] " + value + "\n";
         }
 
     }
 
     public void receive(Message msg) {
         Hashtable<String, RMItem> dataReceived = (Hashtable<String, RMItem>) msg.getObject();
+        System.out.println("\n\n\n"+msg.getSrc() + "\n\n\n");
         synchronized(tempTable) {
             tempTable.putAll(dataReceived);
             m_itemHT.putAll(tempTable);
         }
+        System.out.println(m_itemHT.size());
+        System.out.println(tempTable.toString());
 
 
     }
@@ -114,8 +118,8 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
 
     // Write a data item.
     private void writeData(String key, RMItem value) {
-        synchronized(m_itemHT) {
-            m_itemHT.put(key, value);
+        synchronized(tempTable) {
+            tempTable.put(key, value);
         }
     }
 
