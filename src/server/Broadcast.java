@@ -25,6 +25,8 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
 
     public BitSet bit = new BitSet(2);
     ResourceManagerImpl m_resourceManager;
+    File history = new File("hist.ser");
+
     public Broadcast(ResourceManagerImpl resourceManager, RMHashtable m_itemHT) {
         System.setProperty("java.net.preferIPv4Stack" , "true");
         m_resourceManager = resourceManager;
@@ -68,25 +70,37 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
     public void viewAccepted(View new_view) {
         System.out.println("** view: " + new_view);
     }
-    /*
+
+
     public void getState(OutputStream output) throws Exception {
-        synchronized(m_itemHT) {
-            Util.objectToStream(m_itemHT, new DataOutputStream(output));
+        System.out.println("\n\n\nSENDING THE STATE!!!!\n\n\n");
+
+        synchronized(tempTable) {
+            FileOutputStream fileOut = new FileOutputStream(history);
+            ObjectOutputStream out = new ObjectOutputStream(fileOut);
+            out.writeObject(tempTable);
+            Util.objectToStream(history, out);
         }
     }
 
-    public void setState(InputStream input) throws Exception {
-        ObjectInputStream d = new ObjectInputStream(input);
-        RMHashtable list= (RMHashtable) Util.objectFromStream(d);
-        synchronized(m_itemHT) {
-            m_itemHT.clear();
-            m_itemHT.putAll(list);
+    public void setState(InputStream input) {
+        RMHashtable list = null;
+        try {
+            input = new FileInputStream(history);
+            ObjectInputStream d = new ObjectInputStream(input);
+            list = (RMHashtable) d.readObject();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        System.out.println("received state (" + list.size() + " messages in chat history):");
+        
+        synchronized(tempTable) {
+            tempTable.clear();
+            tempTable.putAll(list);
+        }
+        System.out.println("\n\n\n\nreceived state (messages in chat history):\n\n\n\n");
 
-        System.out.println(list.toString());
     }
-    */
+
 
     private void multicast() {
 
@@ -124,7 +138,6 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
             channel.setReceiver(this);
             channel.connect("Flight-Cluster");
             channel.getState(null, 10000);
-            //copyFrom(m_itemHT);
             multicast();
             channel.close();
         } catch (Exception e) {
