@@ -7,6 +7,9 @@ import org.jgroups.View;
 
 import java.io.*;
 import java.util.BitSet;
+import java.util.Hashtable;
+import java.util.Stack;
+import java.util.Vector;
 
 /**
  * Created by marcyang on 2015-11-23.
@@ -23,24 +26,27 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
 
     private PacketData dataPackage = null;
 
-    private RMHashtable mm_itemHT = null;
-    private TxnManager m_txnManager = null;
-    private TimeToLive[] m_ttl = null;
 
-    public MidBroadcast(String xmlfile, RMHashtable m_itemHT, TxnManager txnManager, TimeToLive[] ttl) {
+    private RMHashtable mm_itemHT = null;
+    private Hashtable<Integer, Vector> m_activeRM =null;
+    private Hashtable<Integer, Stack> m_cmdList = null;
+
+    //private TimeToLive[] m_ttl = null;
+
+    public MidBroadcast(String xmlfile, RMHashtable m_itemHT, Hashtable<Integer, Vector> activeTxnRM, Hashtable<Integer, Stack> txnCmdList) {
         System.setProperty("java.net.preferIPv4Stack" , "true");
         this.configFile = xmlfile;
 
         this.mm_itemHT = m_itemHT;
-        this.m_txnManager = txnManager;
-        this.m_ttl = ttl;
+        this.m_activeRM = activeTxnRM;
+        this.m_cmdList = txnCmdList;
 
-        this.dataPackage = new PacketData(mm_itemHT, m_txnManager, m_ttl);
+        this.dataPackage = new PacketData(mm_itemHT, m_activeRM, m_cmdList);
 
 
     }
 
-
+/*
     private void startTimer() {
 
         int i = 0;
@@ -55,7 +61,7 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
 
 
     }
-
+*/
 
 
     public void receive(Message msg) {
@@ -77,15 +83,18 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
             e.printStackTrace();
         }
 
+        
         synchronized (mm_itemHT) {
-            mm_itemHT.putAll(e1.customerData);
+            mm_itemHT.putAll(e1.mm_itemHT);
         }
-        synchronized (m_txnManager) {
-            m_txnManager.activeTxnRM.putAll(e1.transactionData.activeTxnRM);
-            m_txnManager.txnCmdList.putAll(e1.transactionData.txnCmdList);
+        synchronized (m_activeRM) {
+            m_activeRM.putAll(e1.m_activeRM);
+        }
+        synchronized (m_cmdList) {
+            m_cmdList.putAll(e1.m_cmdList);
         }
 
-        System.out.println("\n\n\n\n Received!!!"+ m_txnManager.activeTxnRM.size() + "\n\n\n\n");
+        System.out.println("\n\n\n\n Received!!!"+ m_activeRM.size() + "\n\n\n\n");
 
     }
 
@@ -164,7 +173,7 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
             channel = new JChannel(serverConfig);
             channel.setReceiver(this);
             channel.connect("Middleware-Cluster");
-            //channel.getState(null, 10000);
+            channel.getState(null, 10000);
             multicast();
             channel.close();
         } catch (Exception e) {

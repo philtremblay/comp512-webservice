@@ -3,20 +3,14 @@ package middleware;
 import java.io.Serializable;
 import java.util.*;
 
+import static java.lang.Math.max;
+
 /**
  * Created by Phil Tremblay on 2015-11-06.
  */
 public class TxnManager implements Serializable {
 
-    //creating unique trxnId
-    protected int currentTxnId;
 
-    private synchronized void incrTxnId(){
-        this.currentTxnId++;
-    }
-    private synchronized int getTxnIdVal(){
-        return this.currentTxnId;
-    }
 
     //DataStructure containing active transactions, list of update commands by a transaction and the list of RM's used by this transaction
     protected Hashtable <Integer,Vector> activeTxnRM = new Hashtable<>();
@@ -26,6 +20,28 @@ public class TxnManager implements Serializable {
     private void addUpdateCmdToStack(){
 
     }
+    //creating unique trxnId
+    protected Integer currentTxnId;
+
+    private synchronized void incrTxnId(){
+
+        //increment transaction ID based on the maximum of the existing ID
+
+        synchronized (this.activeTxnRM) {
+            Integer temp = 0;
+            if (this.activeTxnRM.size() > 0) {
+                for (Integer id : this.activeTxnRM.keySet()) {
+                    if (temp < id) {
+                        temp = id;
+                    }
+                }
+            }
+            this.currentTxnId = temp + 1;
+        }
+    }
+    private synchronized Integer getTxnIdVal(){
+        return this.currentTxnId;
+    }
 
 
     //initiate the global transactionId counter
@@ -33,12 +49,12 @@ public class TxnManager implements Serializable {
         this.currentTxnId = 0;
     }
 
-    public int newTxn(){
+    public Integer newTxn(){
         //increment txn counter
         this.incrTxnId();
 
         //assign this counter to new txn
-        int txnId = this.getTxnIdVal();
+        Integer txnId = this.getTxnIdVal();
 
         //add this transaction to the TM datastructures and create
         Stack cmdStack = new Stack();

@@ -56,43 +56,34 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     String r_host = "localhost";
     int r_port = 8084;
 
+    String configFile = "middleudp.xml";
+
     //code for Client imported from server
     protected RMHashtable m_itemHT = new RMHashtable();
 
     TimeToLive[] ttl = new TimeToLive[1024];
     //Transaction Manager
-    TxnManager txnManager = new TxnManager();
+    TxnManager txnManager = null;
+    MidBroadcast broadcast = null;
 
-    // Basic operations on RMItem //
-
-    // Read a data item.
-    private RMItem readData(int id, String key) {
-        synchronized(m_itemHT) {
-            return (RMItem) m_itemHT.get(key);
-        }
-    }
-
-    // Write a data item.
-    private void writeData(int id, String key, RMItem value) {
-        synchronized(m_itemHT) {
-            m_itemHT.put(key, value);
-        }
-    }
-
-    // Remove the item out of storage.
-    protected RMItem removeData(int id, String key) {
-        synchronized(m_itemHT) {
-            return (RMItem) m_itemHT.remove(key);
-        }
-    }
 
     //constructor that creates proxies to each server
     public ResourceManagerImpl() {
         this.MWLock = new LockManager();
+        this.txnManager = new TxnManager();
         //this is for the method abort
         //once the method abort is turned on, we stop adding
         //any additional transactions to the transaction manager
         this.transactionBit = new BitSet();
+
+        try {
+            broadcast = new MidBroadcast(configFile, m_itemHT, txnManager.activeTxnRM, txnManager.txnCmdList);
+            Thread jgroupThread = new Thread(broadcast);
+            jgroupThread.start();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
 
 
         if (f_flag == 1) {
@@ -153,6 +144,42 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     }
 
+    @Override
+    public int start(){
+        Integer txnId = txnManager.newTxn();
+
+        ttl[txnId-1] = new TimeToLive(txnId, this);
+        Thread t = new Thread(ttl[txnId-1]);
+        t.start();
+        Trace.info("Starting a new transaction with ID : "+txnId);
+
+        broadcast.bit.set(0);
+
+        return txnId;
+    }
+
+    // Basic operations on RMItem //
+
+    // Read a data item.
+    private RMItem readData(int id, String key) {
+        synchronized(m_itemHT) {
+            return (RMItem) m_itemHT.get(key);
+        }
+    }
+
+    // Write a data item.
+    private void writeData(int id, String key, RMItem value) {
+        synchronized(m_itemHT) {
+            m_itemHT.put(key, value);
+        }
+    }
+
+    // Remove the item out of storage.
+    protected RMItem removeData(int id, String key) {
+        synchronized(m_itemHT) {
+            return (RMItem) m_itemHT.remove(key);
+        }
+    }
 
     // Reserve an item.
     protected boolean reserveItem(int id, int customerId, String location, String key, int itemInfo) {
@@ -903,18 +930,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         return false;
     }
 
-    @Override
-    public int start(){
-        int txnId = txnManager.newTxn();
-
-        ttl[txnId-1] = new TimeToLive(txnId, this);
-        Thread t = new Thread(ttl[txnId-1]);
-        t.start();
-
-        Trace.info("Starting a new transaction with ID : "+txnId);
-
-        return txnId;
-    }
 
     @Override
     public boolean commit(int txnId) {

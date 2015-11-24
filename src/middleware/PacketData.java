@@ -12,27 +12,25 @@ import java.util.Vector;
 public class PacketData implements Serializable{
 
     //this class compresses the customer manager and the transaction manager
-    RMHashtable customerData = null;
-    TxnManager transactionData = null;
+
     TimeToLive[] m_ttl = null;
 
-    public PacketData(RMHashtable custdata, TxnManager transManager, TimeToLive[] ttl) {
-        this.customerData = custdata;
-        this.transactionData = transManager;
+    RMHashtable mm_itemHT;
+    Hashtable<Integer, Vector> m_activeRM;
+    Hashtable<Integer, Stack> m_cmdList;
+
+
+
+    public PacketData(RMHashtable custdata, TimeToLive[] ttl) {
+        this.mm_itemHT = custdata;
+
         this.m_ttl = ttl;
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+    public PacketData(RMHashtable mm_itemHT, Hashtable<Integer, Vector> m_activeRM, Hashtable<Integer, Stack> m_cmdList) {
+        this.mm_itemHT = mm_itemHT;
+        this.m_activeRM = m_activeRM;
+        this.m_cmdList = m_cmdList;
+    }
 }
