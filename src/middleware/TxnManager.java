@@ -6,7 +6,7 @@ import java.util.*;
 /**
  * Created by Phil Tremblay on 2015-11-06.
  */
-public class TxnManager  implements Serializable {
+public class TxnManager implements Serializable {
 
     //creating unique trxnId
     protected int currentTxnId;

@@ -4,8 +4,6 @@ import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
-import org.jgroups.util.Util;
-import server.*;
 
 import java.io.*;
 import java.util.BitSet;
@@ -18,31 +16,57 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
 
 
     JChannel channel;
-    private MiddleDatabase tempData;
-
-    public BitSet bit = new BitSet(2);
     private String configFile = null;
     private File history = new File("MiddleHist.ser");
-    private BitSet m_timerBit = null;
+    public BitSet bit = new BitSet(2);
 
-    public MidBroadcast(String xmlfile, MiddleDatabase middata, BitSet timerBit) {
+
+    private PacketData dataPackage = null;
+
+    private RMHashtable mm_itemHT = null;
+    private TxnManager m_txnManager = null;
+    private TimeToLive[] m_ttl = null;
+
+    public MidBroadcast(String xmlfile, RMHashtable m_itemHT, TxnManager txnManager, TimeToLive[] ttl) {
         System.setProperty("java.net.preferIPv4Stack" , "true");
         this.configFile = xmlfile;
 
-        this.tempData = middata;
-        this.m_timerBit = timerBit;
+        this.mm_itemHT = m_itemHT;
+        this.m_txnManager = txnManager;
+        this.m_ttl = ttl;
+
+        this.dataPackage = new PacketData(mm_itemHT, m_txnManager, m_ttl);
+
+
     }
+
+
+    private void startTimer() {
+
+        int i = 0;
+        while (i < m_ttl.length) {
+
+            if (m_ttl[i] != null) {
+                Thread t = new Thread(m_ttl[i]);
+                t.start();
+            }
+            i++;
+        }
+
+
+    }
+
 
 
     public void receive(Message msg) {
         System.out.println("RECEIVER SIDE!!!!");
 
         FileInputStream fileIn = null;
-        server.RMHashtable e1 = null;
+        PacketData e1 = null;
         try {
             fileIn = new FileInputStream((File) msg.getObject());
             ObjectInputStream in = new ObjectInputStream(fileIn);
-            e1 = (server.RMHashtable) in.readObject();
+            e1 = (PacketData) in.readObject();
             in.close();
             fileIn.close();
         } catch (FileNotFoundException e) {
@@ -53,23 +77,25 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
             e.printStackTrace();
         }
 
+        synchronized (mm_itemHT) {
+            mm_itemHT.putAll(e1.customerData);
+        }
+        synchronized (m_txnManager) {
+            m_txnManager.activeTxnRM.putAll(e1.transactionData.activeTxnRM);
+            m_txnManager.txnCmdList.putAll(e1.transactionData.txnCmdList);
+        }
 
-
-        //System.out.println("\n\n\n"+msg.getSrc() + "\n\n\n");
-        //tempTable.putAll(e1);
-
-        System.out.println(e1.size());
+        System.out.println("\n\n\n\n Received!!!"+ m_txnManager.activeTxnRM.size() + "\n\n\n\n");
 
     }
 
 
     public void viewAccepted(View new_view) {
         System.out.println("** view: " + new_view);
-
         if (channel.getView().getMembers().get(0).toString().equals(channel.getName().toString())) {
             System.out.println("** coordinator = this channel: turn on the timer ");
-            m_timerBit.set(0);
         }
+
     }
 
 /*
@@ -100,8 +126,8 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
         //System.out.println("\n\n\n\nreceived state (messages in chat history):\n\n\n\n");
 
     }
-*/
 
+*/
     private void multicast() {
 
         BufferedInputStream bis = null;
@@ -112,8 +138,8 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     File file = new File ("Middle.ser");
                     FileOutputStream fileOut = new FileOutputStream(file);
                     ObjectOutputStream out = new ObjectOutputStream(fileOut);
-                    out.writeObject(tempData);
-
+                    out.writeObject(dataPackage);
+                    System.out.println("SENDING THE PACKET");
                     Message msg = new Message(null, null, file);
                     channel.send(msg);
                     //turn off after sending the message
@@ -133,12 +159,12 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
     @Override
     public void run() {
         String workingDir = System.getProperty("user.dir");
-        String serverConfig = workingDir+"/conf/" + configFile;
+        String serverConfig = workingDir+"/conf/middleudp.xml";
         try {
             channel = new JChannel(serverConfig);
             channel.setReceiver(this);
             channel.connect("Middleware-Cluster");
-            channel.getState(null, 10000);
+            //channel.getState(null, 10000);
             multicast();
             channel.close();
         } catch (Exception e) {

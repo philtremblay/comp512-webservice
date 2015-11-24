@@ -25,7 +25,7 @@ public class Client {
 
         primary = new WSClient(serviceName, serviceHost, servicePort);
         if (hasbackup == 1) {
-            backup = new WSClient("middlerep", serviceHost, 6667);
+            //backup = new WSClient("middlerep", serviceHost, 6668);
         }
         else {
             backup = primary;

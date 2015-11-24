@@ -19,7 +19,7 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
 
 
     JChannel channel;
-    private DataPacket tempPacket;
+    private DataPacket tempPacket = null;
     private LockManager tempLock;
     private RMHashtable tempTable;
 
@@ -27,19 +27,15 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
     String configFile = null;
     File history = new File("hist.ser");
 
-    public Broadcast(String xmlfile, DataPacket m_itemHT, LockManager lockServer, RMHashtable mItemHT) {
+    public Broadcast(String xmlfile, LockManager lockServer, RMHashtable mItemHT) {
         System.setProperty("java.net.preferIPv4Stack" , "true");
 
-        tempPacket = m_itemHT;
         tempTable = mItemHT;
         tempLock = lockServer;
         this.configFile = xmlfile;
+
+        this.tempPacket = new DataPacket(tempTable, tempLock);
     }
-
-
-
-
-
 
     public void receive(Message msg) {
         System.out.println("RECEIVER SIDE!!!!");
@@ -60,11 +56,15 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
             e.printStackTrace();
         }
 
+        synchronized (tempTable) {
+            tempTable.putAll(e1.mm_itemHT);
+        }
 
-        tempTable.putAll(e1.mm_itemHT);
-        tempLock = e1.m_lock;
+        synchronized (tempLock) {
+            tempLock = e1.m_lock;
+        }
 
-        System.out.println("\n\n\n\n\n" + tempTable.size() + " \n\n\n");
+        //System.out.println("\n\n\n\n\n" + tempTable.size() + " \n\n\n");
 
     }
 
@@ -73,14 +73,14 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
         System.out.println("** view: " + new_view);
     }
 
-/*
+
     public void getState(OutputStream output) throws Exception {
         //System.out.println("\n\n\nSENDING THE STATE!!!!\n\n\n");
 
-        synchronized(tempTable) {
+        synchronized(tempPacket) {
             FileOutputStream fileOut = new FileOutputStream(history);
             ObjectOutputStream out = new ObjectOutputStream(fileOut);
-            out.writeObject(tempTable);
+            out.writeObject(tempPacket);
             Util.objectToStream(history, out);
         }
     }
@@ -94,15 +94,15 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-
-        synchronized(tempTable) {
-            tempTable.mm_itemHT.clear();
-            tempTable.mm_itemHT.putAll(list.mm_itemHT);
-            tempTable.m_lock = list.m_lock;
+        synchronized (tempTable) {
+            tempTable.clear();
+            tempTable.putAll(list.mm_itemHT);
+        }
+        synchronized (tempLock) {
+            tempLock = list.m_lock;
         }
     }
-*/
+
 
     private void multicast() {
 
@@ -112,6 +112,7 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                 if(bit.get(0) && !bit.get(1)) {
 
                     File file = new File ("h.ser");
+
                     FileOutputStream fileOut = new FileOutputStream(file);
                     ObjectOutputStream out = new ObjectOutputStream(fileOut);
                     out.writeObject(tempPacket);
