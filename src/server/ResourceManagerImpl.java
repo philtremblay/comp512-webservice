@@ -23,6 +23,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     Broadcast broadcaster;
     String configFile = "flightudp.xml";
+    DataPacket dataPacket = null;
 
     /**
      * Constructor
@@ -33,8 +34,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         //initialize the lock manager
         this.lockServer = new LockManager();
 
+        this.dataPacket = new DataPacket(m_itemHT, lockServer);
+
+
+
         try {
-            this.broadcaster = new Broadcast(configFile, m_itemHT);
+            this.broadcaster = new Broadcast(configFile, dataPacket, lockServer, m_itemHT);
             Thread t = new Thread(broadcaster);
             t.start();
         } catch (Exception e) {
@@ -194,7 +199,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 broadcaster.bit.set(0);
             }
 
-
+            //broadcaster.bit.flip(0);
             return true;
         }
         catch (DeadlockException dl) {

@@ -1,6 +1,8 @@
 package server.LockManager;
 
-public class TrxnObj extends XObj
+import java.io.Serializable;
+
+public class TrxnObj extends XObj implements Serializable
 {
     public static final int READ = 0;
     public static final int WRITE = 1;

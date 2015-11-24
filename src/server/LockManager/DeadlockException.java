@@ -4,7 +4,9 @@ package server.LockManager;
     The transaction is deadlocked.  Somebody should abort it.
 */
 
-public class DeadlockException extends Exception
+import java.io.Serializable;
+
+public class DeadlockException extends Exception implements Serializable
 {
     private int xid = 0;
     

@@ -21,11 +21,11 @@ public class Client {
     public Client(String serviceName, String serviceHost, int servicePort)
             throws Exception {
 
-        int hasbackup = 1;
+        int hasbackup = 0;
 
         primary = new WSClient(serviceName, serviceHost, servicePort);
         if (hasbackup == 1) {
-            backup = new WSClient(serviceName, serviceHost, 8082);
+            backup = new WSClient("middlerep", serviceHost, 6667);
         }
         else {
             backup = primary;

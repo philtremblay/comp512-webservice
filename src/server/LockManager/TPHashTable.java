@@ -1,5 +1,6 @@
 package server.LockManager;
 
+import java.io.Serializable;
 import java.util.Vector;
 import java.util.Enumeration;
 
@@ -7,7 +8,7 @@ import java.util.Enumeration;
     HashTable class for the Lock Manager.
 */
 
-public class TPHashTable
+public class TPHashTable implements Serializable
 {
     private static final int HASH_DEPTH = 8;
     

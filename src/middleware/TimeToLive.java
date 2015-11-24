@@ -1,11 +1,12 @@
 package middleware;
 
+import java.io.Serializable;
 import java.util.*;
 
 /**
  * Created by marcyang on 2015-11-08.
 */
-public class TimeToLive implements Runnable {
+public class TimeToLive implements Serializable, Runnable {
 
 
         protected Hashtable<Integer, Stack<Integer>> activeTransaction = new Hashtable<>();
@@ -70,6 +71,10 @@ public class TimeToLive implements Runnable {
             return pushed;
         }
 
+        //public boolean
+
+
+
 
 
         @Override
@@ -79,7 +84,7 @@ public class TimeToLive implements Runnable {
 
         }
 
-        class RemindTask extends TimerTask {
+        class RemindTask extends TimerTask implements Serializable{
 
 
             private Stack<Integer> sTran;

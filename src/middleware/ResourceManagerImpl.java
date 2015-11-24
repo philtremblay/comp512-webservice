@@ -57,42 +57,51 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     int r_port = 8084;
 
     //code for Client imported from server
+    /** Customer database **/
     protected RMHashtable m_itemHT = new RMHashtable();
 
-    TimeToLive[] ttl = new TimeToLive[1024];
-    //Transaction Manager
+    /**Transaction manager **/
     TxnManager txnManager = new TxnManager();
 
-    // Basic operations on RMItem //
 
-    // Read a data item.
-    private RMItem readData(int id, String key) {
-        synchronized(m_itemHT) {
-            return (RMItem) m_itemHT.get(key);
-        }
-    }
+    MiddleDatabase midData = null;
+    MidBroadcast multicast = null;
+    //if this is the coordinator, it will turn on the timer
+    BitSet timerBit = null;
+    //timer that keep track of all transactions
+    TimeToLive[] ttl = new TimeToLive[1024];
 
-    // Write a data item.
-    private void writeData(int id, String key, RMItem value) {
-        synchronized(m_itemHT) {
-            m_itemHT.put(key, value);
-        }
-    }
+    String configFile = "middleudp.xml";
 
-    // Remove the item out of storage.
-    protected RMItem removeData(int id, String key) {
-        synchronized(m_itemHT) {
-            return (RMItem) m_itemHT.remove(key);
-        }
-    }
 
-    //constructor that creates proxies to each server
+    /**
+     * constructor that:
+     * 1 . creates proxies to each server
+     * 2. sets the lock manager
+     * 3. sets the transaction bit for abort
+     * 4. compresses the customer data and TxnManager
+     * **/
     public ResourceManagerImpl() {
+
+
         this.MWLock = new LockManager();
         //this is for the method abort
         //once the method abort is turned on, we stop adding
         //any additional transactions to the transaction manager
         this.transactionBit = new BitSet();
+
+        this.timerBit = new BitSet(1);
+
+
+        //compresses the two databases into one class
+        midData = new MiddleDatabase(m_itemHT, txnManager, ttl);
+
+        //send all the Data, turn on the timerbit if current channel == coordinator
+        multicast = new MidBroadcast(configFile, midData, timerBit);
+
+
+        //startTimer();
+
 
 
         if (f_flag == 1) {
@@ -151,6 +160,49 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             }
         }
 
+
+
+
+    }
+
+
+    private void startTimer() {
+
+        if (timerBit.get(0)) {
+            int i = 0;
+            while (i < ttl.length) {
+
+                if (ttl[i] != null) {
+                    Thread t = new Thread(ttl[i]);
+                    t.start();
+                }
+                i++;
+            }
+        }
+
+    }
+
+
+    // Basic operations on RMItem //
+    // Read a data item.
+    private RMItem readData(int id, String key) {
+        synchronized(m_itemHT) {
+            return (RMItem) m_itemHT.get(key);
+        }
+    }
+
+    // Write a data item.
+    private void writeData(int id, String key, RMItem value) {
+        synchronized(m_itemHT) {
+            m_itemHT.put(key, value);
+        }
+    }
+
+    // Remove the item out of storage.
+    protected RMItem removeData(int id, String key) {
+        synchronized(m_itemHT) {
+            return (RMItem) m_itemHT.remove(key);
+        }
     }
 
 
@@ -559,7 +611,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 this.txnManager.setNewUpdateItem(id, cmd);
                 this.txnManager.enlist(id, CUST);
             }
-
+            multicast.bit.set(0);
             return true;
         } else {
             Trace.info("INFO: RM::newCustomer(" + id + ", " +

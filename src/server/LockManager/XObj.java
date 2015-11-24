@@ -1,6 +1,8 @@
 package server.LockManager;
 
-public class XObj
+import java.io.Serializable;
+
+public class XObj implements Serializable
 {
     protected int xid = 0;
     

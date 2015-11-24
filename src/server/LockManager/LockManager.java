@@ -2,10 +2,11 @@ package server.LockManager;
 
 import server.Trace;
 
+import java.io.Serializable;
 import java.util.BitSet;
 import java.util.Vector;
 
-public class LockManager
+public class LockManager implements Serializable
 {
     public static final int READ = 0;
     public static final int WRITE = 1;

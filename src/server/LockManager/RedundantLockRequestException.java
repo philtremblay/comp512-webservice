@@ -4,7 +4,9 @@ package server.LockManager;
 	The transaction requested a lock that it already had.
 */
 
-public class RedundantLockRequestException extends Exception
+import java.io.Serializable;
+
+public class RedundantLockRequestException extends Exception implements Serializable
 {
 	protected int xid = 0;
 	

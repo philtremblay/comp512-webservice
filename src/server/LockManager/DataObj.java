@@ -1,6 +1,8 @@
 package server.LockManager;
 
-public class DataObj extends TrxnObj
+import java.io.Serializable;
+
+public class DataObj extends TrxnObj implements Serializable
 {
     // The data members inherited are
     // XObj:: protected int xid;

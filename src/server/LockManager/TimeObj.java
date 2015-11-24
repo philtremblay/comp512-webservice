@@ -1,8 +1,9 @@
 package server.LockManager;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class TimeObj extends XObj
+public class TimeObj extends XObj implements Serializable
 {
     private Date date = new Date();
     

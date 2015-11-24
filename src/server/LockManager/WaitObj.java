@@ -1,6 +1,8 @@
 package server.LockManager;
 
-public class WaitObj extends DataObj
+import java.io.Serializable;
+
+public class WaitObj extends DataObj implements Serializable
 {
     protected Thread thread = null;
     

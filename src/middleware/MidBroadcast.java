@@ -1,55 +1,48 @@
-package server;
+package middleware;
 
 import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
 import org.jgroups.util.Util;
+import server.*;
+
 import java.io.*;
-import java.util.*;
-
-import server.LockManager.LockManager;
-import server.RMHashtable;
-
+import java.util.BitSet;
 
 /**
- * Created by marcyang on 2015-11-22.
+ * Created by marcyang on 2015-11-23.
  */
-public class Broadcast extends ReceiverAdapter implements Runnable {
+public class MidBroadcast extends ReceiverAdapter implements Runnable{
+
 
 
     JChannel channel;
-    private DataPacket tempPacket;
-    private LockManager tempLock;
-    private RMHashtable tempTable;
+    private MiddleDatabase tempData;
 
     public BitSet bit = new BitSet(2);
-    String configFile = null;
-    File history = new File("hist.ser");
+    private String configFile = null;
+    private File history = new File("MiddleHist.ser");
+    private BitSet m_timerBit = null;
 
-    public Broadcast(String xmlfile, DataPacket m_itemHT, LockManager lockServer, RMHashtable mItemHT) {
+    public MidBroadcast(String xmlfile, MiddleDatabase middata, BitSet timerBit) {
         System.setProperty("java.net.preferIPv4Stack" , "true");
-
-        tempPacket = m_itemHT;
-        tempTable = mItemHT;
-        tempLock = lockServer;
         this.configFile = xmlfile;
+
+        this.tempData = middata;
+        this.m_timerBit = timerBit;
     }
-
-
-
-
 
 
     public void receive(Message msg) {
         System.out.println("RECEIVER SIDE!!!!");
 
         FileInputStream fileIn = null;
-        DataPacket e1 = null;
+        server.RMHashtable e1 = null;
         try {
             fileIn = new FileInputStream((File) msg.getObject());
             ObjectInputStream in = new ObjectInputStream(fileIn);
-            e1 = (DataPacket) in.readObject();
+            e1 = (server.RMHashtable) in.readObject();
             in.close();
             fileIn.close();
         } catch (FileNotFoundException e) {
@@ -61,21 +54,26 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
         }
 
 
-        tempTable.putAll(e1.mm_itemHT);
-        tempLock = e1.m_lock;
 
-        System.out.println("\n\n\n\n\n" + tempTable.size() + " \n\n\n");
+        //System.out.println("\n\n\n"+msg.getSrc() + "\n\n\n");
+        //tempTable.putAll(e1);
+
+        System.out.println(e1.size());
 
     }
 
 
     public void viewAccepted(View new_view) {
         System.out.println("** view: " + new_view);
+
+        if (channel.getView().getMembers().get(0).toString().equals(channel.getName().toString())) {
+            System.out.println("** coordinator = this channel: turn on the timer ");
+            m_timerBit.set(0);
+        }
     }
 
 /*
     public void getState(OutputStream output) throws Exception {
-        //System.out.println("\n\n\nSENDING THE STATE!!!!\n\n\n");
 
         synchronized(tempTable) {
             FileOutputStream fileOut = new FileOutputStream(history);
@@ -86,21 +84,21 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
     }
 
     public void setState(InputStream input) {
-        DataPacket list = null;
+        server.RMHashtable list = null;
         try {
             input = new FileInputStream(history);
             ObjectInputStream d = new ObjectInputStream(input);
-            list = (DataPacket) d.readObject();
+            list = (server.RMHashtable) d.readObject();
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-
         synchronized(tempTable) {
-            tempTable.mm_itemHT.clear();
-            tempTable.mm_itemHT.putAll(list.mm_itemHT);
-            tempTable.m_lock = list.m_lock;
+            tempTable.clear();
+            tempTable.putAll(list);
         }
+        //System.out.println("\n\n\n\nreceived state (messages in chat history):\n\n\n\n");
+
     }
 */
 
@@ -111,18 +109,13 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
             try {
                 if(bit.get(0) && !bit.get(1)) {
 
-                    File file = new File ("h.ser");
+                    File file = new File ("Middle.ser");
                     FileOutputStream fileOut = new FileOutputStream(file);
                     ObjectOutputStream out = new ObjectOutputStream(fileOut);
-                    out.writeObject(tempPacket);
-
-                    System.out.println("SENDING THE MESSAGE!!!!!!");
+                    out.writeObject(tempData);
 
                     Message msg = new Message(null, null, file);
                     channel.send(msg);
-
-                    //fileOut.close();
-                    //out.close();
                     //turn off after sending the message
                     bit.flip(0);
                 }
@@ -144,7 +137,7 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
         try {
             channel = new JChannel(serverConfig);
             channel.setReceiver(this);
-            channel.connect("Flight-Cluster");
+            channel.connect("Middleware-Cluster");
             channel.getState(null, 10000);
             multicast();
             channel.close();
@@ -153,7 +146,5 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
         }
 
     }
-
-
 
 }
