@@ -230,6 +230,31 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     e.printStackTrace();
                 }
                 break;
+
+            case 10:
+
+                if (arguments.size() != 3) {
+                    wrongNumber();
+                    break;
+                }
+                System.out.println("Querying a flight using id: " + arguments.elementAt(1));
+                System.out.println("Flight number: " + arguments.elementAt(2));
+                System.out.println("Waiting for response from the server...");
+                try {
+                    id = getInt(arguments.elementAt(1));
+                    flightNumber = getInt(arguments.elementAt(2));
+                    int seats = m_rm.queryFlight(id, flightNumber);
+                }
+                catch(Exception e) {
+                    System.out.println("EXCEPTION: ");
+                    System.out.println(e.getMessage());
+                    e.printStackTrace();
+                }
+
+
+
+
+                break;
             case 13: //query customer
 
                 try {

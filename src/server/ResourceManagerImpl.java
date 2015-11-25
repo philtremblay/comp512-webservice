@@ -204,8 +204,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             return false;
         }
 
-
-
     }
 
     @Override
@@ -229,8 +227,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public int queryFlight(int id, int flightNumber) {
 
-        String strData = "flight,"+flightNumber;
+
         try {
+            String strData = "flight,"+flightNumber;
             lockServer.Lock(id, strData, READ);
             return queryNum(id, Flight.getKey(flightNumber));
         }
@@ -238,8 +237,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             Trace.warn("RM::queryNum(" + id + ", flight " + flightNumber+ ") failed: ");
             return -1;
         }
-
-
 
     }
 

@@ -321,6 +321,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         boolean flightAdded = false;
         try {
+
             flightAdded = flightProxy.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
 
         }catch (client.DeadlockException_Exception e){
@@ -387,6 +388,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public int queryFlight(int id, int flightNumber) {
 
+
         int flightNum = flightProxy.proxy.queryFlight(id, flightNumber);
         ttl[id-1].pushItem(id);
         if (flightNum > 0) {
@@ -396,6 +398,14 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             Trace.warn("Cannot query the flight# " + id);
         }
         this.txnManager.enlist(id,FLIGHT);
+
+        String command = "queryflight,"+id+","+flightNumber;
+        if(broadcast.PCBit.get(0)) {
+            //ready to broadcast the command
+            broadcast.addCommand(command);
+            broadcast.bit.set(0);
+        }
+
         return flightNum;
     }
 

@@ -80,7 +80,7 @@ public class TimeToLive implements Serializable, Runnable {
         @Override
         public void run() {
 
-            timer.scheduleAtFixedRate(rt, new Date(), 60000);
+            timer.scheduleAtFixedRate(rt, new Date(), 120000);
 
         }
 
