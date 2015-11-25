@@ -804,8 +804,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
         else
             return false;
-
-
     }
 
     @Override

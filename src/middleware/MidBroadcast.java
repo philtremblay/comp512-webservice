@@ -96,36 +96,36 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
 
     }
 
-/*
-    public void getState(OutputStream output) throws Exception {
+    /*
+        public void getState(OutputStream output) throws Exception {
 
-        synchronized(tempTable) {
-            FileOutputStream fileOut = new FileOutputStream(history);
-            ObjectOutputStream out = new ObjectOutputStream(fileOut);
-            out.writeObject(tempTable);
-            Util.objectToStream(history, out);
-        }
-    }
-
-    public void setState(InputStream input) {
-        server.RMHashtable list = null;
-        try {
-            input = new FileInputStream(history);
-            ObjectInputStream d = new ObjectInputStream(input);
-            list = (server.RMHashtable) d.readObject();
-        } catch (Exception e) {
-            e.printStackTrace();
+            synchronized(tempTable) {
+                FileOutputStream fileOut = new FileOutputStream(history);
+                ObjectOutputStream out = new ObjectOutputStream(fileOut);
+                out.writeObject(tempTable);
+                Util.objectToStream(history, out);
+            }
         }
 
-        synchronized(tempTable) {
-            tempTable.clear();
-            tempTable.putAll(list);
+        public void setState(InputStream input) {
+            server.RMHashtable list = null;
+            try {
+                input = new FileInputStream(history);
+                ObjectInputStream d = new ObjectInputStream(input);
+                list = (server.RMHashtable) d.readObject();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            synchronized(tempTable) {
+                tempTable.clear();
+                tempTable.putAll(list);
+            }
+            //System.out.println("\n\n\n\nreceived state (messages in chat history):\n\n\n\n");
+
         }
-        //System.out.println("\n\n\n\nreceived state (messages in chat history):\n\n\n\n");
 
-    }
-
-*/
+    */
     private void multicast() {
 
         while(true) {
@@ -201,8 +201,7 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                 }
                 try {
 
-
-
+                    
                     id = getInt(arguments.elementAt(1));
                     flightNumber = getInt(arguments.elementAt(2));
                     numSeats = getInt(arguments.elementAt(3));
@@ -305,7 +304,7 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     // Read customer object if it exists
                     //Customer cust = (Customer) m_rm.readData(id, Customer.getKey(customerId));
                     //if (cust != null) {
-                        //customer reserves it
+                    //customer reserves it
                     //    cust.reserve(key, location, price, itemInfo, id); //change location maybe
                     //    m_rm.writeData(id, cust.getKey(), cust);
 
@@ -314,7 +313,7 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     //    cmd.add(key);
                     //    cmd.add(itemInfo);
                     //    m_rm.txnManager.setNewUpdateItem(id,cmd);
-                   // }
+                    // }
 
                     //start ttl
                     m_rm.ttl[id-1].pushItem(id);
@@ -475,8 +474,6 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     break;
             }
         }
-
-
 
         return true;
     }

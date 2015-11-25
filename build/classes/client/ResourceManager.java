@@ -67,6 +67,21 @@ public interface ResourceManager {
 
     /**
      * 
+     * @param arg0
+     * @return
+     *     returns boolean
+     */
+    @WebMethod
+    @WebResult(targetNamespace = "")
+    @RequestWrapper(localName = "commit", targetNamespace = "http://ws.server/", className = "client.Commit")
+    @ResponseWrapper(localName = "commitResponse", targetNamespace = "http://ws.server/", className = "client.CommitResponse")
+    @Action(input = "http://ws.server/ResourceManager/commitRequest", output = "http://ws.server/ResourceManager/commitResponse")
+    public boolean commit(
+        @WebParam(name = "arg0", targetNamespace = "")
+        int arg0);
+
+    /**
+     * 
      * @param arg3
      * @param arg2
      * @param arg1
@@ -552,20 +567,5 @@ public interface ResourceManager {
         String arg1,
         @WebParam(name = "arg2", targetNamespace = "")
         int arg2);
-
-    /**
-     * 
-     * @param arg0
-     * @return
-     *     returns boolean
-     */
-    @WebMethod
-    @WebResult(targetNamespace = "")
-    @RequestWrapper(localName = "commit", targetNamespace = "http://ws.server/", className = "client.Commit")
-    @ResponseWrapper(localName = "commitResponse", targetNamespace = "http://ws.server/", className = "client.CommitResponse")
-    @Action(input = "http://ws.server/ResourceManager/commitRequest", output = "http://ws.server/ResourceManager/commitResponse")
-    public boolean commit(
-        @WebParam(name = "arg0", targetNamespace = "")
-        int arg0);
 
 }
