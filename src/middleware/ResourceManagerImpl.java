@@ -77,7 +77,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         this.transactionBit = new BitSet();
 
         try {
-            broadcast = new MidBroadcast(configFile, m_itemHT, txnManager.activeTxnRM, txnManager.txnCmdList);
+            broadcast = new MidBroadcast(configFile, this);
             Thread jgroupThread = new Thread(broadcast);
             jgroupThread.start();
         }
@@ -148,12 +148,20 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public int start(){
         Integer txnId = txnManager.newTxn();
 
-        ttl[txnId-1] = new TimeToLive(txnId, this);
-        Thread t = new Thread(ttl[txnId-1]);
+        String command = "start";
+
+        //only start ttl when it is the coordinator
+        //if (broadcast.PCBit.get(0)) {
+        ttl[txnId - 1] = new TimeToLive(txnId, this);
+        Thread t = new Thread(ttl[txnId - 1]);
         t.start();
+        //}
         Trace.info("Starting a new transaction with ID : "+txnId);
 
-        broadcast.bit.set(0);
+        if (broadcast.PCBit.get(0)) {
+            broadcast.addCommand(command);
+            broadcast.bit.set(0);
+        }
 
         return txnId;
     }
@@ -161,14 +169,14 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // Basic operations on RMItem //
 
     // Read a data item.
-    private RMItem readData(int id, String key) {
+    protected RMItem readData(int id, String key) {
         synchronized(m_itemHT) {
             return (RMItem) m_itemHT.get(key);
         }
     }
 
     // Write a data item.
-    private void writeData(int id, String key, RMItem value) {
+    protected void writeData(int id, String key, RMItem value) {
         synchronized(m_itemHT) {
             m_itemHT.put(key, value);
         }
@@ -225,14 +233,21 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
             // Decrease the number of available items in the storage.
             boolean update = true;
-            switch(itemInfo){
-                case FLIGHT: update = flightProxy.proxy.updateItemInfo(id,key,RES);
-                    break;
-                case CAR: update = carProxy.proxy.updateItemInfo(id,key,RES);
-                    break;
-                case ROOM: update = roomProxy.proxy.updateItemInfo(id,key,RES);
-                    break;
+            //its only the Primary copy that sends to the RM, not the replica
+            if (broadcast.PCBit.get(0)) {
+                switch (itemInfo) {
+                    case FLIGHT:
+                        update = flightProxy.proxy.updateItemInfo(id, key, RES);
+                        break;
+                    case CAR:
+                        update = carProxy.proxy.updateItemInfo(id, key, RES);
+                        break;
+                    case ROOM:
+                        update = roomProxy.proxy.updateItemInfo(id, key, RES);
+                        break;
+                }
             }
+
             if (!update){
                 Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
                         + key + ", " + location + ") failed: update item info.");
@@ -327,9 +342,17 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             //set active RM list
             this.txnManager.enlist(id, FLIGHT);
 
+            String command = String.format("newflight,%d,%d,%d,%d,%b", id, flightNumber, numSeats, flightPrice, flightAdded);
+            //if this is the primary copy
+            if(broadcast.PCBit.get(0)) {
+                //ready to broadcast the command
+                broadcast.addCommand(command);
+                broadcast.bit.set(0);
+            }
             return flightAdded;
         }
         else {
+
             System.out.println("FAIL to sent to flight server");
             return flightAdded;
         }
@@ -566,6 +589,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         Trace.info("RM::newCustomer(" + id + ", " + customerId + ") called.");
         String strData = "customer,"+customerId;
 
+        String command = String.format("newcustomerid,%d,%d", id, customerId);
+
+
         try {
             MWLock.Lock(id,strData,WRITE);
         } catch (server.LockManager.DeadlockException e) {
@@ -587,6 +613,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 this.txnManager.enlist(id, CUST);
             }
 
+            if (broadcast.PCBit.get(0)) {
+                System.out.println("READY TO BROADCAST!!!!!");
+                broadcast.addCommand(command);
+                broadcast.bit.set(0);
+            }
             return true;
         } else {
             Trace.info("INFO: RM::newCustomer(" + id + ", " +
@@ -709,6 +740,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         if (cust == null) {
             Trace.warn("RM::queryCustomerInfo(" + id + ", "
                     + customerId + ") failed: customer doesn't exist.");
+
+
+
             // Returning an empty bill means that the customer doesn't exist.
             return "";
         } else {
@@ -716,6 +750,15 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             Trace.info("RM::queryCustomerInfo(" + id + ", " + customerId + "): \n");
             System.out.println(s);
             this.txnManager.enlist(id,CUST);
+
+            String command = "querycustomer,"+id+","+customerId;
+            if (broadcast.PCBit.get(0)) {
+                System.out.println("READY TO BROADCAST!!!!!");
+                broadcast.addCommand(command);
+                broadcast.bit.set(0);
+            }
+            
+
             return s;
         }
     }
@@ -736,11 +779,23 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public boolean reserveFlight(int id, int customerId, int flightNumber) {
         /** call methods from the flight server to execute actions **/
         //get flight key
+
         String key = flightProxy.proxy.getFlightKey(flightNumber);
+
         ttl[id-1].pushItem(id);
-        if (reserveItem(id,customerId,String.valueOf(flightNumber),key,FLIGHT )){
+        boolean isReserved = reserveItem(id,customerId,String.valueOf(flightNumber),key,FLIGHT);
+        String command = String.format("reserveflight,%d,%d,%d,%s",id,customerId,flightNumber,key);
+        if (isReserved){
             System.out.println("RESERVATION ADDED TO THE CUSTOMER!!!!!");
+
             this.txnManager.enlist(id,FLIGHT);
+
+            //if this is the primary copy
+            if(broadcast.PCBit.get(0)) {
+                //ready to broadcast the command
+                broadcast.addCommand(command);
+                broadcast.bit.set(0);
+            }
 
             return true;
         }
@@ -997,6 +1052,14 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             Trace.warn("ERROR WHEN REMOVING TXNMANAGER ENTRIES AT COMMIT: "+txnId);
             e.printStackTrace();
         }
+
+        String command = "commit,"+txnId;
+        if(broadcast.PCBit.get(0)) {
+            //ready to broadcast the command
+            broadcast.addCommand(command);
+            broadcast.bit.set(0);
+        }
+
         return true;
     }
 
