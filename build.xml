@@ -10,6 +10,9 @@
     <property name="middleware.host" value="localhost"/>
     <property name="middleware.port" value="6666"/>
 
+    <!-- protocol configurations -->
+    <property name="config.dir" value="${basedir}/conf"/>
+    <property name="flight.protocol" value="${config.dir}/flightudp.xml"/>
 
 
 
