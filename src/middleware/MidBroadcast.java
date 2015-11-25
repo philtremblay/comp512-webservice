@@ -25,9 +25,6 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
 
     public BitSet PCBit = new BitSet(1);
 
-    private PacketData dataPackage = null;
-
-
     private RMHashtable mm_itemHT = null;
     private Hashtable<Integer, Vector> m_activeRM =null;
     private Hashtable<Integer, Stack> m_cmdList = null;
