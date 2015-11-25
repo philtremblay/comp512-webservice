@@ -74,7 +74,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         //this is for the method abort
         //once the method abort is turned on, we stop adding
         //any additional transactions to the transaction manager
-        this.transactionBit = new BitSet();
+        this.transactionBit = new BitSet(1024);
 
         try {
             broadcast = new MidBroadcast(configFile, this);
@@ -144,6 +144,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     }
 
+
+
+
     @Override
     public int start(){
         Integer txnId = txnManager.newTxn();
@@ -158,10 +161,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         //}
         Trace.info("Starting a new transaction with ID : "+txnId);
 
-        if (broadcast.PCBit.get(0)) {
-            broadcast.addCommand(command);
-            broadcast.bit.set(0);
-        }
+        sendCommand(command);
 
         return txnId;
     }
@@ -186,6 +186,13 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     protected RMItem removeData(int id, String key) {
         synchronized(m_itemHT) {
             return (RMItem) m_itemHT.remove(key);
+        }
+    }
+    //tells JGroup to broadcast
+    protected void sendCommand(String command) {
+        if (broadcast.PCBit.get(0)) {
+            broadcast.addCommand(command);
+            broadcast.bit.set(0);
         }
     }
 
@@ -279,16 +286,22 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             return false;
         } else {
 
-
-            // Decrease the number of available items in the storage.
+            // Decrease the number of available items in the storage --> for primary copy.
+            // the replica directly delete customer data without touching the RMs
             boolean update = true;
-            switch(itemInfo){
-                case FLIGHT: update = flightProxy.proxy.updateItemInfo(id,key,UNRES);
-                    break;
-                case CAR: update = carProxy.proxy.updateItemInfo(id,key,UNRES);
-                    break;
-                case ROOM: update = roomProxy.proxy.updateItemInfo(id,key,UNRES);
-                    break;
+            if (broadcast.PCBit.get(0)) {
+
+                switch (itemInfo) {
+                    case FLIGHT:
+                        update = flightProxy.proxy.updateItemInfo(id, key, UNRES);
+                        break;
+                    case CAR:
+                        update = carProxy.proxy.updateItemInfo(id, key, UNRES);
+                        break;
+                    case ROOM:
+                        update = roomProxy.proxy.updateItemInfo(id, key, UNRES);
+                        break;
+                }
             }
             if (!update){
                 Trace.warn("RM::unreserveItem(" + id + ", " + customerId + ", "
@@ -343,11 +356,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
             String command = String.format("newflight,%d,%d,%d,%d,%b", id, flightNumber, numSeats, flightPrice, flightAdded);
             //if this is the primary copy
-            if(broadcast.PCBit.get(0)) {
-                //ready to broadcast the command
-                broadcast.addCommand(command);
-                broadcast.bit.set(0);
-            }
+            sendCommand(command);
+
             return flightAdded;
         }
         else {
@@ -400,11 +410,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         this.txnManager.enlist(id,FLIGHT);
 
         String command = String.format("queryflight,%d,%d",id,flightNumber);
-        if(broadcast.PCBit.get(0)) {
-            //ready to broadcast the command
-            broadcast.addCommand(command);
-            broadcast.bit.set(0);
-        }
+
+        sendCommand(command);
 
         return flightNum;
     }
@@ -621,11 +628,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 this.txnManager.enlist(id, CUST);
             }
 
-            if (broadcast.PCBit.get(0)) {
-                System.out.println("READY TO BROADCAST!!!!!");
-                broadcast.addCommand(command);
-                broadcast.bit.set(0);
-            }
+            sendCommand(command);
+
             return true;
         } else {
             Trace.info("INFO: RM::newCustomer(" + id + ", " +
@@ -760,11 +764,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             this.txnManager.enlist(id,CUST);
 
             String command = "querycustomer,"+id+","+customerId;
-            if (broadcast.PCBit.get(0)) {
-                System.out.println("READY TO BROADCAST!!!!!");
-                broadcast.addCommand(command);
-                broadcast.bit.set(0);
-            }
+
+            sendCommand(command);
             
 
             return s;
@@ -798,12 +799,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
             this.txnManager.enlist(id,FLIGHT);
 
-            //if this is the primary copy
-            if(broadcast.PCBit.get(0)) {
-                //ready to broadcast the command
-                broadcast.addCommand(command);
-                broadcast.bit.set(0);
-            }
+
+            sendCommand(command);
 
             return true;
         }
@@ -1062,14 +1059,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
 
         String command = "commit,"+txnId;
-        if(broadcast.PCBit.get(0)) {
-            //ready to broadcast the command
-            broadcast.addCommand(command);
-            broadcast.bit.set(0);
-        }
+        sendCommand(command);
 
         return true;
     }
+
 
     @Override
     public boolean abort(int txnId){
@@ -1240,6 +1234,10 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             Trace.warn("ERROR WHEN REMOVING TXNMANAGER ENTRIES AT ABORT: "+txnId);
             e.printStackTrace();
         }
+
+        //send command to replica
+        String command = "abort,"+txnId;
+        sendCommand(command);
 
         return true;
     }

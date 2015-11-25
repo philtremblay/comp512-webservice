@@ -239,9 +239,9 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     wrongNumber();
                     break;
                 }
-                System.out.println("Querying a flight using id: " + arguments.elementAt(1));
-                System.out.println("Flight number: " + arguments.elementAt(2));
-                System.out.println("Waiting for response from the server...");
+                System.out.println("REP: Querying a flight using id: " + arguments.elementAt(1));
+                System.out.println("REP: Flight number: " + arguments.elementAt(2));
+                System.out.println("REP: Waiting for response from the server...");
                 try {
                     id = getInt(arguments.elementAt(1));
                     flightNumber = getInt(arguments.elementAt(2));
@@ -249,7 +249,7 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     Trace.info("REP: Number of seats for flight "+flightNumber+ ": "+ seats);
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
+                    System.out.println("REP: EXCEPTION: ");
                     System.out.println(e.getMessage());
                     e.printStackTrace();
                 }
@@ -269,7 +269,7 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     m_rm.ttl[id-1].pushItem(id);
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
+                    System.out.println("REP: EXCEPTION: ");
                     System.out.println(e.getMessage());
                     e.printStackTrace();
                 }
@@ -290,24 +290,31 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
 
                     price = m_rm.queryFlightPrice(id, flightNumber);
 
-                    //m_rm.reserveItem(id,customerId,String.valueOf(flightNumber),key,m_rm.FLIGHT);
 
                     location = String.valueOf(flightNumber);
-                    //directly write to the customer database
-                    // Read customer object if it exists
-                    Customer cust = (Customer) m_rm.readData(id, Customer.getKey(customerId));
-                    if (cust != null) {
-                        //customer reserves it
-                        int itemInfo = m_rm.FLIGHT;
-                        cust.reserve(key, location, price, itemInfo, id); //change location maybe
-                        m_rm.writeData(id, cust.getKey(), cust);
 
-                        Vector cmd = cmdToVect(m_rm.CUST,m_rm.UNRES,customerId);
-                        cmd.add(Integer.parseInt(location));
-                        cmd.add(key);
-                        cmd.add(itemInfo);
-                        m_rm.txnManager.setNewUpdateItem(id,cmd);
+                    //directly write to the customer database
+                    if (reserveItem(id, customerId, location, key, price, m_rm.FLIGHT, m_rm.UNRES)) {
+                        System.out.println("REP: flight number " + flightNumber + " is reserved");
                     }
+                    else {
+                        System.out.println("REP: flight number " + flightNumber + " is not reserved");
+                    }
+
+                    //made this a universial method --> see below:
+                    // Read customer object if it exists
+                    //Customer cust = (Customer) m_rm.readData(id, Customer.getKey(customerId));
+                    //if (cust != null) {
+                        //customer reserves it
+                    //    cust.reserve(key, location, price, itemInfo, id); //change location maybe
+                    //    m_rm.writeData(id, cust.getKey(), cust);
+
+                    //    Vector cmd = cmdToVect(m_rm.CUST,m_rm.UNRES,customerId);
+                    //    cmd.add(Integer.parseInt(location));
+                    //    cmd.add(key);
+                    //    cmd.add(itemInfo);
+                    //    m_rm.txnManager.setNewUpdateItem(id,cmd);
+                   // }
 
                     //start ttl
                     m_rm.ttl[id-1].pushItem(id);
@@ -315,7 +322,7 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
 
                 }
                 catch(Exception e) {
-                    System.out.println("EXCEPTION: ");
+                    System.out.println("REP: EXCEPTION: ");
                     System.out.println(e.getMessage());
                     e.printStackTrace();
                 }
@@ -326,9 +333,9 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     wrongNumber();
                     break;
                 }
-                System.out.println("Adding a new Customer using id: "
+                System.out.println("REP: Adding a new Customer using id: "
                         + arguments.elementAt(1)  +  " and cid "  + arguments.elementAt(2));
-                System.out.println("Waiting for response from server...");
+                System.out.println("REP: Waiting for response from server...");
 
                 /**Dont need to start TTL right here because it will start once call the newcustomerid()**/
                 try {
@@ -336,9 +343,9 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     int customer = getInt(arguments.elementAt(2));
                     if (id >= 0 && customer >= 0) {
                         if (m_rm.newCustomerId(id, customer)) {
-                            System.out.println("new customer id: " + customer);
+                            System.out.println("REP: new customer id: " + customer);
                         } else {
-                            Trace.warn("Customer already exists");
+                            System.out.println("REP: Customer already exists");
                         }
                     }
                 } catch (Exception e) {
@@ -359,26 +366,119 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     try {
                         int transactionID = getInt(arguments.elementAt(1));
                         if (m_rm.commit(transactionID)){
-                        Trace.info("Commit transaction " + transactionID + " successfully");
+                            System.out.println("REP: Commit transaction " + transactionID + " successfully");
                         }
                         else {
-                        Trace.warn("Invalid transaction ID or failed to unlock");
+                            System.out.println("REP: Invalid transaction ID or failed to unlock");
                         }
                     } catch (Exception e) {
-                        System.out.println("EXCEPTION: ");
+                        System.out.println("REP: EXCEPTION: ");
                         e.printStackTrace();
                     }
                 }
                 break;
+            case 25: // abort method
+                if (arguments.size() != 2) { //command was "abort"
+                    wrongNumber();
+                    break;
+                }
+                else {
+
+                    try {
+                        int transactionID = getInt(arguments.elementAt(1));
+                        abort(transactionID);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+
+                }
+                break;
+
             default:
                 System.out.println("The interface does not support this command.");
                 break;
 
         }
 
+    }//end of execute function
+
+    /**This method writes the reservations to the customer database and add the record to transaction manager **/
+    private boolean reserveItem(int id, int customerId, String location, String key, int price, int itemInfo, int querytype) {
+        // Read customer object if it exists
+        boolean reserved = false;
+        Customer cust = (Customer) m_rm.readData(id, Customer.getKey(customerId));
+        if (cust != null) {
+            //customer reserves it
+            cust.reserve(key, location, price, itemInfo, id); //change location maybe
+            m_rm.writeData(id, cust.getKey(), cust);
+
+            Vector cmd = cmdToVect(m_rm.CUST,m_rm.UNRES,customerId);
+            cmd.add(Integer.parseInt(location));
+            cmd.add(key);
+            cmd.add(itemInfo);
+            m_rm.txnManager.setNewUpdateItem(id,cmd);
+            reserved = true;
+        }
+
+        return reserved;
+    }
+
+    /** abort only needs to focus on the customer data,
+     * all the RM data is supposed to be handled by the Primary Copy
+     *
+     * **/
+    private boolean abort(int txnId) {
+        //turn on the transaction bit
+        m_rm.ttl[txnId-1].pushAbort(txnId);
+        m_rm.transactionBit.set(txnId);
+        //this.transactionBit.set(txnId);
+        //get the commands from the stack of commands and execute them
+        Stack cmdList;
+        try {
+            cmdList = m_rm.txnManager.txnCmdList.get(txnId);
+        }
+        catch (NullPointerException e){
+            e.printStackTrace();
+            Trace.warn("NEED TO START TRANSCATION BEFORE CALLING ABORT");
+            return false;
+        }
+        while (!cmdList.isEmpty()) {
+            Vector cmd = (Vector) cmdList.pop();
+            Integer RMType = (Integer) cmd.get(0);
+            Integer queryType = (Integer) cmd.get(1);
+            Integer location = (Integer) cmd.get(2);
+            switch (queryType) {
+                case ResourceManagerImpl.ADD:
+                    //location is the customerId. it gets set in newcustomer
+                    if (!m_rm.newCustomerId(txnId, location)) {
+                        Trace.warn("FAILED TO CREATE NEW CUSTOMER UPON ABORT: " + txnId);
+                        return false;
+                    }
+                    break;
+                case ResourceManagerImpl.DEL:
+                    //location is the customerId. it gets set in newcustomer
+                    boolean isDeleted = m_rm.deleteCustomer(txnId, location);
+                    if (!isDeleted) {
+                        Trace.warn("FAILED TO DELETE CUSTOMER UPON ABORT: " + txnId);
+                        return false;
+                    }
+                    break;
+                case ResourceManagerImpl.UNRES:
+                    String objLocation = String.valueOf(cmd.get(3));
+                    String objKey = (String) cmd.get(4);
+                    Integer itemInfo = (Integer) cmd.get(5);
+                    if (!m_rm.unReserveItem(txnId, location, objLocation, objKey, itemInfo)) {
+                        Trace.warn("REP: FAILED UNRERSERVE CUSTOMER UPON ABORT: " + txnId);
+                        return false;
+                    }
+                    break;
+            }
+        }
 
 
 
+        return true;
     }
 
 
