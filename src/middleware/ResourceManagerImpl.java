@@ -399,7 +399,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
         this.txnManager.enlist(id,FLIGHT);
 
-        String command = "queryflight,"+id+","+flightNumber;
+        String command = String.format("queryflight,%d,%d",id,flightNumber);
         if(broadcast.PCBit.get(0)) {
             //ready to broadcast the command
             broadcast.addCommand(command);

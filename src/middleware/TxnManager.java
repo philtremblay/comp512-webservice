@@ -26,7 +26,7 @@ public class TxnManager implements Serializable {
     private synchronized void incrTxnId(){
 
         //increment transaction ID based on the maximum of the existing ID
-
+        /*
         synchronized (this.activeTxnRM) {
             Integer temp = 0;
             if (this.activeTxnRM.size() > 0) {
@@ -38,6 +38,10 @@ public class TxnManager implements Serializable {
             }
             this.currentTxnId = temp + 1;
         }
+        */
+
+        this.currentTxnId++;
+
     }
     private synchronized Integer getTxnIdVal(){
         return this.currentTxnId;

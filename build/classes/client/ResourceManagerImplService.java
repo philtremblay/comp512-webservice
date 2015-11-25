@@ -17,7 +17,7 @@ import javax.xml.ws.WebServiceFeature;
  * Generated source version: 2.2
  * 
  */
-@WebServiceClient(name = "ResourceManagerImplService", targetNamespace = "http://middleware/", wsdlLocation = "http://localhost:6668/midrep/service?wsdl")
+@WebServiceClient(name = "ResourceManagerImplService", targetNamespace = "http://middleware/", wsdlLocation = "http://localhost:6666/middle/service?wsdl")
 public class ResourceManagerImplService
     extends Service
 {
@@ -30,7 +30,7 @@ public class ResourceManagerImplService
         URL url = null;
         WebServiceException e = null;
         try {
-            url = new URL("http://localhost:6668/midrep/service?wsdl");
+            url = new URL("http://localhost:6666/middle/service?wsdl");
         } catch (MalformedURLException ex) {
             e = new WebServiceException(ex);
         }

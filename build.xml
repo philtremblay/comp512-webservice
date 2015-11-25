@@ -10,9 +10,9 @@
     <property name="middleware.host" value="localhost"/>
     <property name="middleware.port" value="6666"/>
 
-    <property name="mreplica.name" value="middlerep"/>
-    <property name="mreplica.host" value="localhost"/>
-    <property name="mreplica.port" value="6668"/>
+    <property name="middlerep.name" value="middlerep"/>
+    <property name="middlerep.host" value="localhost"/>
+    <property name="middlerep.port" value="6668"/>
 
 
     <!-- protocol configurations -->
@@ -190,7 +190,7 @@
     <!--End of middleware -->
 
     <!-- Start the middleware replica-->
-    <!--MIDDLEWARE target -->
+    <!--MIDDLEWAREREPLICA target -->
     <target name="build-middlerep">
         <annotationProcessing
                 fork="true"
@@ -210,17 +210,17 @@
     </target>
 
     <target name="deploy-war-middlerep">
-        <delete dir="${basedir}/webapps/${middleware.name}"
+        <delete dir="${basedir}/webapps/${middlerep.name}"
                 includeEmptyDirs="true"/>
-        <mkdir dir="${basedir}/webapps/${middleware.name}"/>
+        <mkdir dir="${basedir}/webapps/${middlerep.name}"/>
         <unzip
-                src="${basedir}/build/war/${middleware.name}.war"
-                dest="${basedir}/webapps/${middleware.name}"/>
+                src="${basedir}/build/war/${middlerep.name}.war"
+                dest="${basedir}/webapps/${middlerep.name}"/>
     </target>
 
     <target name="create-war-middlerep">
         <war
-                warfile="${basedir}/build/war/${middleware.name}.war"
+                warfile="${basedir}/build/war/${middlerep.name}.war"
                 webxml="src/middleware/web.xml">
             <webinf dir="${basedir}/src/middleware" includes="sun-jaxws.xml"/>
             <!-- change the directory -->
@@ -230,7 +230,17 @@
         </war>
     </target>
 
-    <target name="start-tomcat-middlerep" depends="build-main">
+    <target name="build-main-middlerep">
+        <javac
+                fork="true"
+                srcdir="${basedir}/src"
+                destdir="${basedir}/build"
+                includes="main/**">
+            <classpath refid="jaxws.classpath"/>
+        </javac>
+    </target>
+
+    <target name="start-tomcat-middlerep" depends="build-main-middlerep">
         <echo message="Starting Tomcat and deploying service ... "/>
         <java fork="true" classname="main.Main">
             <classpath>
@@ -238,8 +248,8 @@
                 <pathelement location="${basedir}/build/"/>
             </classpath>
             <jvmarg value="-Djava.security.policy=${basedir}/etc/server.policy"/>
-            <arg value="${mreplica.name}"/>
-            <arg value="${mreplica.port}"/>
+            <arg value="${middlerep.name}"/>
+            <arg value="${middlerep.port}"/>
             <arg value="${basedir}/webapps"/>
         </java>
     </target>

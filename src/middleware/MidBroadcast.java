@@ -189,7 +189,9 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
         arguments = parse(command);
 
         //decide which of the commands this was
-        switch(findChoice((String) arguments.elementAt(0))) {
+        int choice = findChoice((String) arguments.elementAt(0));
+        //System.out.println("\n\n\nOPTION: " + choice);
+        switch(choice) {
 
 
             case 2:  //new flight
@@ -214,11 +216,11 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                         //set active RM list
                         this.m_rm.txnManager.enlist(id, m_rm.FLIGHT);
 
-                        System.out.println("Flight is reserved in the replica");
+                        System.out.println("REP: Flight is added in the replica");
 
                     }
                     else {
-                        System.out.println("Flight is not reserved in the replica");
+                        System.out.println("REP: Flight is not added in the replica");
                     }
 
                     //start ttl
@@ -231,7 +233,7 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                 }
                 break;
 
-            case 10:
+            case 10: //query flight
 
                 if (arguments.size() != 3) {
                     wrongNumber();
@@ -244,15 +246,13 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     id = getInt(arguments.elementAt(1));
                     flightNumber = getInt(arguments.elementAt(2));
                     int seats = m_rm.queryFlight(id, flightNumber);
+                    Trace.info("REP: Number of seats for flight "+flightNumber+ ": "+ seats);
                 }
                 catch(Exception e) {
                     System.out.println("EXCEPTION: ");
                     System.out.println(e.getMessage());
                     e.printStackTrace();
                 }
-
-
-
 
                 break;
             case 13: //query customer
@@ -288,7 +288,6 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     flightNumber = getInt(arguments.elementAt(3));
                     String key = getString(arguments.elementAt(4));
 
-                    System.out.println("key used to reserve: " + key);
                     price = m_rm.queryFlightPrice(id, flightNumber);
 
                     //m_rm.reserveItem(id,customerId,String.valueOf(flightNumber),key,m_rm.FLIGHT);
