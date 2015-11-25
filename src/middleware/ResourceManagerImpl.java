@@ -230,23 +230,21 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             return false;
         } else {
 
-
             // Decrease the number of available items in the storage.
             boolean update = true;
-            //its only the Primary copy that sends to the RM, not the replica
-            if (broadcast.PCBit.get(0)) {
-                switch (itemInfo) {
-                    case FLIGHT:
-                        update = flightProxy.proxy.updateItemInfo(id, key, RES);
-                        break;
-                    case CAR:
-                        update = carProxy.proxy.updateItemInfo(id, key, RES);
-                        break;
-                    case ROOM:
-                        update = roomProxy.proxy.updateItemInfo(id, key, RES);
-                        break;
-                }
+
+            switch (itemInfo) {
+                case FLIGHT:
+                    update = flightProxy.proxy.updateItemInfo(id, key, RES);
+                    break;
+                case CAR:
+                    update = carProxy.proxy.updateItemInfo(id, key, RES);
+                    break;
+                case ROOM:
+                    update = roomProxy.proxy.updateItemInfo(id, key, RES);
+                    break;
             }
+
 
             if (!update){
                 Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
