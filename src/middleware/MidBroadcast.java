@@ -38,25 +38,6 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
         this.m_rm = resourceManager;
     }
 
-    //private TimeToLive[] m_ttl = null;
-    
-
-/*
-    private void startTimer() {
-
-        int i = 0;
-        while (i < m_ttl.length) {
-
-            if (m_ttl[i] != null) {
-                Thread t = new Thread(m_ttl[i]);
-                t.start();
-            }
-            i++;
-        }
-
-
-    }
-*/
 
     public void addCommand(String command) {
 
@@ -201,7 +182,7 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                 }
                 try {
 
-                    
+
                     id = getInt(arguments.elementAt(1));
                     flightNumber = getInt(arguments.elementAt(2));
                     numSeats = getInt(arguments.elementAt(3));

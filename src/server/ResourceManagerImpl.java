@@ -7,6 +7,7 @@ package server;
 
 import server.LockManager.DeadlockException;
 import server.LockManager.LockManager;
+
 import java.util.*;
 import javax.jws.WebService;
 
@@ -14,34 +15,30 @@ import javax.jws.WebService;
 @WebService(endpointInterface = "server.ws.ResourceManager")
 public class ResourceManagerImpl implements server.ws.ResourceManager {
 
-    public RMHashtable m_itemHT = new RMHashtable();
+    protected RMHashtable m_itemHT = new RMHashtable();
 
     private static final int READ = 0;
     private static final int WRITE = 1;
 
     protected LockManager lockServer;
-
     Broadcast broadcaster;
     String configFile = "flightudp.xml";
 
 
-    /**
-     * Constructor
-     */
     //constructor here: initialize the lock manager
     public ResourceManagerImpl() {
 
         //initialize the lock manager
         this.lockServer = new LockManager();
-
         try {
-            this.broadcaster = new Broadcast(configFile,lockServer, m_itemHT);
+            this.broadcaster = new Broadcast(configFile,this);
             Thread t = new Thread(broadcaster);
             t.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
 
     // Basic operations on RMItem //
 
@@ -66,8 +63,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
     }
 
-
-
+    protected void sendCommand(String command) {
+        if (broadcaster.PCBit.get(0)) {
+            broadcaster.addCommand(command);
+            broadcaster.bit.set(0);
+        }
+    }
 
 
     // Basic operations on ReservableItem //
@@ -128,7 +129,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         Customer cust = (Customer) readData(id, Customer.getKey(customerId));
         if (cust == null) {
             Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
-                   + key + ", " + location + ") failed: customer doesn't exist.");
+                    + key + ", " + location + ") failed: customer doesn't exist.");
             return false;
         }
 
@@ -160,7 +161,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // Flight operations //
 
     // Create a new flight, or add seats to existing flight.
-    // Note: if flightPrice <= 0 and the flight already exists, it maintains
+    // Note: if flightPrice <= 0 and the flight already exists, it maintains 
     // its current price.
     @Override
     public boolean addFlight(int id, int flightNumber,
@@ -179,8 +180,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 writeData(id, newObj.getKey(), newObj);
                 Trace.info("RM::addFlight(" + id + ", " + flightNumber
                         + ", $" + flightPrice + ", " + numSeats + ") OK.");
-                //turn on multicast
-                broadcaster.bit.set(0);
             } else {
                 // Add seats to existing flight and update the price.
                 curObj.setCount(curObj.getCount() + numSeats);
@@ -191,11 +190,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 Trace.info("RM::addFlight(" + id + ", " + flightNumber
                         + ", $" + flightPrice + ", " + numSeats + ") OK: "
                         + "seats = " + curObj.getCount() + ", price = $" + flightPrice);
-                //turn on multicast
-                broadcaster.bit.set(0);
             }
-
-            //broadcaster.bit.flip(0);
+            String command = String.format("newflight,%d,%d,%d,%d", id, flightNumber, numSeats, flightPrice);
+            sendCommand(command);
             return true;
         }
         catch (DeadlockException dl) {
@@ -204,39 +201,46 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             return false;
         }
 
+
+
     }
 
     @Override
     public boolean deleteFlight(int id, int flightNumber) {
 
-
         String strData = "flight,"+flightNumber;
         try {
             lockServer.Lock(id, strData, WRITE);
-            boolean isDeleted = deleteItem(id, Flight.getKey(flightNumber));
-            broadcaster.bit.set(0);
-            return isDeleted;
+            return deleteItem(id, Flight.getKey(flightNumber));
         }
         catch (DeadlockException dl) {
             Trace.warn("RM::deleteItem(" + id + ", flight " + flightNumber+ ") failed: ");
             return false;
         }
+
+
     }
 
     // Returns the number of empty seats on this flight.
     @Override
     public int queryFlight(int id, int flightNumber) {
 
-
+        String strData = "flight,"+flightNumber;
         try {
-            String strData = "flight,"+flightNumber;
             lockServer.Lock(id, strData, READ);
-            return queryNum(id, Flight.getKey(flightNumber));
+
+            int num = queryNum(id, Flight.getKey(flightNumber));
+
+            String command = "queryflight,"+id+","+flightNumber;
+            sendCommand(command);
+            return num;
         }
         catch (DeadlockException dl) {
             Trace.warn("RM::queryNum(" + id + ", flight " + flightNumber+ ") failed: ");
             return -1;
         }
+
+
 
     }
 
@@ -257,36 +261,36 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     }
 
     /*
-    // Returns the number of reservations for this flight.
+    // Returns the number of reservations for this flight. 
     public int queryFlightReservations(int id, int flightNumber) {
-        Trace.info("RM::queryFlightReservations(" + id
+        Trace.info("RM::queryFlightReservations(" + id 
                 + ", #" + flightNumber + ") called.");
-        RMInteger numReservations = (RMInteger) readData(id,
+        RMInteger numReservations = (RMInteger) readData(id, 
                 Flight.getNumReservationsKey(flightNumber));
         if (numReservations == null) {
             numReservations = new RMInteger(0);
        }
-        Trace.info("RM::queryFlightReservations(" + id +
+        Trace.info("RM::queryFlightReservations(" + id + 
                 ", #" + flightNumber + ") = " + numReservations);
         return numReservations.getValue();
     }
     */
-
+    
     /*
-    // Frees flight reservation record. Flight reservation records help us
-    // make sure we don't delete a flight if one or more customers are
+    // Frees flight reservation record. Flight reservation records help us 
+    // make sure we don't delete a flight if one or more customers are 
     // holding reservations.
     public boolean freeFlightReservation(int id, int flightNumber) {
-        Trace.info("RM::freeFlightReservations(" + id + ", "
+        Trace.info("RM::freeFlightReservations(" + id + ", " 
                 + flightNumber + ") called.");
-        RMInteger numReservations = (RMInteger) readData(id,
+        RMInteger numReservations = (RMInteger) readData(id, 
                 Flight.getNumReservationsKey(flightNumber));
         if (numReservations != null) {
             numReservations = new RMInteger(
                     Math.max(0, numReservations.getValue() - 1));
         }
         writeData(id, Flight.getNumReservationsKey(flightNumber), numReservations);
-        Trace.info("RM::freeFlightReservations(" + id + ", "
+        Trace.info("RM::freeFlightReservations(" + id + ", " 
                 + flightNumber + ") OK: reservations = " + numReservations);
         return true;
     }
@@ -296,7 +300,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // Car operations //
 
     // Create a new car location or add cars to an existing location.
-    // Note: if price <= 0 and the car location already exists, it maintains
+    // Note: if price <= 0 and the car location already exists, it maintains 
     // its current price.
     @Override
     public boolean addCars(int id, String location, int numCars, int carPrice) {
@@ -316,7 +320,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 writeData(id, newObj.getKey(), newObj);
                 Trace.info("RM::addCars(" + id + ", " + location + ", "
                         + numCars + ", $" + carPrice + ") OK.");
-                broadcaster.bit.set(0);
             } else {
                 // Add count to existing object and update price.
                 curObj.setCount(curObj.getCount() + numCars);
@@ -327,7 +330,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 Trace.info("RM::addCars(" + id + ", " + location + ", "
                         + numCars + ", $" + carPrice + ") OK: "
                         + "cars = " + curObj.getCount() + ", price = $" + carPrice);
-                broadcaster.bit.set(0);
             }
             return(true);
 
@@ -348,9 +350,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         try {
 
             lockServer.Lock(id, strData, WRITE);
-            boolean isDeleted = deleteItem(id, Car.getKey(location));
-            broadcaster.bit.set(0);
-            return isDeleted;
+            return deleteItem(id, Car.getKey(location));
         }
         catch (DeadlockException dl) {
             Trace.warn("RM::deleteItem(" + id + ", car " + location + ") failed: ");
@@ -393,7 +393,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // Room operations //
 
     // Create a new room location or add rooms to an existing location.
-    // Note: if price <= 0 and the room location already exists, it maintains
+    // Note: if price <= 0 and the room location already exists, it maintains 
     // its current price.
     @Override
     public boolean addRooms(int id, String location, int numRooms, int roomPrice) {
@@ -410,7 +410,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 writeData(id, newObj.getKey(), newObj);
                 Trace.info("RM::addRooms(" + id + ", " + location + ", "
                         + numRooms + ", $" + roomPrice + ") OK.");
-                broadcaster.bit.set(0);
             } else {
                 // Add count to existing object and update price.
                 curObj.setCount(curObj.getCount() + numRooms);
@@ -421,7 +420,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 Trace.info("RM::addRooms(" + id + ", " + location + ", "
                         + numRooms + ", $" + roomPrice + ") OK: "
                         + "rooms = " + curObj.getCount() + ", price = $" + roomPrice);
-                broadcaster.bit.set(0);
             }
 
             return true;
@@ -440,9 +438,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         String strData = "room," + location;
         try {
             lockServer.Lock(id, strData, WRITE);
-            boolean isDeleted = deleteItem(id, Room.getKey(location));
-            broadcaster.bit.set(0);
-            return isDeleted;
+            return deleteItem(id, Room.getKey(location));
         }
         catch (DeadlockException dl) {
             return false;
@@ -500,7 +496,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             Customer cust = new Customer(customerId);
             writeData(id, cust.getKey(), cust);
             Trace.info("RM::newCustomer(" + id + ") OK: " + customerId);
-            broadcaster.bit.set(0);
             return customerId;
         }
         catch (DeadlockException dl) {
@@ -522,7 +517,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 cust = new Customer(customerId);
                 writeData(id, cust.getKey(), cust);
                 Trace.info("INFO: RM::newCustomer(" + id + ", " + customerId + ") OK.");
-                broadcaster.bit.set(0);
                 return true;
             } else {
                 Trace.info("INFO: RM::newCustomer(" + id + ", " +
@@ -536,7 +530,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
     }
 
-    // Delete customer from the database.
+    // Delete customer from the database. 
     @Override
     public boolean deleteCustomer(int id, int customerId) {
         Trace.info("RM::deleteCustomer(" + id + ", " + customerId + ") called.");
@@ -571,8 +565,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 // Remove the customer from the storage.
                 removeData(id, cust.getKey());
                 Trace.info("RM::deleteCustomer(" + id + ", " + customerId + ") OK.");
-
-                broadcaster.bit.set(0);
                 return true;
             }
         }
@@ -582,8 +574,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
     }
 
-    // Return data structure containing customer reservation info.
-    // Returns null if the customer doesn't exist.
+    // Return data structure containing customer reservation info. 
+    // Returns null if the customer doesn't exist. 
     // Returns empty RMHashtable if customer exists but has no reservations.
     protected RMHashtable getCustomerReservations(int id, int customerId) {
         Trace.info("RM::getCustomerReservations(" + id + ", "
@@ -626,7 +618,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
     }
 
-    // Add flight reservation to this customer.
+    // Add flight reservation to this customer.  
     @Override
     public boolean reserveFlight(int id, int customerId, int flightNumber) {
         String flightData = "flight,"+flightNumber;
@@ -635,10 +627,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         try {
             lockServer.Lock(id, flightData, WRITE);
             lockServer.Lock(id, custData, WRITE);
-            boolean isReserved = reserveItem(id, customerId,
+            return reserveItem(id, customerId,
                     Flight.getKey(flightNumber), String.valueOf(flightNumber));
-            broadcaster.bit.set(0);
-            return isReserved;
         }
         catch (DeadlockException dl) {
             Trace.warn("RM::reserveItem(" + id + ", "
@@ -647,7 +637,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
     }
 
-    // Add car reservation to this customer.
+    // Add car reservation to this customer. 
     @Override
     public boolean reserveCar(int id, int customerId, String location) {
         String strCar = "car,"+location;
@@ -655,9 +645,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         try {
             lockServer.Lock(id, strCar, WRITE);
             lockServer.Lock(id, strCustom, WRITE);
-            boolean isReserved = reserveItem(id, customerId, Car.getKey(location), location);
-            broadcaster.bit.set(0);
-            return isReserved;
+            return reserveItem(id, customerId, Car.getKey(location), location);
         }
         catch (DeadlockException dl) {
             Trace.warn("RM::reserveItem(" + id + ", "
@@ -676,9 +664,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         try {
             lockServer.Lock(id, strRoom, WRITE);
             lockServer.Lock(id, strCustomer, WRITE);
-            boolean isReserved = reserveItem(id, customerId, Room.getKey(location), location);
-            broadcaster.bit.set(0);
-            return isReserved;
+            return reserveItem(id, customerId, Room.getKey(location), location);
         }
         catch (DeadlockException dl) {
             Trace.warn("RM::reserveItem(" + id + ", "
@@ -781,7 +767,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         item.setCount(item.getCount() + count);
 
         Trace.info(key + " reserved/available = "
-                        + item.getReserved() + "/" + item.getCount());
+                + item.getReserved() + "/" + item.getCount());
         return true;
     }
 
@@ -804,6 +790,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
         else
             return false;
+
+
     }
 
     @Override
@@ -813,7 +801,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     @Override
     public boolean shutdown(){
-        System.exit(1);
+        System.exit(0);
         return true;
     }
 
