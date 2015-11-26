@@ -387,6 +387,10 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             this.txnManager.enlist(id,FLIGHT);
 
             System.out.println("DELETED flight " + flightNumber);
+
+            //send to replica
+            String command = String.format("deleteflight,%d,%d,%b",id,flightNumber,flightDeleted);
+            sendCommand(command);
         }
         else {
             System.out.println("FAIL to delete flight");
@@ -425,6 +429,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         this.txnManager.enlist(id,FLIGHT);
 
+        String command = String.format("queryflightprice,%d,%d",id,flightNumber);
+        sendCommand(command);
+
         return flightPrice;
     }
 
@@ -442,6 +449,10 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
             //set active RM list
             this.txnManager.enlist(id,CAR);
+
+            String command = String.format("newcar,%d,%s,%d,%d,%b", id, location, numCars, carPrice, carsAdded);
+            //if this is the primary copy
+            sendCommand(command);
         }
         else {
             System.out.println("FAIL to add cars");
@@ -466,6 +477,10 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
             this.txnManager.enlist(id,CAR);
 
+            String command = String.format("deletecar,%d,%s,%b",id,location,carsDeleted);
+            //if this is the primary copy
+            sendCommand(command);
+
             System.out.println("DELETE cars " + id);
         }
         else {
@@ -484,6 +499,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         this.txnManager.enlist(id,CAR);
 
+        String command = String.format("querycar,%d,%s",id,location);
+        sendCommand(command);
+
         return carNum;
     }
 
@@ -495,6 +513,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         System.out.println("QUERY the car price with ID: " + id);
 
         this.txnManager.enlist(id,CAR);
+
+        String command = String.format("querycar,%d,%s",id,location);
+        sendCommand(command);
 
         return carPrice;
     }
@@ -510,6 +531,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             this.txnManager.setNewUpdateItem(id,cmd);
 
             this.txnManager.enlist(id,ROOM);
+            String command = String.format("newroom,%d,%s,%d,%d,%b", id, location, numRooms, roomPrice, roomsAdded);
+            //if this is the primary copy
+            sendCommand(command);
         }
         else {
             System.out.println("FAIL to add rooms to the room server: "+r_host + ":" +r_port);
@@ -534,9 +558,10 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
             this.txnManager.enlist(id,ROOM);
             this.txnManager.enlist(id,ROOM);
-
-
             System.out.println("EXECUTE the deleteRoom command to the rooom server: "+r_host + ":" +r_port);
+
+            String command = String.format("deleteroom,%d,%s,%b",id,location,roomDeleted);
+            sendCommand(command);
         }
         else {
             System.out.println("FAIL to delete rooms");
@@ -554,6 +579,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         this.txnManager.enlist(id,ROOM);
 
+        String command = String.format("queryroom,%d,%s",id,location);
+        sendCommand(command);
+
         return roomquery;
     }
 
@@ -564,6 +592,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         System.out.println("QUERY the room PRICE with ID:" + id);
 
         this.txnManager.enlist(id,ROOM);
+
+        String command = String.format("queryroomprice,%d,%s",id,location);
+        sendCommand(command);
 
         return roomPrice;
     }
@@ -595,6 +626,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         this.txnManager.setNewUpdateItem(id,cmd);
 
         this.txnManager.enlist(id,CUST);
+
+        String command = String.format("newcustomer,%d",id);
+        sendCommand(command);
 
         return customerId;
     }
@@ -763,7 +797,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             System.out.println(s);
             this.txnManager.enlist(id,CUST);
 
-            String command = "querycustomer,"+id+","+customerId;
+            String command = String.format("querycustomer,%d,%d",id,customerId);
 
             sendCommand(command);
             
