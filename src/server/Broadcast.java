@@ -301,7 +301,9 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                 break;
 
 
-            case 17:  //reserve a flight
+            case 17:  //reserve a flight --> goes to case updateItemInfo
+
+                /*
                 if (arguments.size() != 4) {
                     wrongNumber();
                     break;
@@ -325,6 +327,7 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                     System.out.println(e.getMessage());
                     e.printStackTrace();
                 }
+                */
                 break;
 
             case 22:  //new Customer given id
@@ -388,6 +391,24 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                         int count = getInt(arguments.elementAt(3));
                         s_rm.updateDeleteCustomer(id, key, count);
                         System.out.println("REP: Restore RM database from deleting customer");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                break;
+
+            case 28:
+                if (arguments.size() != 4) { //command was deletecustomer
+                    wrongNumber();
+                    break;
+                }
+                else {
+                    //reserve or unreserve
+                    try {
+                        id = getInt(arguments.elementAt(1));
+                        String key = getString(arguments.elementAt(2));
+                        int resOrUnres = getInt(arguments.elementAt(3));
+                        s_rm.updateItemInfo(id, key, resOrUnres);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -458,6 +479,8 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
             return 26;
         else if (argument.compareToIgnoreCase("updatedeletecustomer") == 0)
             return 27;
+        else if (argument.compareToIgnoreCase("updateItemInfo") == 0)
+            return 28;
         else
             return 666;
     }

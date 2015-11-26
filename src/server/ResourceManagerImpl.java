@@ -716,7 +716,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         System.out.println("HERE IS THE KEY and item:" + key + ", " + invokeItem);
 
-
+        String command = String.format("updateItemInfo,%d,%s,%d",id,key,resOrUnres);
         //reserve
         if (resOrUnres == 7) {
             if (item == null) {
@@ -731,7 +731,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                     writeData(id,key,item);
 
                     //only send the command to replica upon success
-                    String command = String.format("reserve%s,%d,%s,%d", invokeItem,id,key,resOrUnres);
                     sendCommand(command);
 
                     return true;
@@ -756,6 +755,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                     item.setCount(item.getCount() + 1);
                     item.setReserved(item.getReserved() - 1);
                     writeData(id,key,item);
+
+                    //only send the command to replica upon success
+                    sendCommand(command);
 
                     return true;
                 } catch (DeadlockException e) {
