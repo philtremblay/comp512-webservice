@@ -211,16 +211,15 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                         this.m_rm.txnManager.enlist(id, m_rm.FLIGHT);
 
                         System.out.println("REP: Flight is added in the replica");
-                    }
-                    else {
-                        System.out.println("REP: Flight " + flightNumber+" is not added in the replica");
+                    } else {
+                        System.out.println("REP: Flight " + flightNumber + " is not added in the replica");
                         break;
                     }
 
                     //start ttl
-                    m_rm.ttl[id-1].pushItem(id);
+                    m_rm.ttl[id - 1].pushItem(id);
 
-                }catch(Exception e) {
+                } catch (Exception e) {
                     System.out.println("EXCEPTION: ");
                     System.out.println(e.getMessage());
                     e.printStackTrace();
@@ -231,25 +230,24 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     wrongNumber();
                     break;
                 }
-                try{
+                try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
                     status = getBoolean(arguments.elementAt(5));
 
-                    if (status){
+                    if (status) {
                         //add to txnmanager and enlist the rm
-                        Vector cmd = cmdToVect(this.m_rm.CAR,this.m_rm.DEL,Integer.parseInt(location));
-                        this.m_rm.txnManager.setNewUpdateItem(id,cmd);
-                        this.m_rm.txnManager.enlist(id,this.m_rm.CAR);
+                        Vector cmd = cmdToVect(this.m_rm.CAR, this.m_rm.DEL, Integer.parseInt(location));
+                        this.m_rm.txnManager.setNewUpdateItem(id, cmd);
+                        this.m_rm.txnManager.enlist(id, this.m_rm.CAR);
 
                         System.out.println("REP: Car " + location + "is added in the replica");
-                    }
-                    else{
+                    } else {
                         System.out.println("REP: Car could not be added to the replica");
                         break;
                     }
                     //start ttl
-                    m_rm.ttl[id-1].pushItem(id);
+                    m_rm.ttl[id - 1].pushItem(id);
 
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -261,42 +259,40 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     wrongNumber();
                     break;
                 }
-                try{
+                try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
                     status = getBoolean(arguments.elementAt(5));
 
-                    if(status){
-                        Vector cmd = cmdToVect(this.m_rm.ROOM,this.m_rm.DEL,Integer.parseInt(location));
-                        this.m_rm.txnManager.setNewUpdateItem(id,cmd);
-                        this.m_rm.txnManager.enlist(id,this.m_rm.ROOM);
+                    if (status) {
+                        Vector cmd = cmdToVect(this.m_rm.ROOM, this.m_rm.DEL, Integer.parseInt(location));
+                        this.m_rm.txnManager.setNewUpdateItem(id, cmd);
+                        this.m_rm.txnManager.enlist(id, this.m_rm.ROOM);
 
-                        System.out.println("REP: Room "+ location+" added to the replica");
-                    }
-                    else{
+                        System.out.println("REP: Room " + location + " added to the replica");
+                    } else {
                         System.out.println("REP: Room could not be added to the replica");
                         break;
                     }
                     //start ttl
-                    m_rm.ttl[id-1].pushItem(id);
+                    m_rm.ttl[id - 1].pushItem(id);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
                 break;
 
             case 5: //new customer
-                if (arguments.size() != 2){
+                if (arguments.size() != 2) {
                     wrongNumber();
                     break;
                 }
-                try{
+                try {
                     id = getInt(arguments.elementAt(1));
-                    if (id > 0){
+                    if (id > 0) {
                         int custId = this.m_rm.newCustomer(id);
-                        if (custId > 0 ){
+                        if (custId > 0) {
                             System.out.println("REP: Added Customer with customer id: " + custId);
-                        }
-                        else {
+                        } else {
                             System.out.println("REP: Could not create new customer");
                             break;
                         }
@@ -305,12 +301,12 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                m_rm.ttl[id-1].pushItem(id);
+                m_rm.ttl[id - 1].pushItem(id);
 
                 break;
 
             case 6: //deleteflight
-                if (arguments.size() != 4){
+                if (arguments.size() != 4) {
                     wrongNumber();
                     break;
                 }
@@ -320,8 +316,8 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                 try {
                     id = getInt(arguments.elementAt(1));
                     flightNumber = getInt(arguments.elementAt(2));
-                    numSeats = this.m_rm.queryFlight(id,flightNumber);
-                    flightPrice = this.m_rm.queryFlightPrice(id,flightNumber);
+                    numSeats = this.m_rm.queryFlight(id, flightNumber);
+                    flightPrice = this.m_rm.queryFlightPrice(id, flightNumber);
                     status = getBoolean(arguments.elementAt(3));
 
                     if (status) {
@@ -332,19 +328,18 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                         this.m_rm.txnManager.enlist(id, m_rm.FLIGHT);
 
                         System.out.println("REP: Deleted flight: " + flightNumber);
-                    }
-                    else{
+                    } else {
                         System.out.println("REP: Could not delete fight: " + flightNumber);
                     }
                     //start TTL
-                    this.m_rm.ttl[id-1].pushItem(id);
+                    this.m_rm.ttl[id - 1].pushItem(id);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
 
                 break;
             case 7: //deletecar
-                if (arguments.size() != 4){
+                if (arguments.size() != 4) {
                     wrongNumber();
                     break;
                 }
@@ -355,27 +350,27 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
                     status = getBoolean(arguments.elementAt(3));
-                    numCars = this.m_rm.queryCars(id,location);
-                    price = this.m_rm.queryCarsPrice(id,location);
+                    numCars = this.m_rm.queryCars(id, location);
+                    price = this.m_rm.queryCarsPrice(id, location);
 
-                    if (status){
-                        Vector cmd = cmdToVect(this.m_rm.CAR,this.m_rm.ADD,Integer.parseInt(location));
+                    if (status) {
+                        Vector cmd = cmdToVect(this.m_rm.CAR, this.m_rm.ADD, Integer.parseInt(location));
                         cmd.add(numCars);
                         cmd.add(price);
-                        this.m_rm.txnManager.setNewUpdateItem(id,cmd);
-                        this.m_rm.txnManager.enlist(id,this.m_rm.CAR);
+                        this.m_rm.txnManager.setNewUpdateItem(id, cmd);
+                        this.m_rm.txnManager.enlist(id, this.m_rm.CAR);
 
                         System.out.println("REP: Deleted car: " + location);
                     }
 
                     //start TTL
-                    this.m_rm.ttl[id-1].pushItem(id);
+                    this.m_rm.ttl[id - 1].pushItem(id);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
                 break;
             case 8: //deleteroom
-                if (arguments.size() != 4){
+                if (arguments.size() != 4) {
                     wrongNumber();
                     break;
                 }
@@ -386,26 +381,43 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
                     status = getBoolean(arguments.elementAt(3));
-                    numRooms = this.m_rm.queryRooms(id,location);
-                    price = this.m_rm.queryRoomsPrice(id,location);
+                    numRooms = this.m_rm.queryRooms(id, location);
+                    price = this.m_rm.queryRoomsPrice(id, location);
 
-                    if (status){
-                        Vector cmd = cmdToVect(this.m_rm.ROOM,this.m_rm.ADD,Integer.parseInt(location));
+                    if (status) {
+                        Vector cmd = cmdToVect(this.m_rm.ROOM, this.m_rm.ADD, Integer.parseInt(location));
                         cmd.add(numRooms);
                         cmd.add(price);
-                        this.m_rm.txnManager.setNewUpdateItem(id,cmd);
-                        this.m_rm.txnManager.enlist(id,this.m_rm.ROOM);
+                        this.m_rm.txnManager.setNewUpdateItem(id, cmd);
+                        this.m_rm.txnManager.enlist(id, this.m_rm.ROOM);
 
                         System.out.println("REP: Deleted room:" + location);
                     }
                     //start TTL
-                    this.m_rm.ttl[id-1].pushItem(id);
+                    this.m_rm.ttl[id - 1].pushItem(id);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
                 break;
             case 9: //delete customer
-                
+                if (arguments.size() != 2){
+                    wrongNumber();
+                    break;
+                }
+                System.out.println("REP: Deleting customer");
+                try {
+                    id = getInt(arguments.elementAt(1));
+                    int customerId = getInt(arguments.elementAt(2));
+
+                    if (this.m_rm.deleteCustomer(id,customerId)){
+                        System.out.println("REP: Customer "+ id + "was deleted");
+                    }
+                    else {
+                        System.out.println("REP: Customer "+ id + "was NOT deleted");
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 break;
 
             case 10: //query flight
@@ -421,11 +433,10 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     id = getInt(arguments.elementAt(1));
                     flightNumber = getInt(arguments.elementAt(2));
                     int seats = m_rm.queryFlight(id, flightNumber);
-                    Trace.info("REP: Number of seats for flight "+flightNumber+ ": "+ seats);
+                    Trace.info("REP: Number of seats for flight " + flightNumber + ": " + seats);
                     //start TTL
-                    this.m_rm.ttl[id-1].pushItem(id);
-                }
-                catch(Exception e) {
+                    this.m_rm.ttl[id - 1].pushItem(id);
+                } catch (Exception e) {
                     System.out.println("REP: EXCEPTION: ");
                     System.out.println(e.getMessage());
                     e.printStackTrace();
@@ -440,38 +451,38 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                 System.out.println("REP: Querying a car using id: " + arguments.elementAt(1));
                 System.out.println("REP: Car location: " + arguments.elementAt(2));
                 System.out.println("REP: Waiting for response from the server...");
-                try{
+                try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
-                    numCars = m_rm.queryCars(id,location);
-                    System.out.println("REP: Number of cars for car "+ location + ": "+numCars);
+                    numCars = m_rm.queryCars(id, location);
+                    System.out.println("REP: Number of cars for car " + location + ": " + numCars);
                     //start TTL
-                    this.m_rm.ttl[id-1].pushItem(id);
+                    this.m_rm.ttl[id - 1].pushItem(id);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
                 break;
             case 12: //query room location
-                if (arguments.size() != 3){
+                if (arguments.size() != 3) {
                     wrongNumber();
                     break;
                 }
                 System.out.println("REP: Querying a room using id: " + arguments.elementAt(1));
                 System.out.println("REP: Room location: " + arguments.elementAt(2));
                 System.out.println("REP: Waiting for response from the server...");
-                try{
+                try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
-                    numRooms = m_rm.queryRooms(id,location);
-                    System.out.println("REP: Number of rooms for room "+location + ": "+ numRooms);
+                    numRooms = m_rm.queryRooms(id, location);
+                    System.out.println("REP: Number of rooms for room " + location + ": " + numRooms);
                     //start TTL
-                    this.m_rm.ttl[id-1].pushItem(id);
+                    this.m_rm.ttl[id - 1].pushItem(id);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
                 break;
             case 13: //query customer
-                if (arguments.size() != 3){
+                if (arguments.size() != 3) {
                     wrongNumber();
                     break;
                 }
@@ -479,65 +490,64 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     id = getInt(arguments.elementAt(1));
                     int customer = getInt(arguments.elementAt(2));
                     String info = this.m_rm.queryCustomerInfo(id, customer);
-                    System.out.println("REP: Customer info for id "+id + ": " + info);
+                    System.out.println("REP: Customer info for id " + id + ": " + info);
                     m_rm.txnManager.enlist(id, m_rm.CUST);
 
-                }
-                catch(Exception e) {
+                } catch (Exception e) {
                     System.out.println("REP: EXCEPTION: ");
                     System.out.println(e.getMessage());
                     e.printStackTrace();
                 }
-                m_rm.ttl[id-1].pushItem(id);
+                m_rm.ttl[id - 1].pushItem(id);
 
                 break;
             case 14: //query flight price
-                if (arguments.size() != 3){
+                if (arguments.size() != 3) {
                     wrongNumber();
                     break;
                 }
                 try {
                     id = getInt(arguments.elementAt(1));
                     flightNumber = getInt(arguments.elementAt(2));
-                    flightPrice = this.m_rm.queryFlightPrice(id,flightNumber);
+                    flightPrice = this.m_rm.queryFlightPrice(id, flightNumber);
                     System.out.println("REP: Flight price for flight " + flightNumber + ": " + flightPrice);
 
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                m_rm.ttl[id-1].pushItem(id);
+                m_rm.ttl[id - 1].pushItem(id);
 
                 break;
             case 15: //query car price
-                if (arguments.size() != 3){
-                    wrongNumber();
-                    break;
-                }
-                try{
-                    id = getInt(arguments.elementAt(1));
-                    location = getString(arguments.elementAt(2));
-                    price = this.m_rm.queryCarsPrice(id,location);
-                    System.out.println("REP: Car price for car " + location + ": "+ price);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                m_rm.ttl[id-1].pushItem(id);
-
-                break;
-            case 16: //query room price
-                if (arguments.size() != 3){
+                if (arguments.size() != 3) {
                     wrongNumber();
                     break;
                 }
                 try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
-                    price = this.m_rm.queryRoomsPrice(id,location);
-                    System.out.println("REP: Room price for room "+ location + ": "+price);
+                    price = this.m_rm.queryCarsPrice(id, location);
+                    System.out.println("REP: Car price for car " + location + ": " + price);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                m_rm.ttl[id-1].pushItem(id);
+                m_rm.ttl[id - 1].pushItem(id);
+
+                break;
+            case 16: //query room price
+                if (arguments.size() != 3) {
+                    wrongNumber();
+                    break;
+                }
+                try {
+                    id = getInt(arguments.elementAt(1));
+                    location = getString(arguments.elementAt(2));
+                    price = this.m_rm.queryRoomsPrice(id, location);
+                    System.out.println("REP: Room price for room " + location + ": " + price);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                m_rm.ttl[id - 1].pushItem(id);
 
                 break;
 
@@ -552,31 +562,70 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     flightNumber = getInt(arguments.elementAt(3));
                     String key = getString(arguments.elementAt(4));
 
-                    price = m_rm.queryFlightPrice(id, flightNumber);
+                    price = this.m_rm.queryFlightPrice(id, flightNumber);
                     location = String.valueOf(flightNumber);
 
                     //directly write to the customer database
-                    if (reserveItem(id, customerId, location, key, price, m_rm.FLIGHT, m_rm.UNRES)) {
+                    if (reserveItem(id, customerId, location, key, price, this.m_rm.FLIGHT)) {
                         System.out.println("REP: flight number " + flightNumber + " is reserved");
-                    }
-                    else {
+                    } else {
                         System.out.println("REP: flight number " + flightNumber + " is not reserved");
                     }
-                    m_rm.ttl[id-1].pushItem(id);
-                }
-                catch(Exception e) {
+                    m_rm.ttl[id - 1].pushItem(id);
+                } catch (Exception e) {
                     System.out.println("REP: EXCEPTION: ");
                     System.out.println(e.getMessage());
                     e.printStackTrace();
                 }
                 break;
             case 18: //reserve car
+                if (arguments.size() != 5) {
+                    wrongNumber();
+                    break;
+                }
+                try{
+                    id = getInt(arguments.elementAt(1));
+                    int customerId = getInt(arguments.elementAt(2));
+                    location = getString(arguments.elementAt(3));
+                    String key = getString(arguments.elementAt(4));
+                    price = this.m_rm.queryCarsPrice(id,location);
+
+                    if (reserveItem(id,customerId,location,key,price,this.m_rm.CAR)){
+                        System.out.println("REP: car location: "+ location + " is reserved");
+                    }
+                    else{
+                        System.out.println("REP: car location: "+ location + " is not reserved");
+                    }
+                    m_rm.ttl[id - 1].pushItem(id);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 break;
             case 19: //reserve room
+                if (arguments.size() != 5 ){
+                    wrongNumber();
+                    break;
+                }
+                try{
+                    id = getInt(arguments.elementAt(1));
+                    int customerId = getInt(arguments.elementAt(2));
+                    location = getString(arguments.elementAt(3));
+                    String key = getString(arguments.elementAt(4));
+                    price = this.m_rm.queryRoomsPrice(id,location);
+
+                    if (reserveItem(id,customerId,location,key,price,this.m_rm.ROOM)){
+                        System.out.println("REP: room location: "+ location + " is reserved");
+                    }
+                    else{
+                        System.out.println("REP: room location: "+ location + " is not reserved");
+                    }
+                    m_rm.ttl[id - 1].pushItem(id);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 break;
             case 20: //reserve itinerary
-                break;
-            case 21: //quit the client
                 break;
 
             case 22:  //new Customer given id
@@ -644,29 +693,28 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     }
                 }
                 break;
-
-            default:
-                System.out.println("The interface does not support this command.");
-                break;
             case 26: //shutdown
                 this.m_rm.shutdown();
                 break;
 
+            default:
+                System.out.println("The interface does not support this command.");
+                break;
         }
 
     }//end of execute function
 
     /**This method writes the reservations to the customer database and add the record to transaction manager **/
-    private boolean reserveItem(int id, int customerId, String location, String key, int price, int itemInfo, int querytype) {
+    private boolean reserveItem(int id, int customerId, String location, String key, int price, int itemInfo) {
         // Read customer object if it exists
         boolean reserved = false;
-        Customer cust = (Customer) m_rm.readData(id, Customer.getKey(customerId));
+        Customer cust = (Customer) this.m_rm.readData(id, Customer.getKey(customerId));
         if (cust != null) {
             //customer reserves it
             cust.reserve(key, location, price, itemInfo, id); //change location maybe
-            m_rm.writeData(id, cust.getKey(), cust);
+            this.m_rm.writeData(id, cust.getKey(), cust);
 
-            Vector cmd = cmdToVect(m_rm.CUST,m_rm.UNRES,customerId);
+            Vector cmd = cmdToVect(this.m_rm.CUST,this.m_rm.UNRES,customerId);
             cmd.add(Integer.parseInt(location));
             cmd.add(key);
             cmd.add(itemInfo);

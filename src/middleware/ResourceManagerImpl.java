@@ -714,8 +714,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                             this.txnManager.setNewUpdateItem(id, cmd);
                             this.txnManager.enlist(id, FLIGHT);
                         }
-
-                        return true;
                     }
                     else{
                         //error
@@ -732,7 +730,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                             this.txnManager.setNewUpdateItem(id, cmd);
                             this.txnManager.enlist(id, CAR);
                         }
-                        return true;
                     }
                     else{
                         //error
@@ -748,14 +745,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                             this.txnManager.setNewUpdateItem(id, cmd);
                             this.txnManager.enlist(id, ROOM);
                         }
-                        return true;
                     }
                     else{
                         //error
                         return false;
                     }
                 }
-
             }
             // Remove the customer from the storage.
             removeData(id, cust.getKey());
@@ -867,6 +862,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         ttl[id-1].pushItem(id);
         if (reserveItem(id,customerId,location,key,CAR)){
             this.txnManager.enlist(id,CAR);
+
+            String command = String.format("reservecar,%d,%d,%s,%s",id,customerId,location,key);
+            sendCommand(command);
             return true;
         }
         else{
@@ -897,6 +895,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         if (reserveItem(id, customerId,location, key, ROOM)){
 
             this.txnManager.enlist(id,ROOM);
+
+            String command = String.format("reserveroom,%d,%d,%s,%s",id,customerId,location,key);
+            sendCommand(command);
             return true;
         }
         else{
