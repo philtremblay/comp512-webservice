@@ -398,7 +398,7 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                 break;
 
             case 28:
-                if (arguments.size() != 4) { //command was deletecustomer
+                if (arguments.size() != 4) { //command was for reservations
                     wrongNumber();
                     break;
                 }
