@@ -704,7 +704,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 String location = reservedItem.getLocation();
 
                 Trace.info("RM::deleteCustomer(" + id + ", " + customerId + "): ");
-                //car
+                //flight
                 if(reservedItem.getType() == 1){
                     if(flightProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count)){
 
@@ -720,7 +720,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                         return false;
                     }
                 }
-                //room
+                //car
                 else if (reservedItem.getType() == 2){
                     if(carProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count)){
 
@@ -736,6 +736,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                         return false;
                     }
                 }
+                //room
                 else if (reservedItem.getType() == 3){
                     if(roomProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count)){
 

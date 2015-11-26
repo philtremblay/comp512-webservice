@@ -211,7 +211,15 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         String strData = "flight,"+flightNumber;
         try {
             lockServer.Lock(id, strData, WRITE);
-            return deleteItem(id, Flight.getKey(flightNumber));
+            boolean isDeleted = deleteItem(id, Flight.getKey(flightNumber));
+
+            if (isDeleted) {
+                //send to replica only upon success
+                String command ="deleteflight,"+id+","+flightNumber;
+                sendCommand(command);
+            }
+
+            return isDeleted;
         }
         catch (DeadlockException dl) {
             Trace.warn("RM::deleteItem(" + id + ", flight " + flightNumber+ ") failed: ");
@@ -239,7 +247,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             Trace.warn("RM::queryNum(" + id + ", flight " + flightNumber+ ") failed: ");
             return -1;
         }
-
 
 
     }
@@ -704,7 +711,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         String strData = key.substring(0,key.indexOf('-'))+','+key.substring(key.indexOf('-') + 1);
 
-        System.out.println("HERE IS THE KEY:" + key);
+        StringTokenizer s = new StringTokenizer(key, "-");
+        String invokeItem = s.nextToken();
+
+        System.out.println("HERE IS THE KEY and item:" + key + ", " + invokeItem);
+
 
         //reserve
         if (resOrUnres == 7) {
@@ -718,6 +729,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                     item.setCount(item.getCount() - 1);
                     item.setReserved(item.getReserved() + 1);
                     writeData(id,key,item);
+
+                    //only send the command to replica upon success
+                    String command = String.format("reserve%s,%d,%s,%d", invokeItem,id,key,resOrUnres);
+                    sendCommand(command);
+
                     return true;
                 } catch (DeadlockException e) {
 
@@ -740,6 +756,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                     item.setCount(item.getCount() + 1);
                     item.setReserved(item.getReserved() - 1);
                     writeData(id,key,item);
+
                     return true;
                 } catch (DeadlockException e) {
 
@@ -768,6 +785,10 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         Trace.info(key + " reserved/available = "
                 + item.getReserved() + "/" + item.getCount());
+
+        String command = String.format("updatedeleteCustomer,%d,%s,%d",id,key,count);
+        sendCommand(command);
+
         return true;
     }
 
@@ -786,6 +807,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         /**testing purposes **/
         if (txnId > 0) {
             Trace.info("RM::COMMIT TRANSACTION ID: "+ txnId);
+            String command = "commit,"+txnId;
+            sendCommand(command);
             return lockServer.UnlockAll(txnId);
         }
         else
@@ -796,11 +819,19 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     @Override
     public boolean abort(int txnId){
+
+        String command = "abort,"+txnId;
+        sendCommand(command);
         return lockServer.UnlockAll(txnId);
     }
 
     @Override
     public boolean shutdown(){
+
+        String command = "shutdown";
+        sendCommand(command);
+
+
         System.exit(0);
         return true;
     }

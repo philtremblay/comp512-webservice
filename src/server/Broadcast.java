@@ -242,6 +242,36 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                 }
                 break;
 
+            case 6: //delete flight
+                if (arguments.size() != 3) {
+                    wrongNumber();
+                    break;
+                }
+                System.out.println("REP: Deleting a flight using id: " + arguments.elementAt(1));
+                System.out.println("REP: Flight Number: " + arguments.elementAt(2));
+                System.out.println("REP: Waiting for response from the server...");
+                try {
+                    id = getInt(arguments.elementAt(1));
+                    flightNumber = getInt(arguments.elementAt(2));
+
+                    if (s_rm.deleteFlight(id, flightNumber))
+                        System.out.println("REP: Flight Deleted");
+                    else
+                        System.out.println("REP: Flight could not be deleted");
+
+                }
+                catch(Exception e) {
+                    System.out.println("EXCEPTION: ");
+                    System.out.println(e.getMessage());
+                    e.printStackTrace();
+                }
+
+                break;
+            case 9:
+
+                //becomes new case --> updateDeleteCustomer
+                break;
+
             case 10: //query flight
 
                 if (arguments.size() != 3) {
@@ -255,7 +285,7 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                     id = getInt(arguments.elementAt(1));
                     flightNumber = getInt(arguments.elementAt(2));
                     int seats = s_rm.queryFlight(id, flightNumber);
-                    Trace.info("REP: Number of seats for flight " + flightNumber + ": " + seats);
+                    System.out.println("REP: Number of seats for flight " + flightNumber + ": " + seats);
                 } catch (Exception e) {
                     System.out.println("REP: EXCEPTION: ");
                     System.out.println(e.getMessage());
@@ -266,65 +296,29 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
 
             case 13: //query customer
 
-                try {
-
-
-                    id = getInt(arguments.elementAt(1));
-                    int customer = getInt(arguments.elementAt(2));
-                    s_rm.queryCustomerInfo(id, customer);
-                }
-                catch(Exception e) {
-                    System.out.println("REP: EXCEPTION: ");
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
-                }
+                //dont care about this in the server
 
                 break;
-/*
+
+
             case 17:  //reserve a flight
-                if (arguments.size() != 5) {
+                if (arguments.size() != 4) {
                     wrongNumber();
                     break;
                 }
 
                 try {
                     id = getInt(arguments.elementAt(1));
-                    int customerId = getInt(arguments.elementAt(2));
-                    flightNumber = getInt(arguments.elementAt(3));
-                    String key = getString(arguments.elementAt(4));
+                    String key = getString(arguments.elementAt(2));
+                    int resOrUnres = getInt(arguments.elementAt(3));
 
-                    price = m_rm.queryFlightPrice(id, flightNumber);
-
-
-                    location = String.valueOf(flightNumber);
-
-                    //directly write to the customer database
-                    if (reserveItem(id, customerId, location, key, price, m_rm.FLIGHT, m_rm.UNRES)) {
-                        System.out.println("REP: flight number " + flightNumber + " is reserved");
+                    //directly call the updateItem info and add one item from the database
+                    if (s_rm.updateItemInfo(id, key, resOrUnres)) {
+                        System.out.println("REP: flight number "+ key + " is reserved");
                     }
                     else {
                         System.out.println("REP: flight number " + flightNumber + " is not reserved");
                     }
-
-                    //made this a universial method --> see below:
-                    // Read customer object if it exists
-                    //Customer cust = (Customer) m_rm.readData(id, Customer.getKey(customerId));
-                    //if (cust != null) {
-                    //customer reserves it
-                    //    cust.reserve(key, location, price, itemInfo, id); //change location maybe
-                    //    m_rm.writeData(id, cust.getKey(), cust);
-
-                    //    Vector cmd = cmdToVect(m_rm.CUST,m_rm.UNRES,customerId);
-                    //    cmd.add(Integer.parseInt(location));
-                    //    cmd.add(key);
-                    //    cmd.add(itemInfo);
-                    //    m_rm.txnManager.setNewUpdateItem(id,cmd);
-                    // }
-
-                    //start ttl
-                    m_rm.ttl[id-1].pushItem(id);
-
-
                 }
                 catch(Exception e) {
                     System.out.println("REP: EXCEPTION: ");
@@ -334,32 +328,12 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                 break;
 
             case 22:  //new Customer given id
-                if (arguments.size() != 3) {
-                    wrongNumber();
-                    break;
-                }
-                System.out.println("REP: Adding a new Customer using id: "
-                        + arguments.elementAt(1)  +  " and cid "  + arguments.elementAt(2));
-                System.out.println("REP: Waiting for response from server...");
+                //dont care about this in the server
 
-
-                try {
-                    id = getInt(arguments.elementAt(1));
-                    int customer = getInt(arguments.elementAt(2));
-                    if (id >= 0 && customer >= 0) {
-                        if (m_rm.newCustomerId(id, customer)) {
-                            System.out.println("REP: new customer id: " + customer);
-                        } else {
-                            System.out.println("REP: Customer already exists");
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
                 break;
 
             case 23: //start method
-                this.m_rm.start();
+                //dont care about this in the server
                 break;
 
             case 24: //commit method
@@ -370,7 +344,7 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                 else {
                     try {
                         int transactionID = getInt(arguments.elementAt(1));
-                        if (m_rm.commit(transactionID)){
+                        if (s_rm.commit(transactionID)){
                             System.out.println("REP: Commit transaction " + transactionID + " successfully");
                         }
                         else {
@@ -382,24 +356,43 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                     }
                 }
                 break;
+
             case 25: // abort method
                 if (arguments.size() != 2) { //command was "abort"
                     wrongNumber();
                     break;
                 }
                 else {
-
                     try {
                         int transactionID = getInt(arguments.elementAt(1));
-                        abort(transactionID);
+                        s_rm.abort(transactionID);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-
-
                 }
                 break;
-            */
+            case 26:
+                System.out.println("REP: Shutting down REP");
+                s_rm.shutdown();
+                break;
+            case 27: //update deleted customer ==> delete customer
+                if (arguments.size() != 4) { //command was deletecustomer
+                    wrongNumber();
+                    break;
+                }
+                //restore the rm data
+                else {
+                    try {
+                        id = getInt(arguments.elementAt(1));
+                        String key = getString(arguments.elementAt(2));
+                        int count = getInt(arguments.elementAt(3));
+                        s_rm.updateDeleteCustomer(id, key, count);
+                        System.out.println("REP: Restore RM database from deleting customer");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                break;
             default:
                 System.out.println("The interface does not support this command.");
                 break;
@@ -463,6 +456,8 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
             return 25;
         else if (argument.compareToIgnoreCase("shutdown") == 0)
             return 26;
+        else if (argument.compareToIgnoreCase("updatedeletecustomer") == 0)
+            return 27;
         else
             return 666;
     }
