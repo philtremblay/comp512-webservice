@@ -263,7 +263,7 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                 }
 
                 break;
-            /*
+
             case 13: //query customer
 
                 try {
@@ -271,11 +271,7 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
 
                     id = getInt(arguments.elementAt(1));
                     int customer = getInt(arguments.elementAt(2));
-                    m_rm.queryCustomerInfo(id, customer);
-                    m_rm.ttl[id-1].pushItem(id);
-                    m_rm.txnManager.enlist(id, m_rm.CUST);
-
-                    m_rm.ttl[id-1].pushItem(id);
+                    s_rm.queryCustomerInfo(id, customer);
                 }
                 catch(Exception e) {
                     System.out.println("REP: EXCEPTION: ");
@@ -284,7 +280,7 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                 }
 
                 break;
-
+/*
             case 17:  //reserve a flight
                 if (arguments.size() != 5) {
                     wrongNumber();
