@@ -8,7 +8,10 @@ import client.WSClient;
 import server.Trace;
 
 import javax.jws.WebService;
+import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 
 
@@ -17,8 +20,14 @@ import java.util.*;
 public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     WSClient flightProxy;
+    WSClient flightPC;
+    WSClient flightProxyBackup;
     WSClient carProxy;
+    WSClient carPC;
+    WSClient carProxyBackup;
     WSClient roomProxy;
+    WSClient roomPC;
+    WSClient roomProxyBackup;
 
     private static final int READ = 0;
     private static final int WRITE = 1;
@@ -45,16 +54,30 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     String f_host = "localhost";
     int f_port = 8080;
 
+    //flight server replica properties
+    String frep_name = "flightrep";
+    String frep_host = "localhost";
+    int frep_port = 7080;
 
     //car server properties
     String c_name = "car";
     String c_host = "localhost";
     int c_port = 8082;
 
+    //car server replica properties
+    String crep_name = "carrep";
+    String crep_host = "localhost";
+    int crep_port = 7082;
+
     //room server properties
     String r_name = "room";
     String r_host = "localhost";
     int r_port = 8084;
+
+    //room server replica properties
+    String rrep_name = "roomrep";
+    String rrep_host = "localhost";
+    int rrep_port = 7084;
 
     String configFile = "middleudp.xml";
 
@@ -88,7 +111,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         if (f_flag == 1) {
             try {
-                flightProxy = new WSClient(f_name, f_host, f_port);
+                flightPC  = new WSClient(f_name, f_host, f_port);
+                flightProxyBackup = new WSClient(frep_name,frep_host,frep_port);
+                flightProxy = flightPC;
                 System.out.println("middleware is connected to the flight server: " +f_host + " " +f_port);
 
             } catch (MalformedURLException e) {
@@ -98,7 +123,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         if (c_flag == 1) {
             try {
-                carProxy = new WSClient(c_name, c_host, c_port);
+                carPC = new WSClient(c_name, c_host, c_port);
+                carProxyBackup = new WSClient(crep_name,crep_host,crep_port);
+                carProxy = carPC;
             } catch (MalformedURLException e) {
                 System.out.println("Connecting to the car server " + c_host + " "+ c_port);
             }
@@ -106,7 +133,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         if (r_flag == 1) {
             try {
-                roomProxy = new WSClient(r_name, r_host, r_port);
+                roomPC = new WSClient(r_name, r_host, r_port);
+                roomProxyBackup = new WSClient(rrep_name,rrep_host,rrep_port);
+                roomProxy = roomPC;
             } catch (MalformedURLException e) {
                 System.out.println("Connecting to the room server");
             }
@@ -195,6 +224,13 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             broadcast.bit.set(0);
         }
     }
+    private int getStatusCode(URL url) throws IOException {
+
+        HttpURLConnection http = (HttpURLConnection)url.openConnection();
+        http.connect();
+        int statusCode = http.getResponseCode();
+        return statusCode;
+    }
 
     // Reserve an item.
     protected boolean reserveItem(int id, int customerId, String location, String key, int itemInfo) {
@@ -203,8 +239,36 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         int price = -1;
         switch(itemInfo){
             case FLIGHT:
-                count = flightProxy.proxy.queryFlight(id, Integer.parseInt(location));
-                price = flightProxy.proxy.queryFlightPrice(id,Integer.parseInt(location));
+                try {
+                    count = flightProxy.proxy.queryFlight(id, Integer.parseInt(location));
+                    price = flightProxy.proxy.queryFlightPrice(id, Integer.parseInt(location));
+                }catch (Exception e){
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+
+                    try{
+                        if (getStatusCode(flightProxyBackup.wsdlLocation) == 200) {
+                            flightProxy = flightProxyBackup;
+                        }
+                        System.out.println("connected to its replica");
+                        //proceeding on replica
+                        count = flightProxy.proxy.queryFlight(id, Integer.parseInt(location));
+                        price = flightProxy.proxy.queryFlightPrice(id, Integer.parseInt(location));
+
+                    } catch (IOException e1) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try{
+                            if (getStatusCode(flightPC.wsdlLocation) == 200) {
+                                flightProxy = flightPC;
+                            }
+                            System.out.println("connected to its replica");
+                            //proceeding on replica
+                            count = flightProxy.proxy.queryFlight(id, Integer.parseInt(location));
+                            price = flightProxy.proxy.queryFlightPrice(id, Integer.parseInt(location));
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                        }
+                    }
+                }
                 break;
             case CAR:
                 count = carProxy.proxy.queryCars(id,location);
@@ -996,6 +1060,28 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             }
             return false;
         }
+        //send command to replica
+        System.out.println(flightNumbers);
+        String command = String.format("itinerary,%d,%d,",id,customerId);
+        flightNumbers.toString();
+        Iterator it2 = flightNumbers.iterator();
+        while (it2.hasNext()){
+            String next = (String) it2.next();
+            String key = this.flightProxy.proxy.getFlightKey(Integer.parseInt(next));
+            int price = this.flightProxy.proxy.queryFlightPrice(id,Integer.parseInt(next));
+            command = command + next + "," + key + "," + price + ",";
+        }
+        //-1 will delimit the end or the flight numbers
+        command = command + String.format("%d,%s,%b,%b,",-1,location,car,room);
+        //get the keys to reserve items at the replica
+        String carKey = this.carProxy.proxy.getCarKey(location);
+        String roomKey = this.roomProxy.proxy.getRoomKey(location);
+        int carPrice = this.carProxy.proxy.queryCarsPrice(id,location);
+        int roomPrice = this.roomProxy.proxy.queryRoomsPrice(id,location);
+        command = command + String.format("%s,%d,%s,%d",carKey,carPrice,roomKey,roomPrice);
+
+        System.out.println("PC command sent on itinerary: " + command);
+        sendCommand(command);
 
         return true;
     }
