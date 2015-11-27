@@ -27,11 +27,11 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
     public BitSet PCBit = new BitSet(1);
     String configFile = null;
 
+    BitSet firstTime = new BitSet(1);
 
     ResourceManagerImpl s_rm = null;
 
     final List<String> state = new LinkedList<>();
-
 
 
     public Broadcast(String configFile, ResourceManagerImpl resourceManager) {
@@ -40,21 +40,26 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
         this.configFile = configFile;
         this.s_rm = resourceManager;
 
+        firstTime.set(0);
+
+
     }
 
     public void receive(Message msg) {
 
 
-        Vector arguments = new Vector();
+
+        //line is newflight,1,1,1,1 (command as a whole)
+        //command is only newflight (title)
 
         String line = msg.getObject().toString();
-
-
         line = line.trim();
+
+        Vector arguments = new Vector();
         arguments = parse(line);
 
-        String command = null;
 
+        String command = null;
         try {
             command = getString(arguments.elementAt(0));
 
@@ -63,11 +68,10 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
         }
 
         System.out.println("Command :" +line);
-        synchronized(state) {
-            state.add(line);
-        }
-
         if (!PCBit.get(0)) {
+            synchronized(state) {
+                state.add(line);
+            }
             executeCommand(line);
         }
 
@@ -85,20 +89,13 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
 
         assert command != null;
         if(command.compareToIgnoreCase("abort") == 0) {
-            Vector arg = new Vector();
             try {
 
                 int id = getInt(arguments.elementAt(1));
 
-                synchronized(state) {
-                    for (int i = state.size()-1; i>=0; i--) {
-                        String c = state.get(i);
-                        arg = parse(c);
-                        if (getInt(arg.elementAt(1)) == id) {
-                            state.remove(c);
-                        }
-                    }
-                }
+                deleteHistory(id);
+                System.out.println("deleted the abort transaction id : "+ id +" in history: ");
+                System.out.println("history size : " + state.size());
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -107,6 +104,23 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
 
 
 
+    }
+
+    private void deleteHistory(int id) {
+        Vector arg = new Vector();
+        synchronized(state) {
+            for (int i = state.size()-1; i>=0; i--) {
+                String c = state.get(i);
+                arg = parse(c);
+                try {
+                    if (getInt(arg.elementAt(1)) == id) {
+                        state.remove(c);
+                    }
+                } catch (Exception e) {
+                    System.out.println("REP: fail to parse");
+                }
+            }
+        }
     }
 
 
@@ -122,36 +136,71 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
     }
 
 
-    /*
-    public void getState(OutputStream output) throws Exception {
-        //System.out.println("\n\n\nSENDING THE STATE!!!!\n\n\n");
 
-        synchronized(tempPacket) {
-            FileOutputStream fileOut = new FileOutputStream(history);
-            ObjectOutputStream out = new ObjectOutputStream(fileOut);
-            out.writeObject(tempPacket);
-            Util.objectToStream(history, out);
+    public void getState(OutputStream output) throws Exception {
+        synchronized(state) {
+            Util.objectToStream(state, new DataOutputStream(output));
         }
+        /*
+        //send the history one by one to the new member
+        DataOutputStream out = null;
+        synchronized(state) {
+            for (int i = 0; i < state.size(); i++) {
+                out = new DataOutputStream(output);
+                out.writeUTF(state.get(i));
+            }
+        }
+        */
     }
 
     public void setState(InputStream input) {
-        DataPacket list = null;
+
+        DataInputStream d = new DataInputStream(input);
+        List<String> list= null;
         try {
-            input = new FileInputStream(history);
-            ObjectInputStream d = new ObjectInputStream(input);
-            list = (DataPacket) d.readObject();
+            list = (List<String>) Util.objectFromStream(d);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        synchronized (tempTable) {
-            tempTable.clear();
-            tempTable.putAll(list.mm_itemHT);
+        synchronized(state) {
+            state.clear();
+            state.addAll(list);
+            System.out.println("HISTORY OF COMMANDS: ");
+            for (int i = 0; i<state.size(); i++) {
+                if (state.get(i)!= null) {
+                    System.out.println(state.get(i));
+                    executeCommand(state.get(i));
+                }
+            }
         }
-        synchronized (tempLock) {
-            tempLock = list.m_lock;
+
+
+
+        /*
+        DataInputStream d = new DataInputStream(input);
+        String commandhistory = null;
+        try {
+            commandhistory = d.readUTF();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+        synchronized(state) {
+            //clear the list if its first time joining
+            if (firstTime.get(0)) {
+                state.clear();
+                firstTime.flip(0);
+            }
+            //add the history
+            if (commandhistory != null) {
+                state.add(commandhistory);
+                executeCommand(commandhistory);
+            }
+        }
+        */
+
+
     }
-*/
+
 
     private void multicast() {
 
@@ -166,6 +215,36 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                     channel.send(msg);
                     //turn off after sending the message
                     bit.flip(0);
+
+                    /**
+                     * After executing abort,id
+                     *
+                     * Delete the abort transaction id from the list
+                     * so that the replica will not need to execute upon recovery
+                     *
+                     *
+                     * **/
+                    line = line.trim();
+                    Vector arguments = new Vector();
+
+                    arguments = parse(line);
+                    String command = getString(arguments.elementAt(0));
+
+                    assert command != null;
+                    if(command.compareToIgnoreCase("abort") == 0) {
+                        try {
+
+                            int id = getInt(arguments.elementAt(1));
+                            
+                            deleteHistory(id);
+                            System.out.println("deleted the abort transaction id : "+ id +" in history: ");
+                            System.out.println("history size : " + state.size());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
+                    };
+
                 }
                 else if (bit.get(1)) {
                     break;
@@ -242,6 +321,64 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                 }
                 break;
 
+            case 3:  //new car
+                if (arguments.size() != 5) {
+                    wrongNumber();
+                    break;
+                }
+                System.out.println("Adding a new car using id: " + arguments.elementAt(1));
+                System.out.println("car Location: " + arguments.elementAt(2));
+                System.out.println("Add Number of cars: " + arguments.elementAt(3));
+                System.out.println("Set Price: " + arguments.elementAt(4));
+                System.out.println("Waiting for a response from the server...");
+                try {
+                    id = getInt(arguments.elementAt(1));
+                    location = getString(arguments.elementAt(2));
+                    numCars = getInt(arguments.elementAt(3));
+                    price = getInt(arguments.elementAt(4));
+
+                    if (s_rm.addCars(id, location, numCars, price))
+                        System.out.println("REP: cars added");
+                    else
+                        System.out.println("REP: cars could not be added");
+                }
+                catch(Exception e) {
+                    System.out.println("EXCEPTION: ");
+                    System.out.println(e.getMessage());
+                    e.printStackTrace();
+                }
+                break;
+            case 4:  //new room
+                if (arguments.size() != 5) {
+                    wrongNumber();
+                    break;
+                }
+                System.out.println("Adding a new room using id: " + arguments.elementAt(1));
+                System.out.println("room Location: " + arguments.elementAt(2));
+                System.out.println("Add Number of rooms: " + arguments.elementAt(3));
+                System.out.println("Set Price: " + arguments.elementAt(4));
+                System.out.println("Waiting for a response from the server...");
+                try {
+                    id = getInt(arguments.elementAt(1));
+                    location = getString(arguments.elementAt(2));
+                    numRooms = getInt(arguments.elementAt(3));
+                    price = getInt(arguments.elementAt(4));
+
+                    if (s_rm.addRooms(id, location, numRooms, price))
+                        System.out.println("REP: rooms added");
+                    else
+                        System.out.println("REP: rooms could not be added");
+                }
+                catch(Exception e) {
+                    System.out.println("EXCEPTION: ");
+                    System.out.println(e.getMessage());
+                    e.printStackTrace();
+                }
+                break;
+            case 5: //new customer
+                //dont care about this in the RM
+
+                break;
             case 6: //delete flight
                 if (arguments.size() != 3) {
                     wrongNumber();
@@ -265,9 +402,57 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                     System.out.println(e.getMessage());
                     e.printStackTrace();
                 }
-
                 break;
-            case 9:
+
+            case 7: //delete car
+                if (arguments.size() != 3) {
+                    wrongNumber();
+                    break;
+                }
+                System.out.println("Deleting the cars from a particular location  using id: " + arguments.elementAt(1));
+                System.out.println("car Location: " + arguments.elementAt(2));
+                System.out.println("Waiting for response from the server...");
+                try {
+                    id = getInt(arguments.elementAt(1));
+                    location = getString(arguments.elementAt(2));
+
+                    if (s_rm.deleteCars(id, location))
+                        System.out.println("REP: cars Deleted");
+                    else
+                        System.out.println("REP: cars could not be deleted");
+                }
+                catch(Exception e) {
+                    System.out.println("EXCEPTION: ");
+                    System.out.println(e.getMessage());
+                    e.printStackTrace();
+                }
+                break;
+            case 8: //delete room
+                if (arguments.size() != 3) {
+                    wrongNumber();
+                    break;
+                }
+                System.out.println("Deleting all rooms from a particular location  using id: " + arguments.elementAt(1));
+                System.out.println("room Location: " + arguments.elementAt(2));
+                System.out.println("Waiting for response from the server...");
+                try {
+                    id = getInt(arguments.elementAt(1));
+                    location = getString(arguments.elementAt(2));
+
+                    if (s_rm.deleteRooms(id, location))
+                        System.out.println("rooms Deleted");
+                    else
+                        System.out.println("rooms could not be deleted");
+
+                }
+                catch(Exception e) {
+                    System.out.println("EXCEPTION: ");
+                    System.out.println(e.getMessage());
+                    e.printStackTrace();
+                }
+                break;
+
+            case 9: //delete customer
 
                 //becomes new case --> updateDeleteCustomer
                 break;
@@ -293,11 +478,137 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                 }
 
                 break;
+            case 11: //querying a car Location
+                if (arguments.size() != 3) {
+                    wrongNumber();
+                    break;
+                }
+                System.out.println("Querying a car location using id: " + arguments.elementAt(1));
+                System.out.println("car location: " + arguments.elementAt(2));
+                System.out.println("Waiting for response from the server...");
+                try {
+                    id = getInt(arguments.elementAt(1));
+                    location = getString(arguments.elementAt(2));
+                    System.out.println("Waiting for a response from the server...");
+                    numCars = s_rm.queryCars(id, location);
+                    if (numCars >= 0) {
+                        System.out.println("number of cars at this location: " + numCars);
+                    }
+                    else {
+                    System.out.println("ERROR: some other process might lock on that car location " + location);
+                    }
+
+                }catch(Exception e) {
+                    System.out.println("EXCEPTION: ");
+                    System.out.println(e.getMessage());
+                    e.printStackTrace();
+                }
+                break;
+            case 12: //querying a room location
+                if (arguments.size() != 3) {
+                    wrongNumber();
+                    break;
+                }
+                System.out.println("Querying a room location using id: " + arguments.elementAt(1));
+                System.out.println("room location: " + arguments.elementAt(2));
+                System.out.println("Waiting for response from server...");
+                try {
+                    id = getInt(arguments.elementAt(1));
+                    location = getString(arguments.elementAt(2));
+
+                    numRooms = s_rm.queryRooms(id, location);
+                    if (numRooms >= 0) {
+                        System.out.println("number of rooms at this location: " + numRooms);
+                    }
+                    else {
+                        System.out.println("ERROR: Some other process is locking on the room location " + location);
+                    }
+                }
+                catch(Exception e) {
+                    System.out.println("EXCEPTION: ");
+                    System.out.println(e.getMessage());
+                    e.printStackTrace();
+                }
+                break;
 
             case 13: //query customer
 
                 //dont care about this in the server
+                break;
+            case 14: //querying a flight Price
+                if (arguments.size() != 3) {
+                    wrongNumber();
+                    break;
+                }
+                System.out.println("Querying a flight Price using id: " + arguments.elementAt(1));
+                System.out.println("Flight number: " + arguments.elementAt(2));
+                System.out.println("Waiting for response from the server...");
+                try {
+                    id = getInt(arguments.elementAt(1));
+                    flightNumber = getInt(arguments.elementAt(2));
+                    price = s_rm.queryFlightPrice(id, flightNumber);
+                    if (price >= 0) {
+                        System.out.println("Price of a seat: " + price);
+                    }
+                    else {
+                        System.out.println("ERROR: other process is locking on flight# " + flightNumber);
+                    }
+                }catch(Exception e) {
+                    System.out.println("EXCEPTION: ");
+                    System.out.println(e.getMessage());
+                    e.printStackTrace();
+                }
+                break;
+            case 15: //querying a car Price
+                if (arguments.size() != 3) {
+                    wrongNumber();
+                    break;
+                }
+                System.out.println("Querying a car price using id: " + arguments.elementAt(1));
+                System.out.println("car location: " + arguments.elementAt(2));
+                System.out.println("Waiting for response from server...");
+                try {
+                    id = getInt(arguments.elementAt(1));
+                    location = getString(arguments.elementAt(2));
 
+                    price = s_rm.queryCarsPrice(id, location);
+                    if (price >= 0) {
+                        System.out.println("Price of a car at this location: " + price);
+                    }
+                    else {
+                        System.out.println("ERROR: other process is locking on car location: " + location);
+                    }
+                }
+                catch(Exception e) {
+                    System.out.println("EXCEPTION: ");
+                    System.out.println(e.getMessage());
+                    e.printStackTrace();
+                }
+                break;
+            case 16: //querying a room price
+                if (arguments.size() != 3) {
+                    wrongNumber();
+                    break;
+                }
+                System.out.println("Querying a room price using id: " + arguments.elementAt(1));
+                System.out.println("room Location: " + arguments.elementAt(2));
+                try {
+                    id = getInt(arguments.elementAt(1));
+                    location = getString(arguments.elementAt(2));
+                    price = s_rm.queryRoomsPrice(id, location);
+                    if (price >= 0) {
+                        System.out.println("Price of rooms at this location: " + price);
+                    }
+                    else {
+                        System.out.println("ERROR: other process is locking on room location: " + location);
+                    }
+
+                }
+                catch(Exception e) {
+                    System.out.println("EXCEPTION: ");
+                    System.out.println(e.getMessage());
+                    e.printStackTrace();
+                }
                 break;
 
 
@@ -328,6 +639,17 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                     e.printStackTrace();
                 }
                 */
+                break;
+            case 18:  //reserve a car ---> goes to case updateItemInfo
+
+                break;
+            case 19:  //reserve a room --> goes to case updateItemInfo
+
+                break;
+            case 20:  //reserve an Itinerary
+                //dont care in the RM
+                //only execute from the middleware
+
                 break;
 
             case 22:  //new Customer given id

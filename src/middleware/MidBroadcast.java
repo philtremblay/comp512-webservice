@@ -49,17 +49,15 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
 
         String line = msg.getObject().toString();
         //System.out.println(line);
-        synchronized(stateCommand) {
-            stateCommand.add(line);
-        }
+
         String command = stateCommand.get(stateCommand.size() - 1);
-        //System.out.println("\n\n\n\n\n");
-        //System.out.println("COMMAND RECEIVED IS: " + command);
-        //System.out.println("\n\n\n\n\n");
 
         //if its not PC, then it must be replica
-        //Thus, execute the command
+        //Thus, add the command and execute the command
         if (!PCBit.get(0)) {
+            synchronized(stateCommand) {
+                stateCommand.add(line);
+            }
             executeCommand(command);
         }
 
