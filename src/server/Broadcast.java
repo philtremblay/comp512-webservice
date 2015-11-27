@@ -168,7 +168,7 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
             System.out.println("HISTORY OF COMMANDS: ");
             for (int i = 0; i<state.size(); i++) {
                 if (state.get(i)!= null) {
-                    System.out.println(state.get(i));
+                    System.out.println("\n" + state.get(i) + "\n");
                     executeCommand(state.get(i));
                 }
             }
@@ -235,7 +235,7 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                         try {
 
                             int id = getInt(arguments.elementAt(1));
-                            
+
                             deleteHistory(id);
                             System.out.println("deleted the abort transaction id : "+ id +" in history: ");
                             System.out.println("history size : " + state.size());
@@ -243,7 +243,7 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                             e.printStackTrace();
                         }
 
-                    };
+                    }
 
                 }
                 else if (bit.get(1)) {
@@ -705,7 +705,7 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                     wrongNumber();
                     break;
                 }
-                //restore the rm data
+                //restore the rm data when deleting a customer
                 else {
                     try {
                         id = getInt(arguments.elementAt(1));
@@ -737,12 +737,9 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
                 }
                 break;
             default:
-                System.out.println("The interface does not support this command.");
+                System.out.println("REP: The interface does not support this command.");
                 break;
         }
-
-
-
 
     }
 

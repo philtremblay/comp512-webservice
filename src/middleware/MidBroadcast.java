@@ -2,6 +2,7 @@ package middleware;
 
 import org.jgroups.*;
 import org.jgroups.protocols.rules.SUPERVISOR;
+import org.jgroups.util.Util;
 import server.Trace;
 
 import java.io.*;
@@ -18,21 +19,20 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
 
     private ResourceManagerImpl m_rm;
     private String configFile = null;
-    //private File history = new File("MiddleHist.ser");
+
     public BitSet bit = new BitSet(2);
 
     public BitSet PCBit = new BitSet(1);
 
-    private RMHashtable mm_itemHT = null;
-    private Hashtable<Integer, Vector> m_activeRM =null;
-    private Hashtable<Integer, Stack> m_cmdList = null;
 
-    final List<String> stateCommand=new LinkedList<String>();
+    final List<String> stateCommand= new LinkedList<>();
+
 
     /**Constructor class **/
     public MidBroadcast(String configFile, ResourceManagerImpl resourceManager) {
         System.setProperty("java.net.preferIPv4Stack" , "true");
 
+        this.configFile = configFile;
         this.m_rm = resourceManager;
     }
 
@@ -45,12 +45,22 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
     }
 
     public void receive(Message msg) {
-        System.out.println("RECEIVER SIDE!!!!");
+
 
         String line = msg.getObject().toString();
-        //System.out.println(line);
 
-        String command = stateCommand.get(stateCommand.size() - 1);
+        System.out.println("RECEIVED command: " + line);
+
+        Vector arguments = new Vector();
+        line = line.trim();
+        arguments = parse(line);
+
+        String command = null;
+        try {
+            command = getString(arguments.elementAt(0));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         //if its not PC, then it must be replica
         //Thus, add the command and execute the command
@@ -58,10 +68,54 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
             synchronized(stateCommand) {
                 stateCommand.add(line);
             }
-            executeCommand(command);
+            executeCommand(line);
         }
 
+        /**
+         * After executing abort,id
+         *
+         * Delete the abort transaction id from the list
+         * so that the replica will not need to execute upon recovery
+         *
+         *
+         * **/
+
+        assert command != null;
+        if(command.compareToIgnoreCase("abort") == 0) {
+            try {
+
+                int id = getInt(arguments.elementAt(1));
+
+                deleteHistory(id);
+                System.out.println("deleted the abort transaction id : "+ id +" in history: ");
+                System.out.println("history size : " + stateCommand.size());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }
+
+
+
     }
+
+    private void deleteHistory(int id) {
+        Vector arg = new Vector();
+        synchronized(stateCommand) {
+            for (int i = stateCommand.size()-1; i>=0; i--) {
+                String c = stateCommand.get(i);
+                arg = parse(c);
+                try {
+                    if (getInt(arg.elementAt(1)) == id) {
+                        stateCommand.remove(c);
+                    }
+                } catch (Exception e) {
+                    System.out.println("REP: fail to parse");
+                }
+            }
+        }
+    }
+
 
 
     public void viewAccepted(View new_view) {
@@ -73,36 +127,40 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
 
     }
 
-    /*
-        public void getState(OutputStream output) throws Exception {
 
-            synchronized(tempTable) {
-                FileOutputStream fileOut = new FileOutputStream(history);
-                ObjectOutputStream out = new ObjectOutputStream(fileOut);
-                out.writeObject(tempTable);
-                Util.objectToStream(history, out);
+    public void getState(OutputStream output) throws Exception {
+
+        synchronized(stateCommand) {
+            Util.objectToStream(stateCommand, new DataOutputStream(output));
+        }
+
+    }
+
+    public void setState(InputStream input) {
+
+        DataInputStream d = new DataInputStream(input);
+        List<String> list= null;
+        try {
+            list = (List<String>) Util.objectFromStream(d);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        synchronized(stateCommand) {
+            stateCommand.clear();
+            stateCommand.addAll(list);
+            System.out.println("HISTORY OF COMMANDS: ");
+
+            for (int i = 0; i<stateCommand.size(); i++) {
+                if (stateCommand.get(i)!= null) {
+                    System.out.println("\n" + stateCommand.get(i) + "\n");
+                    executeCommand(stateCommand.get(i));
+                }
             }
         }
 
-        public void setState(InputStream input) {
-            server.RMHashtable list = null;
-            try {
-                input = new FileInputStream(history);
-                ObjectInputStream d = new ObjectInputStream(input);
-                list = (server.RMHashtable) d.readObject();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
 
-            synchronized(tempTable) {
-                tempTable.clear();
-                tempTable.putAll(list);
-            }
-            //System.out.println("\n\n\n\nreceived state (messages in chat history):\n\n\n\n");
+    }
 
-        }
-
-    */
     private void multicast() {
 
         while(true) {
@@ -116,6 +174,37 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                     channel.send(msg);
                     //turn off after sending the message
                     bit.flip(0);
+
+                    line = line.trim();
+
+                    Vector arguments = new Vector();
+
+                    arguments = parse(line);
+                    String command = getString(arguments.elementAt(0));
+
+                    /**
+                     * After executing abort,id
+                     *
+                     * Delete the abort transaction id from the list
+                     * so that the replica will not need to execute upon recovery
+                     *
+                     *
+                     * **/
+                    assert command != null;
+                    if(command.compareToIgnoreCase("abort") == 0) {
+                        try {
+
+                            int id = getInt(arguments.elementAt(1));
+
+                            deleteHistory(id);
+                            System.out.println("deleted the abort transaction id : "+ id +" in history: ");
+                            System.out.println("history size : " + stateCommand.size());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+
                 }
                 else if (bit.get(1)) {
                     break;
@@ -131,7 +220,7 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
     @Override
     public void run() {
         String workingDir = System.getProperty("user.dir");
-        String serverConfig = workingDir+"/conf/middleudp.xml";
+        String serverConfig = workingDir+"/conf/" + configFile;
         try {
             channel = new JChannel(serverConfig);
             channel.setReceiver(this);
@@ -678,7 +767,7 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                 break;
 
             default:
-                System.out.println("The interface does not support this command.");
+                System.out.println("REP: The interface does not support this command.");
                 break;
         }
 
