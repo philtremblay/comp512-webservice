@@ -110,12 +110,13 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     // Query the price of an item.
     protected int queryPrice(int id, String key) {
-        Trace.info("RM::queryCarsPrice(" + id + ", " + key + ") called.");
+        Trace.info("RM::queryPrice(" + id + ", " + key + ") called.");
         ReservableItem curObj = (ReservableItem) readData(id, key);
         int value = 0;
         if (curObj != null) {
             value = curObj.getPrice();
         }
+
         Trace.info("RM::queryPrice(" + id + ", " + key + ") OK: $" + value);
         return value;
     }
@@ -257,6 +258,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         String strData = "flight," + flightNumber;
         try {
             lockServer.Lock(id, strData, READ);
+            String command = String.format("queryflightprice,%d,%d",id,flightNumber);
+            sendCommand(command);
             return queryPrice(id, Flight.getKey(flightNumber));
         }
         catch (DeadlockException dl) {
@@ -338,6 +341,10 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                         + numCars + ", $" + carPrice + ") OK: "
                         + "cars = " + curObj.getCount() + ", price = $" + carPrice);
             }
+
+            String command = String.format("newcar,%d,%s,%d,%d", id,location, numCars, carPrice);
+            sendCommand(command);
+
             return(true);
 
         }
@@ -357,7 +364,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         try {
 
             lockServer.Lock(id, strData, WRITE);
-            return deleteItem(id, Car.getKey(location));
+            boolean isDeleted = deleteItem(id, Car.getKey(location));
+            if (isDeleted) {
+                String command = "deletecar,"+id+","+location;
+                sendCommand(command);
+            }
+            return isDeleted;
         }
         catch (DeadlockException dl) {
             Trace.warn("RM::deleteItem(" + id + ", car " + location + ") failed: ");
@@ -373,6 +385,10 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         String strData = "car,"+location;
         try {
             lockServer.Lock(id, strData, READ);
+
+            String command = String.format("querycar,%d,%s",id,location);
+            sendCommand(command);
+
             return queryNum(id, Car.getKey(location));
         }
         catch (DeadlockException dl) {
@@ -388,6 +404,10 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         String strData = "car,"+location;
         try {
             lockServer.Lock(id, strData, READ);
+
+            String command = String.format("querycarprice,%d,%s",id,location);
+            sendCommand(command);
+
             return queryPrice(id, Car.getKey(location));
         }
         catch (DeadlockException dl) {
@@ -428,7 +448,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                         + numRooms + ", $" + roomPrice + ") OK: "
                         + "rooms = " + curObj.getCount() + ", price = $" + roomPrice);
             }
-
+            String command = String.format("newroom,%d,%s,%d,%d",id,location,numRooms,roomPrice);
+            sendCommand(command);
             return true;
         }
         catch (DeadlockException dl) {
@@ -445,7 +466,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         String strData = "room," + location;
         try {
             lockServer.Lock(id, strData, WRITE);
-            return deleteItem(id, Room.getKey(location));
+            boolean isDeleted = deleteItem(id, Room.getKey(location));
+            if(isDeleted) {
+                String command = String.format("deleteroom,%d,%s",id,location);
+                sendCommand(command);
+            }
+            return isDeleted;
         }
         catch (DeadlockException dl) {
             return false;
@@ -459,6 +485,10 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         String strData = "room,"+location;
         try {
             lockServer.Lock(id, strData,READ);
+
+            String command = String.format("queryroom,%d,%s",id, location);
+            sendCommand(command);
+
             return queryNum(id, Room.getKey(location));
         }
         catch (DeadlockException dl) {
@@ -475,6 +505,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
         try {
             lockServer.Lock(id, strData, READ);
+            String command = String.format("queryroomprice,%d,%s",id,location);
+            sendCommand(command);
             return queryPrice(id, Room.getKey(location));
         }
         catch (DeadlockException dl) {
