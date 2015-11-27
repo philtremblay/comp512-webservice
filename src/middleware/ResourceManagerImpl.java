@@ -271,12 +271,67 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 }
                 break;
             case CAR:
-                count = carProxy.proxy.queryCars(id,location);
-                price = carProxy.proxy.queryCarsPrice(id, location);
-                break;
+                try {
+                    count = carProxy.proxy.queryCars(id, location);
+                    price = carProxy.proxy.queryCarsPrice(id, location);
+                } catch (Exception e) {
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        if (getStatusCode(carProxyBackup.wsdlLocation) == 200) {
+                            carProxy = carProxyBackup;
+                        }
+                        System.out.println("connected to its replica");
+                        //proceeding on replica
+                        count = carProxy.proxy.queryFlight(id, Integer.parseInt(location));
+                        price = carProxy.proxy.queryFlightPrice(id, Integer.parseInt(location));
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(carPC.wsdlLocation) == 200) {
+                                carProxy = carPC;
+                            }
+                            System.out.println("connected to its replica");
+                            //proceeding on replica
+                            count = carProxy.proxy.queryFlight(id, Integer.parseInt(location));
+                            price = carProxy.proxy.queryFlightPrice(id, Integer.parseInt(location));
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                        }
+                    }
+                }
+                    break;
             case ROOM:
-                count = roomProxy.proxy.queryRooms(id,location);
-                price = roomProxy.proxy.queryRoomsPrice(id, location);
+                try {
+                    count = roomProxy.proxy.queryRooms(id, location);
+                    price = roomProxy.proxy.queryRoomsPrice(id, location);
+                }
+                catch (Exception e){
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                    try {
+                        if (getStatusCode(roomProxyBackup.wsdlLocation) == 200) {
+                            roomProxy = roomProxyBackup;
+                        }
+                        System.out.println("connected to its replica");
+                        //proceeding on replica
+                        count = roomProxy.proxy.queryFlight(id, Integer.parseInt(location));
+                        price = roomProxy.proxy.queryFlightPrice(id, Integer.parseInt(location));
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                        try {
+                            if (getStatusCode(roomPC.wsdlLocation) == 200) {
+                                roomProxy = roomPC;
+                            }
+                            System.out.println("connected to its replica");
+                            //proceeding on replica
+                            count = roomProxy.proxy.queryFlight(id, Integer.parseInt(location));
+                            price = roomProxy.proxy.queryFlightPrice(id, Integer.parseInt(location));
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                        }
+                    }
+                }
                 break;
         }
 
@@ -306,16 +361,93 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
             switch (itemInfo) {
                 case FLIGHT:
-                    update = flightProxy.proxy.updateItemInfo(id, key, RES);
+                    try {
+                        update = flightProxy.proxy.updateItemInfo(id, key, RES);
+                    }catch (Exception e) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                        try {
+                            if (getStatusCode(flightProxyBackup.wsdlLocation) == 200) {
+                                flightProxy = flightProxyBackup;
+                            }
+                            System.out.println("connected to its replica");
+                            //proceeding on replica
+                            update = flightProxy.proxy.updateItemInfo(id, key, RES);
+
+                        } catch (IOException e1) {
+                            e1.printStackTrace();
+                            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                            try {
+                                if (getStatusCode(flightPC.wsdlLocation) == 200) {
+                                    flightProxy = flightPC;
+                                }
+                                System.out.println("connected to its replica");
+                                //proceeding on replica
+                                update = flightProxy.proxy.updateItemInfo(id, key, RES);
+                            } catch (IOException e2) {
+                                e2.printStackTrace();
+                            }
+                        }
+                    }
                     break;
                 case CAR:
-                    update = carProxy.proxy.updateItemInfo(id, key, RES);
+                    try {
+                        update = carProxy.proxy.updateItemInfo(id, key, RES);
+                    }catch (Exception e) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                        try {
+                            if (getStatusCode(carProxyBackup.wsdlLocation) == 200) {
+                                carProxy = carProxyBackup;
+                            }
+                            System.out.println("connected to its replica");
+                            //proceeding on replica
+                            update = carProxy.proxy.updateItemInfo(id, key, RES);
+
+                        } catch (IOException e1) {
+                            e1.printStackTrace();
+                            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                            try {
+                                if (getStatusCode(carPC.wsdlLocation) == 200) {
+                                    carProxy = carPC;
+                                }
+                                System.out.println("connected to its replica");
+                                //proceeding on replica
+                                update = carProxy.proxy.updateItemInfo(id, key, RES);
+                            } catch (IOException e2) {
+                                e2.printStackTrace();
+                            }
+                        }
+                    }
                     break;
                 case ROOM:
-                    update = roomProxy.proxy.updateItemInfo(id, key, RES);
+                    try {
+                        update = roomProxy.proxy.updateItemInfo(id, key, RES);
+                    }catch (Exception e) {
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                        try {
+                            if (getStatusCode(roomProxyBackup.wsdlLocation) == 200) {
+                                roomProxy = roomProxyBackup;
+                            }
+                            System.out.println("connected to its replica");
+                            //proceeding on replica
+                            update = roomProxy.proxy.updateItemInfo(id, key, RES);
+
+                        } catch (IOException e1) {
+                            e1.printStackTrace();
+                            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                            try {
+                                if (getStatusCode(roomPC.wsdlLocation) == 200) {
+                                    roomProxy = roomPC;
+                                }
+                                System.out.println("connected to its replica");
+                                //proceeding on replica
+                                update = roomProxy.proxy.updateItemInfo(id, key, RES);
+                            } catch (IOException e2) {
+                                e2.printStackTrace();
+                            }
+                        }
+                    }
                     break;
             }
-
 
             if (!update){
                 Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
@@ -357,13 +489,91 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
                 switch (itemInfo) {
                     case FLIGHT:
-                        update = flightProxy.proxy.updateItemInfo(id, key, UNRES);
+                        try {
+                            update = flightProxy.proxy.updateItemInfo(id, key, UNRES);
+                        }catch (Exception e) {
+                            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                            try {
+                                if (getStatusCode(flightProxyBackup.wsdlLocation) == 200) {
+                                    flightProxy = flightProxyBackup;
+                                }
+                                System.out.println("connected to its replica");
+                                //proceeding on replica
+                                update = flightProxy.proxy.updateItemInfo(id, key, UNRES);
+
+                            } catch (IOException e1) {
+                                e1.printStackTrace();
+                                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                                try {
+                                    if (getStatusCode(flightPC.wsdlLocation) == 200) {
+                                        flightProxy = flightPC;
+                                    }
+                                    System.out.println("connected to its replica");
+                                    //proceeding on replica
+                                    update = flightProxy.proxy.updateItemInfo(id, key, UNRES);
+                                } catch (IOException e2) {
+                                    e2.printStackTrace();
+                                }
+                            }
+                        }
                         break;
                     case CAR:
-                        update = carProxy.proxy.updateItemInfo(id, key, UNRES);
+                        try {
+                            update = carProxy.proxy.updateItemInfo(id, key, UNRES);
+                        }catch (Exception e) {
+                            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                            try {
+                                if (getStatusCode(carProxyBackup.wsdlLocation) == 200) {
+                                    carProxy = carProxyBackup;
+                                }
+                                System.out.println("connected to its replica");
+                                //proceeding on replica
+                                update = carProxy.proxy.updateItemInfo(id, key, UNRES);
+
+                            } catch (IOException e1) {
+                                e1.printStackTrace();
+                                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                                try {
+                                    if (getStatusCode(carPC.wsdlLocation) == 200) {
+                                        carProxy = carPC;
+                                    }
+                                    System.out.println("connected to its replica");
+                                    //proceeding on replica
+                                    update = carProxy.proxy.updateItemInfo(id, key, UNRES);
+                                } catch (IOException e2) {
+                                    e2.printStackTrace();
+                                }
+                            }
+                        }
                         break;
                     case ROOM:
-                        update = roomProxy.proxy.updateItemInfo(id, key, UNRES);
+                        try {
+                            update = roomProxy.proxy.updateItemInfo(id, key, UNRES);
+                        }catch (Exception e) {
+                            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                            try {
+                                if (getStatusCode(roomProxyBackup.wsdlLocation) == 200) {
+                                    roomProxy = roomProxyBackup;
+                                }
+                                System.out.println("connected to its replica");
+                                //proceeding on replica
+                                update = roomProxy.proxy.updateItemInfo(id, key, UNRES);
+
+                            } catch (IOException e1) {
+                                e1.printStackTrace();
+                                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                                try {
+                                    if (getStatusCode(roomPC.wsdlLocation) == 200) {
+                                        roomProxy = roomPC;
+                                    }
+                                    System.out.println("connected to its replica");
+                                    //proceeding on replica
+                                    update = roomProxy.proxy.updateItemInfo(id, key, UNRES);
+                                } catch (IOException e2) {
+                                    e2.printStackTrace();
+                                }
+                            }
+                        }
                         break;
                 }
             }
@@ -405,6 +615,38 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             System.err.println("DeadlockException: " + e.getMessage());
             return false;
         }
+        catch (Exception e){
+            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+            try {
+                if (getStatusCode(flightProxyBackup.wsdlLocation) == 200) {
+                    flightProxy = flightProxyBackup;
+                }
+                System.out.println("connected to its replica");
+                //proceeding on replica
+                flightAdded = flightProxy.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
+
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                try {
+                    if (getStatusCode(flightPC.wsdlLocation) == 200) {
+                        flightProxy = flightPC;
+                    }
+                    System.out.println("connected to its replica");
+                    //proceeding on replica
+                    flightAdded = flightProxy.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
+                } catch (IOException e2) {
+                    e2.printStackTrace();
+                    //exit program?
+                } catch (DeadlockException_Exception e2) {
+                    System.err.println("DeadlockException: " + e.getMessage());
+                    return false;
+                }
+            } catch (DeadlockException_Exception e1) {
+                System.err.println("DeadlockException: " + e.getMessage());
+                return false;
+            }
+        }
 
         ttl[id-1].pushItem(id);
 
@@ -435,12 +677,41 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean deleteFlight(int id, int flightNumber) {
 
-        boolean flightDeleted;
+        boolean flightDeleted = false;
+        int seats = 0;
+        int price = 0;
         //check price and number of seats before deleting
-        int seats = flightProxy.proxy.queryFlight(id,flightNumber);
-        int price = flightProxy.proxy.queryFlightPrice(id,flightNumber);
+        try {
+            seats = flightProxy.proxy.queryFlight(id, flightNumber);
+            price = flightProxy.proxy.queryFlightPrice(id, flightNumber);
+            flightDeleted = flightProxy.proxy.deleteFlight(id, flightNumber);
+        }catch (Exception e){
+            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+            try {
+                if (getStatusCode(flightProxyBackup.wsdlLocation) == 200){
+                    flightProxy = flightProxyBackup;
+                }
+                System.out.println("connected to its replica");
 
-        flightDeleted = flightProxy.proxy.deleteFlight(id, flightNumber);
+                seats = flightProxy.proxy.queryFlight(id, flightNumber);
+                price = flightProxy.proxy.queryFlightPrice(id, flightNumber);
+                flightDeleted = flightProxy.proxy.deleteFlight(id, flightNumber);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                try{
+                    if (getStatusCode(flightPC.wsdlLocation) == 200){
+                        flightProxy = flightPC;
+                    }
+                    System.out.println("connected to its replica");
+                    seats = flightProxy.proxy.queryFlight(id, flightNumber);
+                    price = flightProxy.proxy.queryFlightPrice(id, flightNumber);
+                    flightDeleted = flightProxy.proxy.deleteFlight(id, flightNumber);
+                } catch (IOException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        }
         ttl[id-1].pushItem(id);
         if (flightDeleted) {
             Vector cmd = cmdToVect(FLIGHT,ADD,flightNumber);
@@ -465,9 +736,32 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     @Override
     public int queryFlight(int id, int flightNumber) {
+        int flightNum =0;
+        try {
+            flightNum = flightProxy.proxy.queryFlight(id, flightNumber);
+        }catch (Exception e){
+            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+            try {
+                if (getStatusCode(flightProxyBackup.wsdlLocation) == 200){
+                    flightProxy = flightProxyBackup;
+                }
+                System.out.println("connected to its replica");
 
-
-        int flightNum = flightProxy.proxy.queryFlight(id, flightNumber);
+                flightNum = flightProxy.proxy.queryFlight(id, flightNumber);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                try{
+                    if (getStatusCode(flightPC.wsdlLocation) == 200){
+                        flightProxy = flightPC;
+                    }
+                    System.out.println("connected to its replica");
+                    flightNum = flightProxy.proxy.queryFlight(id, flightNumber);
+                } catch (IOException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        }
         ttl[id-1].pushItem(id);
         if (flightNum > 0) {
             System.out.println("QUERY the flight with ID:" + id);
@@ -487,7 +781,32 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public int queryFlightPrice(int id, int flightNumber) {
 
-        int flightPrice = flightProxy.proxy.queryFlightPrice(id, flightNumber);
+        int flightPrice =0;
+        try {
+            flightPrice = flightProxy.proxy.queryFlightPrice(id, flightNumber);
+        }catch (Exception e){
+            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+            try {
+                if (getStatusCode(flightProxyBackup.wsdlLocation) == 200){
+                    flightProxy = flightProxyBackup;
+                }
+                System.out.println("connected to its replica");
+
+                flightPrice = flightProxy.proxy.queryFlightPrice(id, flightNumber);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                try{
+                    if (getStatusCode(flightPC.wsdlLocation) == 200){
+                        flightProxy = flightPC;
+                    }
+                    System.out.println("connected to its replica");
+                    flightPrice = flightProxy.proxy.queryFlightPrice(id, flightNumber);
+                } catch (IOException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        }
         ttl[id-1].pushItem(id);
         System.out.println("QUERY the flight price with ID: " + id);
 
@@ -502,8 +821,33 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean addCars(int id, String location, int numCars, int carPrice) {
 
-        boolean carsAdded;
-        carsAdded = carProxy.proxy.addCars(id,location, numCars, carPrice);
+        boolean carsAdded = false;
+        try {
+            carsAdded = carProxy.proxy.addCars(id, location, numCars, carPrice);
+        }catch (Exception e){
+            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+            try {
+                if (getStatusCode(carProxyBackup.wsdlLocation) == 200){
+                    carProxy = carProxyBackup;
+                }
+                System.out.println("connected to its replica");
+
+                carsAdded = carProxy.proxy.addCars(id, location, numCars, carPrice);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                try{
+                    if (getStatusCode(carPC.wsdlLocation) == 200){
+                        carProxy = carPC;
+                    }
+                    System.out.println("connected to its replica");
+                    carsAdded = carProxy.proxy.addCars(id, location, numCars, carPrice);
+                } catch (IOException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        }
+
         ttl[id-1].pushItem(id);
         if (carsAdded) {
             System.out.println("SENT the addCar command to the car server:" + c_host + ":" + c_port);
@@ -527,11 +871,41 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean deleteCars(int id, String location) {
 
-        boolean carsDeleted;
-        int num = carProxy.proxy.queryCars(id,location);
-        int price = carProxy.proxy.queryCarsPrice(id,location);
+        boolean carsDeleted = false;
+        int num = 0;
+        int price = 0;
 
-        carsDeleted = carProxy.proxy.deleteCars(id, location);
+        try {
+            num = carProxy.proxy.queryCars(id,location);
+            price = carProxy.proxy.queryCarsPrice(id,location);
+            carsDeleted = carProxy.proxy.deleteCars(id, location);
+        }catch (Exception e){
+            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+            try {
+                if (getStatusCode(carProxyBackup.wsdlLocation) == 200){
+                    carProxy = carProxyBackup;
+                }
+                System.out.println("connected to its replica");
+
+                num = carProxy.proxy.queryCars(id,location);
+                price = carProxy.proxy.queryCarsPrice(id,location);
+                carsDeleted = carProxy.proxy.deleteCars(id, location);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                try{
+                    if (getStatusCode(carPC.wsdlLocation) == 200){
+                        carProxy = carPC;
+                    }
+                    System.out.println("connected to its replica");
+                    num = carProxy.proxy.queryCars(id,location);
+                    price = carProxy.proxy.queryCarsPrice(id,location);
+                    carsDeleted = carProxy.proxy.deleteCars(id, location);
+                } catch (IOException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        }
         ttl[id-1].pushItem(id);
         if(carsDeleted) {
             Vector cmd = cmdToVect(CAR,ADD,Integer.parseInt(location));
@@ -557,7 +931,33 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public int queryCars(int id, String location) {
 
-        int carNum = carProxy.proxy.queryCars(id, location);
+        int carNum =0;
+        carNum = carProxy.proxy.queryCars(id, location);
+        try {
+            carNum = carProxy.proxy.queryCars(id, location);
+        }catch (Exception e){
+            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+            try {
+                if (getStatusCode(carProxyBackup.wsdlLocation) == 200){
+                    carProxy = carProxyBackup;
+                }
+                System.out.println("connected to its replica");
+
+                carNum = carProxy.proxy.queryCars(id, location);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                try{
+                    if (getStatusCode(carPC.wsdlLocation) == 200){
+                        carProxy = carPC;
+                    }
+                    System.out.println("connected to its replica");
+                    carNum = carProxy.proxy.queryCars(id, location);
+                } catch (IOException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        }
         ttl[id-1].pushItem(id);
         System.out.println("QUERY the car with ID: " + id);
 
@@ -572,7 +972,32 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public int queryCarsPrice(int id, String location) {
 
-        int carPrice = carProxy.proxy.queryCarsPrice(id, location);
+        int carPrice = 0;
+        try {
+            carPrice = carProxy.proxy.queryCarsPrice(id, location);
+        }catch (Exception e){
+            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+            try {
+                if (getStatusCode(carProxyBackup.wsdlLocation) == 200){
+                    carProxy = carProxyBackup;
+                }
+                System.out.println("connected to its replica");
+
+                carPrice = carProxy.proxy.queryCarsPrice(id, location);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                try{
+                    if (getStatusCode(carPC.wsdlLocation) == 200){
+                        carProxy = carPC;
+                    }
+                    System.out.println("connected to its replica");
+                    carPrice = carProxy.proxy.queryCarsPrice(id, location);
+                } catch (IOException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        }
         ttl[id-1].pushItem(id);
         System.out.println("QUERY the car price with ID: " + id);
 
@@ -587,7 +1012,33 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean addRooms(int id, String location, int numRooms, int roomPrice) {
 
-        boolean roomsAdded = roomProxy.proxy.addRooms(id, location, numRooms, roomPrice);
+        boolean roomsAdded = false;
+
+        try {
+            roomsAdded = roomProxy.proxy.addRooms(id, location, numRooms, roomPrice);
+        }catch (Exception e){
+            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+            try {
+                if (getStatusCode(roomProxyBackup.wsdlLocation) == 200){
+                    roomProxy = roomProxyBackup;
+                }
+                System.out.println("connected to its replica");
+
+                roomsAdded = roomProxy.proxy.addRooms(id, location, numRooms, roomPrice);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                try{
+                    if (getStatusCode(roomPC.wsdlLocation) == 200){
+                        roomProxy = roomPC;
+                    }
+                    System.out.println("connected to its replica");
+                    roomsAdded = roomProxy.proxy.addRooms(id, location, numRooms, roomPrice);
+                } catch (IOException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        }
         ttl[id-1].pushItem(id);
         if (roomsAdded) {
             System.out.println("EXECUTE the addRoom command to the room server: "+r_host +":"+r_port);
@@ -608,10 +1059,41 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     @Override
     public boolean deleteRooms(int id, String location) {
-        int num = roomProxy.proxy.queryRooms(id,location);
-        int price = roomProxy.proxy.queryRoomsPrice(id,location);
+        int num = 0;
+        int price = 0;
+        boolean roomDeleted = false;
 
-        boolean roomDeleted = roomProxy.proxy.deleteRooms(id, location);
+        try {
+            num = roomProxy.proxy.queryRooms(id,location);
+            price = roomProxy.proxy.queryRoomsPrice(id,location);
+            roomDeleted = roomProxy.proxy.deleteRooms(id, location);
+        }catch (Exception e){
+            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+            try {
+                if (getStatusCode(roomProxyBackup.wsdlLocation) == 200){
+                    roomProxy = roomProxyBackup;
+                }
+                System.out.println("connected to its replica");
+
+                num = roomProxy.proxy.queryRooms(id,location);
+                price = roomProxy.proxy.queryRoomsPrice(id,location);
+                roomDeleted = roomProxy.proxy.deleteRooms(id, location);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                try{
+                    if (getStatusCode(roomPC.wsdlLocation) == 200){
+                        roomProxy = roomPC;
+                    }
+                    System.out.println("connected to its replica");
+                    num = roomProxy.proxy.queryRooms(id,location);
+                    price = roomProxy.proxy.queryRoomsPrice(id,location);
+                    roomDeleted = roomProxy.proxy.deleteRooms(id, location);
+                } catch (IOException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        }
         ttl[id-1].pushItem(id);
         if (roomDeleted) {
 
@@ -636,7 +1118,32 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public int queryRooms(int id, String location) {
 
-        int roomquery = roomProxy.proxy.queryRooms(id, location);
+        int roomquery = 0;
+        roomquery = roomProxy.proxy.queryRooms(id, location);
+        try {
+            roomquery = roomProxy.proxy.queryRooms(id, location);
+        }catch (Exception e){
+            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+            try {
+                if (getStatusCode(roomProxyBackup.wsdlLocation) == 200){
+                    roomProxy = roomProxyBackup;
+                }
+                System.out.println("connected to its replica");
+                roomquery = roomProxy.proxy.queryRooms(id, location);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                try{
+                    if (getStatusCode(roomPC.wsdlLocation) == 200){
+                        roomProxy = roomPC;
+                    }
+                    System.out.println("connected to its replica");
+                    roomquery = roomProxy.proxy.queryRooms(id, location);
+                } catch (IOException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        }
         ttl[id-1].pushItem(id);
 
         System.out.println("QUERY the room with ID: " + id);
@@ -651,7 +1158,31 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     @Override
     public int queryRoomsPrice(int id, String location) {
-        int roomPrice = roomProxy.proxy.queryRoomsPrice(id,location);
+        int roomPrice = 0;
+        try {
+            roomPrice = roomProxy.proxy.queryRoomsPrice(id, location);
+        }catch (Exception e){
+            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+            try {
+                if (getStatusCode(roomProxyBackup.wsdlLocation) == 200){
+                    roomProxy = roomProxyBackup;
+                }
+                System.out.println("connected to its replica");
+                roomPrice = roomProxy.proxy.queryRoomsPrice(id, location);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                try{
+                    if (getStatusCode(roomPC.wsdlLocation) == 200){
+                        roomProxy = roomPC;
+                    }
+                    System.out.println("connected to its replica");
+                    roomPrice = roomProxy.proxy.queryRoomsPrice(id, location);
+                } catch (IOException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        }
         ttl[id-1].pushItem(id);
         System.out.println("QUERY the room PRICE with ID:" + id);
 
@@ -770,7 +1301,32 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 Trace.info("RM::deleteCustomer(" + id + ", " + customerId + "): ");
                 //flight
                 if(reservedItem.getType() == 1){
-                    if(flightProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count)){
+                    boolean flightUpdated = false;
+                    try {
+                        flightUpdated = flightProxy.proxy.updateDeleteCustomer(itemId, reservedItem.getKey(), count);
+                    }catch (Exception e0){
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                        try {
+                            if (getStatusCode(flightProxyBackup.wsdlLocation) == 200){
+                                flightProxy = flightProxyBackup;
+                            }
+                            System.out.println("connected to its replica");
+                            flightUpdated = flightProxy.proxy.updateDeleteCustomer(itemId, reservedItem.getKey(), count);
+                        } catch (IOException e1) {
+                            e1.printStackTrace();
+                            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                            try{
+                                if (getStatusCode(flightPC.wsdlLocation) == 200){
+                                    flightProxy = flightPC;
+                                }
+                                System.out.println("connected to its replica");
+                                flightUpdated = flightProxy.proxy.updateDeleteCustomer(itemId, reservedItem.getKey(), count);
+                            } catch (IOException e2) {
+                                e2.printStackTrace();
+                            }
+                        }
+                    }
+                    if(flightUpdated){
 
                         if (!transactionBit.get(id)) {
                             Vector cmd = cmdToVect(FLIGHT, RES, Integer.parseInt(location));
@@ -786,7 +1342,32 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 }
                 //car
                 else if (reservedItem.getType() == 2){
-                    if(carProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count)){
+                    boolean carUpdated = false;
+                    try {
+                        carUpdated = carProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count);
+                    }catch (Exception e0){
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                        try {
+                            if (getStatusCode(carProxyBackup.wsdlLocation) == 200){
+                                carProxy = carProxyBackup;
+                            }
+                            System.out.println("connected to its replica");
+                            carUpdated = carProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count);
+                        } catch (IOException e1) {
+                            e1.printStackTrace();
+                            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                            try{
+                                if (getStatusCode(carPC.wsdlLocation) == 200){
+                                    carProxy = carPC;
+                                }
+                                System.out.println("connected to its replica");
+                                carUpdated = carProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count);
+                            } catch (IOException e2) {
+                                e2.printStackTrace();
+                            }
+                        }
+                    }
+                    if(carUpdated){
 
                         if (!transactionBit.get(id)) {
                             Vector cmd = cmdToVect(CAR, RES, Integer.parseInt(location));
@@ -802,7 +1383,32 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                 }
                 //room
                 else if (reservedItem.getType() == 3){
-                    if(roomProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count)){
+                    boolean roomUpdated = false;
+                    try {
+                        roomUpdated = roomProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count);
+                    }catch (Exception e0){
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                        try {
+                            if (getStatusCode(roomProxyBackup.wsdlLocation) == 200){
+                                roomProxy = roomProxyBackup;
+                            }
+                            System.out.println("connected to its replica");
+                            roomUpdated = roomProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count);
+                        } catch (IOException e1) {
+                            e1.printStackTrace();
+                            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                            try{
+                                if (getStatusCode(roomPC.wsdlLocation) == 200){
+                                    roomProxy = roomPC;
+                                }
+                                System.out.println("connected to its replica");
+                                roomUpdated = roomProxy.proxy.updateDeleteCustomer(itemId,reservedItem.getKey(),count);
+                            } catch (IOException e2) {
+                                e2.printStackTrace();
+                            }
+                        }
+                    }
+                    if(roomUpdated){
 
                         if (!transactionBit.get(id)) {
                             Vector cmd = cmdToVect(ROOM, RES, Integer.parseInt(location));
@@ -883,7 +1489,31 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         /** call methods from the flight server to execute actions **/
         //get flight key
 
-        String key = flightProxy.proxy.getFlightKey(flightNumber);
+        String key = "";
+        try {
+            key = flightProxy.proxy.getFlightKey(flightNumber);
+        }catch (Exception e0){
+            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+            try {
+                if (getStatusCode(flightProxyBackup.wsdlLocation) == 200){
+                    flightProxy = flightProxyBackup;
+                }
+                System.out.println("connected to its replica");
+                key = flightProxy.proxy.getFlightKey(flightNumber);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                try{
+                    if (getStatusCode(flightPC.wsdlLocation) == 200){
+                        flightProxy = flightPC;
+                    }
+                    System.out.println("connected to its replica");
+                    key = flightProxy.proxy.getFlightKey(flightNumber);
+                } catch (IOException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        }
 
         ttl[id-1].pushItem(id);
         boolean isReserved = reserveItem(id,customerId,String.valueOf(flightNumber),key,FLIGHT);
@@ -907,7 +1537,32 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     private boolean unReserveFlight(int id, int customerId, int flightNumber) {
         /** call methods from the flight server to execute actions **/
         //get flight key
-        String key = flightProxy.proxy.getFlightKey(flightNumber);
+        String key = "";
+        try {
+            key = flightProxy.proxy.getFlightKey(flightNumber);
+        }catch (Exception e0){
+            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+            try {
+                if (getStatusCode(flightProxyBackup.wsdlLocation) == 200){
+                    flightProxy = flightProxyBackup;
+                }
+                System.out.println("connected to its replica");
+                key = flightProxy.proxy.getFlightKey(flightNumber);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                try{
+                    if (getStatusCode(flightPC.wsdlLocation) == 200){
+                        flightProxy = flightPC;
+                    }
+                    System.out.println("connected to its replica");
+                    key = flightProxy.proxy.getFlightKey(flightNumber);
+                } catch (IOException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        }
+
         ttl[id-1].pushItem(id);
         if (unReserveItem(id, customerId, String.valueOf(flightNumber), key, FLIGHT)){
             this.txnManager.enlist(id,FLIGHT);
@@ -923,7 +1578,31 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean reserveCar(int id, int customerId, String location) {
         /** call methods from the car server to execute actions **/
-        String key = carProxy.proxy.getCarKey(location);
+        String key = "";
+        try {
+            key = carProxy.proxy.getCarKey(location);
+        }catch (Exception e0){
+            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+            try {
+                if (getStatusCode(carProxyBackup.wsdlLocation) == 200){
+                    carProxy = carProxyBackup;
+                }
+                System.out.println("connected to its replica");
+                key = carProxy.proxy.getCarKey(location);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                try{
+                    if (getStatusCode(carPC.wsdlLocation) == 200){
+                        carProxy = carPC;
+                    }
+                    System.out.println("connected to its replica");
+                    key = carProxy.proxy.getCarKey(location);
+                } catch (IOException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        }
         ttl[id-1].pushItem(id);
         if (reserveItem(id,customerId,location,key,CAR)){
             this.txnManager.enlist(id,CAR);
@@ -940,7 +1619,31 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     private boolean unReserveCar(int id, int customerId, String location) {
         /** call methods from the car server to execute actions **/
-        String key = carProxy.proxy.getCarKey(location);
+        String key ="";
+        try {
+            key = carProxy.proxy.getCarKey(location);
+        }catch (Exception e0){
+            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+            try {
+                if (getStatusCode(carProxyBackup.wsdlLocation) == 200){
+                    carProxy = carProxyBackup;
+                }
+                System.out.println("connected to its replica");
+                key = carProxy.proxy.getCarKey(location);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                try{
+                    if (getStatusCode(carPC.wsdlLocation) == 200){
+                        carProxy = carPC;
+                    }
+                    System.out.println("connected to its replica");
+                    key = carProxy.proxy.getCarKey(location);
+                } catch (IOException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        }
         ttl[id-1].pushItem(id);
         if (unReserveItem(id, customerId, location, key, CAR)){
             this.txnManager.enlist(id,CAR);
@@ -955,7 +1658,31 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean reserveRoom(int id, int customerId, String location) {
         /** call methods from the room server to execute actions **/
-        String key = roomProxy.proxy.getRoomKey(location);
+        String key = "";
+        try {
+            key = roomProxy.proxy.getRoomKey(location);
+        }catch (Exception e){
+            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+            try {
+                if (getStatusCode(roomProxyBackup.wsdlLocation) == 200){
+                    roomProxy = roomProxyBackup;
+                }
+                System.out.println("connected to its replica");
+                key = roomProxy.proxy.getRoomKey(location);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                try{
+                    if (getStatusCode(roomPC.wsdlLocation) == 200){
+                        roomProxy = roomPC;
+                    }
+                    System.out.println("connected to its replica");
+                    key = roomProxy.proxy.getRoomKey(location);
+                } catch (IOException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        }
         ttl[id-1].pushItem(id);
         if (reserveItem(id, customerId,location, key, ROOM)){
 
@@ -972,7 +1699,31 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     }
     private boolean unReserveRoom(int id, int customerId, String location) {
         /** call methods from the room server to execute actions **/
-        String key = roomProxy.proxy.getRoomKey(location);
+        String key = "";
+        try {
+            key = roomProxy.proxy.getRoomKey(location);
+        }catch (Exception e){
+            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+            try {
+                if (getStatusCode(roomProxyBackup.wsdlLocation) == 200){
+                    roomProxy = roomProxyBackup;
+                }
+                System.out.println("connected to its replica");
+                key = roomProxy.proxy.getRoomKey(location);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                try{
+                    if (getStatusCode(roomPC.wsdlLocation) == 200){
+                        roomProxy = roomPC;
+                    }
+                    System.out.println("connected to its replica");
+                    key = roomProxy.proxy.getRoomKey(location);
+                } catch (IOException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        }
         ttl[id-1].pushItem(id);
         if (unReserveItem(id, customerId, location, key, ROOM)){
 
@@ -1067,22 +1818,110 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         Iterator it2 = flightNumbers.iterator();
         while (it2.hasNext()){
             String next = (String) it2.next();
-            String key = this.flightProxy.proxy.getFlightKey(Integer.parseInt(next));
-            int price = this.flightProxy.proxy.queryFlightPrice(id,Integer.parseInt(next));
-            command = command + next + "," + key + "," + price + ",";
+            String flightKey = "";
+            int flightPrice = -1;
+            try {
+                flightKey = this.flightProxy.proxy.getFlightKey(Integer.parseInt(next));
+                flightPrice = this.flightProxy.proxy.queryFlightPrice(id,Integer.parseInt(next));
+            }catch (Exception e0){
+                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                try {
+                    if (getStatusCode(flightProxyBackup.wsdlLocation) == 200){
+                        flightProxy = flightProxyBackup;
+                    }
+                    System.out.println("connected to its replica");
+                    flightKey = this.flightProxy.proxy.getFlightKey(Integer.parseInt(next));
+                    flightPrice = this.flightProxy.proxy.queryFlightPrice(id, Integer.parseInt(next));
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                    try{
+                        if (getStatusCode(flightPC.wsdlLocation) == 200){
+                            flightProxy = flightPC;
+                        }
+                        System.out.println("connected to its replica");
+                        flightKey = this.flightProxy.proxy.getFlightKey(Integer.parseInt(next));
+                        flightPrice = this.flightProxy.proxy.queryFlightPrice(id, Integer.parseInt(next));
+                    } catch (IOException e2) {
+                        e2.printStackTrace();
+                    }
+                }
+            }
+            if (flightKey.isEmpty() || flightPrice ==-1){
+                System.out.println("ERROR: Flight price and flight key sent to replica are wrong");
+            }
+            command = command + next + "," + flightKey + "," + flightPrice + ",";
         }
         //-1 will delimit the end or the flight numbers
         command = command + String.format("%d,%s,%b,%b,",-1,location,car,room);
         //get the keys to reserve items at the replica
-        String carKey = this.carProxy.proxy.getCarKey(location);
-        String roomKey = this.roomProxy.proxy.getRoomKey(location);
-        int carPrice = this.carProxy.proxy.queryCarsPrice(id,location);
-        int roomPrice = this.roomProxy.proxy.queryRoomsPrice(id,location);
-        command = command + String.format("%s,%d,%s,%d",carKey,carPrice,roomKey,roomPrice);
+        String carKey = "";
+        String roomKey = "";
+        int carPrice = -1;
+        int roomPrice = -1;
+        try {
+            carKey = this.carProxy.proxy.getCarKey(location);
+            carPrice = this.carProxy.proxy.queryCarsPrice(id,location);
+        }catch (Exception e0){
+            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+            try {
+                if (getStatusCode(carProxyBackup.wsdlLocation) == 200){
+                    carProxy = carProxyBackup;
+                }
+                System.out.println("connected to its replica");
+                carKey = this.carProxy.proxy.getCarKey(location);
+                carPrice = this.carProxy.proxy.queryCarsPrice(id, location);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                try{
+                    if (getStatusCode(carPC.wsdlLocation) == 200){
+                        carProxy = carPC;
+                    }
+                    System.out.println("connected to its replica");
+                    carKey = this.carProxy.proxy.getCarKey(location);
+                    carPrice = this.carProxy.proxy.queryCarsPrice(id, location);
+                } catch (IOException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        }
+        try {
+            roomKey = this.roomProxy.proxy.getRoomKey(location);
+            roomPrice = this.roomProxy.proxy.queryRoomsPrice(id,location);
+        }catch (Exception e){
+            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+            try {
+                if (getStatusCode(roomProxyBackup.wsdlLocation) == 200){
+                    roomProxy = roomProxyBackup;
+                }
+                System.out.println("connected to its replica");
+                roomKey = this.roomProxy.proxy.getRoomKey(location);
+                roomPrice = this.roomProxy.proxy.queryRoomsPrice(id, location);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                try{
+                    if (getStatusCode(roomPC.wsdlLocation) == 200){
+                        roomProxy = roomPC;
+                    }
+                    System.out.println("connected to its replica");
+                    roomKey = this.roomProxy.proxy.getRoomKey(location);
+                    roomPrice = this.roomProxy.proxy.queryRoomsPrice(id,location);
+                } catch (IOException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        }
+        if ( carKey.isEmpty() || carPrice == -1 || roomKey.isEmpty() || roomPrice==-1){
+            System.out.println("ERROR: failed to send message to replica");
+        }
+        else {
+            command = command + String.format("%s,%d,%s,%d", carKey, carPrice, roomKey, roomPrice);
 
-        System.out.println("PC command sent on itinerary: " + command);
-        sendCommand(command);
-
+            System.out.println("PC command sent on itinerary: " + command);
+            sendCommand(command);
+        }
         return true;
     }
 
@@ -1137,19 +1976,96 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             Integer RMType = (Integer) it.next();
             switch (RMType) {
                 case FLIGHT:
-                    if(!flightProxy.proxy.commit(txnId)){
+                    boolean flightCommit = false;
+                    try {
+                        flightCommit = flightProxy.proxy.commit(txnId);
+                    }catch (Exception e0){
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                        try {
+                            if (getStatusCode(flightProxyBackup.wsdlLocation) == 200){
+                                flightProxy = flightProxyBackup;
+                            }
+                            System.out.println("connected to its replica");
+                            flightCommit = flightProxy.proxy.commit(txnId);
+                        } catch (IOException e1) {
+                            e1.printStackTrace();
+                            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                            try{
+                                if (getStatusCode(flightPC.wsdlLocation) == 200){
+                                    flightProxy = flightPC;
+                                }
+                                System.out.println("connected to its replica");
+                                flightCommit = flightProxy.proxy.commit(txnId);
+                            } catch (IOException e2) {
+                                e2.printStackTrace();
+                            }
+                        }
+                    }
+
+                    if(!flightCommit){
                         Trace.warn("ERROR IN FLIGHT RM COMMIT: " + txnId);
                         return false;
                     }
                     break;
                 case CAR:
-                    if(!carProxy.proxy.commit(txnId)){
+                    boolean carCommit = false;
+                    try {
+                        carCommit = carProxy.proxy.commit(txnId);
+                    }catch (Exception e0){
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                        try {
+                            if (getStatusCode(carProxyBackup.wsdlLocation) == 200){
+                                carProxy = carProxyBackup;
+                            }
+                            System.out.println("connected to its replica");
+                            carCommit = carProxy.proxy.commit(txnId);
+                        } catch (IOException e1) {
+                            e1.printStackTrace();
+                            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                            try{
+                                if (getStatusCode(carPC.wsdlLocation) == 200){
+                                    carProxy = carPC;
+                                }
+                                System.out.println("connected to its replica");
+                                carCommit = carProxy.proxy.commit(txnId);
+                            } catch (IOException e2) {
+                                e2.printStackTrace();
+                            }
+                        }
+                    }
+
+                    if(!carCommit){
                         Trace.warn("ERROR IN CAR RM COMMIT: " + txnId);
                         return false;
                     }
                     break;
                 case ROOM:
-                    if(!roomProxy.proxy.commit(txnId)){
+                    boolean roomCommit = false;
+                    try {
+                        roomCommit = roomProxy.proxy.commit(txnId);
+                    }catch (Exception e){
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                        try {
+                            if (getStatusCode(roomProxyBackup.wsdlLocation) == 200){
+                                roomProxy = roomProxyBackup;
+                            }
+                            System.out.println("connected to its replica");
+                            roomCommit = roomProxy.proxy.commit(txnId);
+                        } catch (IOException e1) {
+                            e1.printStackTrace();
+                            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                            try{
+                                if (getStatusCode(roomPC.wsdlLocation) == 200){
+                                    roomProxy = roomPC;
+                                }
+                                System.out.println("connected to its replica");
+                                roomCommit = roomProxy.proxy.commit(txnId);
+                            } catch (IOException e2) {
+                                e2.printStackTrace();
+                            }
+                        }
+                    }
+                    if(!roomCommit){
                         Trace.warn("ERROR IN ROOM RM COMMIT: " + txnId);
                         return false;
                     }
@@ -1226,10 +2142,67 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                                     Trace.warn("DEADLOCK EXCEPTION UPON ADDFLIGHT IN ABORT: " + txnId);
                                     return false;
                                 }
+                                catch (Exception e0){
+                                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                                    try {
+                                        if (getStatusCode(flightProxyBackup.wsdlLocation) == 200){
+                                            flightProxy = flightProxyBackup;
+                                        }
+                                        System.out.println("connected to its replica");
+                                        if (!flightProxy.proxy.addFlight(txnId, location, seats, price)) {
+                                            Trace.warn("FAILED TO ADDFLIGHT UPON ABORT: " + txnId);
+                                            return false;
+                                        }
+                                    } catch (IOException e1) {
+                                        e1.printStackTrace();
+                                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                                        try{
+                                            if (getStatusCode(flightPC.wsdlLocation) == 200){
+                                                flightProxy = flightPC;
+                                            }
+                                            System.out.println("connected to its replica");
+                                            if (!flightProxy.proxy.addFlight(txnId, location, seats, price)) {
+                                                Trace.warn("FAILED TO ADDFLIGHT UPON ABORT: " + txnId);
+                                                return false;
+                                            }
+                                        } catch (IOException e2) {
+                                            e2.printStackTrace();
+                                        } catch (DeadlockException_Exception e) {
+                                            e.printStackTrace();
+                                        }
+                                    } catch (DeadlockException_Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                }
                                 Trace.info("ADDED NEW FLIGHT WHEN ABORTING: "+txnId);
                                 break;
                             case DEL:
-                                if (!flightProxy.proxy.deleteFlight(txnId, location)) {
+                                boolean flightDeleted = false;
+                                try {
+                                    flightDeleted = flightProxy.proxy.deleteFlight(txnId, location);
+                                }catch (Exception e0){
+                                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                                    try {
+                                        if (getStatusCode(flightProxyBackup.wsdlLocation) == 200){
+                                            flightProxy = flightProxyBackup;
+                                        }
+                                        System.out.println("connected to its replica");
+                                        flightDeleted = flightProxy.proxy.deleteFlight(txnId, location);
+                                    } catch (IOException e1) {
+                                        e1.printStackTrace();
+                                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                                        try{
+                                            if (getStatusCode(flightPC.wsdlLocation) == 200){
+                                                flightProxy = flightPC;
+                                            }
+                                            System.out.println("connected to its replica");
+                                            flightDeleted = flightProxy.proxy.deleteFlight(txnId, location);
+                                        } catch (IOException e2) {
+                                            e2.printStackTrace();
+                                        }
+                                    }
+                                }
+                                if (!flightDeleted) {
                                     Trace.warn("FAILED TO DELETEFLIGHT UPON ABORT: " + txnId);
                                     return false;
                                 }
@@ -1241,19 +2214,64 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                             case ADD:
                                 Integer numCars = (Integer) cmd.get(3);
                                 Integer price = (Integer) cmd.get(4);
+                                boolean carAdded = false;
                                 try {
-                                    if (!carProxy.proxy.addCars(txnId, String.valueOf(location), numCars, price)) {
-                                        Trace.warn("FAILED TO ADDCAR UPON ABORT: " + txnId);
-                                        return false;
+                                    carAdded = carProxy.proxy.addCars(txnId, String.valueOf(location), numCars, price);
+                                }catch (Exception e0){
+                                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                                    try {
+                                        if (getStatusCode(carProxyBackup.wsdlLocation) == 200){
+                                            carProxy = carProxyBackup;
+                                        }
+                                        System.out.println("connected to its replica");
+                                        carAdded = carProxy.proxy.addCars(txnId, String.valueOf(location), numCars, price);
+                                    } catch (IOException e1) {
+                                        e1.printStackTrace();
+                                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                                        try{
+                                            if (getStatusCode(carPC.wsdlLocation) == 200){
+                                                carProxy = carPC;
+                                            }
+                                            System.out.println("connected to its replica");
+                                            carAdded = carProxy.proxy.addCars(txnId, String.valueOf(location), numCars, price);
+                                        } catch (IOException e2) {
+                                            e2.printStackTrace();
+                                        }
                                     }
-                                } catch (Exception e) { //why isn't there an exception here?
-                                    Trace.warn("DEADLOCK EXCEPTION UPON ADDFLIGHT IN ABORT: " + txnId);
-                                    e.printStackTrace();
+                                }
+                                if (!carAdded) {
+                                    Trace.warn("FAILED TO ADDCAR UPON ABORT: " + txnId);
                                     return false;
                                 }
+
                                 break;
                             case DEL:
-                                if (!carProxy.proxy.deleteCars(txnId, String.valueOf(location))) {
+                                boolean carDeleted = false;
+                                try {
+                                    carDeleted = carProxy.proxy.deleteCars(txnId, String.valueOf(location));
+                                }catch (Exception e0){
+                                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                                    try {
+                                        if (getStatusCode(carProxyBackup.wsdlLocation) == 200){
+                                            carProxy = carProxyBackup;
+                                        }
+                                        System.out.println("connected to its replica");
+                                        carDeleted = carProxy.proxy.deleteCars(txnId, String.valueOf(location));
+                                    } catch (IOException e1) {
+                                        e1.printStackTrace();
+                                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                                        try{
+                                            if (getStatusCode(carPC.wsdlLocation) == 200){
+                                                carProxy = carPC;
+                                            }
+                                            System.out.println("connected to its replica");
+                                            carDeleted = carProxy.proxy.deleteCars(txnId, String.valueOf(location));
+                                        } catch (IOException e2) {
+                                            e2.printStackTrace();
+                                        }
+                                    }
+                                }
+                                if (!carDeleted) {
                                     Trace.warn("FAILED TO DELETECAR UPON ABORT: " + txnId);
                                     return false;
                                 }
@@ -1265,13 +2283,64 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
                             case ADD:
                                 Integer numRooms = (Integer) cmd.get(3);
                                 Integer price = (Integer) cmd.get(4);
-                                if (roomProxy.proxy.addRooms(txnId, String.valueOf(location), numRooms, price)) {
+                                boolean roomAdded = false;
+                                roomAdded = roomProxy.proxy.addRooms(txnId, String.valueOf(location), numRooms, price);
+                                try {
+                                    roomAdded = roomProxy.proxy.addRooms(txnId, String.valueOf(location), numRooms, price);
+                                }catch (Exception e){
+                                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                                    try {
+                                        if (getStatusCode(roomProxyBackup.wsdlLocation) == 200){
+                                            roomProxy = roomProxyBackup;
+                                        }
+                                        System.out.println("connected to its replica");
+                                        roomAdded = roomProxy.proxy.addRooms(txnId, String.valueOf(location), numRooms, price);
+                                    } catch (IOException e1) {
+                                        e1.printStackTrace();
+                                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                                        try{
+                                            if (getStatusCode(roomPC.wsdlLocation) == 200){
+                                                roomProxy = roomPC;
+                                            }
+                                            System.out.println("connected to its replica");
+                                            roomAdded = roomProxy.proxy.addRooms(txnId, String.valueOf(location), numRooms, price);
+                                        } catch (IOException e2) {
+                                            e2.printStackTrace();
+                                        }
+                                    }
+                                }
+                                if (!roomAdded) {
                                     Trace.warn("FAILED TO ADDROOM UPON ABORT: " + txnId);
                                     return false;
                                 }
                                 break;
                             case DEL:
-                                if (!roomProxy.proxy.deleteRooms(txnId, String.valueOf(location))) {
+                                boolean roomDeleted = false;
+                                try {
+                                    roomDeleted = roomProxy.proxy.deleteRooms(txnId, String.valueOf(location));
+                                }catch (Exception e){
+                                    System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                                    try {
+                                        if (getStatusCode(roomProxyBackup.wsdlLocation) == 200){
+                                            roomProxy = roomProxyBackup;
+                                        }
+                                        System.out.println("connected to its replica");
+                                        roomDeleted = roomProxy.proxy.deleteRooms(txnId, String.valueOf(location));
+                                    } catch (IOException e1) {
+                                        e1.printStackTrace();
+                                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                                        try{
+                                            if (getStatusCode(roomPC.wsdlLocation) == 200){
+                                                roomProxy = roomPC;
+                                            }
+                                            System.out.println("connected to its replica");
+                                            roomDeleted = roomProxy.proxy.deleteRooms(txnId, String.valueOf(location));
+                                        } catch (IOException e2) {
+                                            e2.printStackTrace();
+                                        }
+                                    }
+                                }
+                                if (!roomDeleted) {
                                     Trace.warn("FAILED TO DELETEROOM UPON ABORT: " + txnId);
                                     return false;
                                 }
@@ -1323,19 +2392,94 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             Integer RMType = (Integer) it.next();
             switch (RMType){
                 case FLIGHT:
-                    if (!flightProxy.proxy.abort(txnId)){
+                    boolean flightAborted = false;
+                    try {
+                        flightAborted = flightProxy.proxy.abort(txnId);
+                    }catch (Exception e0){
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                        try {
+                            if (getStatusCode(flightProxyBackup.wsdlLocation) == 200){
+                                flightProxy = flightProxyBackup;
+                            }
+                            System.out.println("connected to its replica");
+                            flightAborted = flightProxy.proxy.abort(txnId);
+                        } catch (IOException e1) {
+                            e1.printStackTrace();
+                            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                            try{
+                                if (getStatusCode(flightPC.wsdlLocation) == 200){
+                                    flightProxy = flightPC;
+                                }
+                                System.out.println("connected to its replica");
+                                flightAborted = flightProxy.proxy.abort(txnId);
+                            } catch (IOException e2) {
+                                e2.printStackTrace();
+                            }
+                        }
+                    }
+                    if (!flightAborted){
                         Trace.warn("ERROR IN ABORT IN THE FLIGHT SERVER: " + txnId);
                         return false;
                     }
                     break;
                 case CAR:
-                    if (!carProxy.proxy.abort(txnId)){
+                    boolean carAborted = false;
+                    try {
+                        carAborted = carProxy.proxy.abort(txnId);
+                    }catch (Exception e0){
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                        try {
+                            if (getStatusCode(carProxyBackup.wsdlLocation) == 200){
+                                carProxy = carProxyBackup;
+                            }
+                            System.out.println("connected to its replica");
+                            carAborted = carProxy.proxy.abort(txnId);
+                        } catch (IOException e1) {
+                            e1.printStackTrace();
+                            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                            try{
+                                if (getStatusCode(carPC.wsdlLocation) == 200){
+                                    carProxy = carPC;
+                                }
+                                System.out.println("connected to its replica");
+                                carAborted = carProxy.proxy.abort(txnId);
+                            } catch (IOException e2) {
+                                e2.printStackTrace();
+                            }
+                        }
+                    }
+                    if (!carAborted){
                         Trace.info("ERROR IN ABORT IN THE CAR SERVER: "+txnId);
                         return false;
                     }
                     break;
                 case ROOM:
-                    if (!roomProxy.proxy.abort(txnId)){
+                    boolean roomAborted = false;
+                    try {
+                        roomAborted = roomProxy.proxy.abort(txnId);
+                    }catch (Exception e){
+                        System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica");
+                        try {
+                            if (getStatusCode(roomProxyBackup.wsdlLocation) == 200){
+                                roomProxy = roomProxyBackup;
+                            }
+                            System.out.println("connected to its replica");
+                            roomAborted = roomProxy.proxy.abort(txnId);
+                        } catch (IOException e1) {
+                            e1.printStackTrace();
+                            System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
+                            try{
+                                if (getStatusCode(roomPC.wsdlLocation) == 200){
+                                    roomProxy = roomPC;
+                                }
+                                System.out.println("connected to its replica");
+                                roomAborted = roomProxy.proxy.abort(txnId);
+                            } catch (IOException e2) {
+                                e2.printStackTrace();
+                            }
+                        }
+                    }
+                    if (!roomAborted){
                         Trace.info("ERROR IN ABORT IN THE ROOM SERVER: "+txnId);
                         return false;
                     }
