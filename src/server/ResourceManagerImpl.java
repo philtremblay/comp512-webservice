@@ -22,7 +22,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager{
 
     protected LockManager lockServer;
     Broadcast broadcaster = null;
-    String configFile = "flighttcp.xml";
+    String configFile = "flightudp.xml";
 
 
     //constructor here: initialize the lock manager
@@ -869,5 +869,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager{
         System.exit(0);
         return true;
     }
+
+    @Override
+    public int signal() {
+
+        return 3;
+    }
+
 
 }

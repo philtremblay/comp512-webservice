@@ -168,4 +168,8 @@ public interface ResourceManager {
     @WebMethod
     public boolean shutdown();
 
+    @WebMethod
+    public int signal();
+
+
 }

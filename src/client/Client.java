@@ -25,13 +25,19 @@ public class Client {
 
         primary = new WSClient(serviceName, serviceHost, servicePort);
         if (hasbackup == 1) {
-            //backup = new WSClient("middlerep", serviceHost, 6668);
+            backup = new WSClient("middlerep", serviceHost, 6668);
         }
         else {
             backup = primary;
         }
         //primary proxy for the client
         client = primary;
+
+        SignalMessage ping = new SignalMessage(this);
+        Thread t = new Thread(ping);
+        t.start();
+
+
     }
 
     public static void main(String[] args) {

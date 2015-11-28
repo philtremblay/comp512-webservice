@@ -171,6 +171,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             }
         }
 
+        SignalMessage ping = new SignalMessage(this);
+        Thread t = new Thread(ping);
+        t.start();
+
+
     }
 
 
@@ -231,6 +236,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         int statusCode = http.getResponseCode();
         return statusCode;
     }
+
+
 
     // Reserve an item.
     protected boolean reserveItem(int id, int customerId, String location, String key, int itemInfo) {
@@ -1466,7 +1473,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             String command = String.format("querycustomer,%d,%d",id,customerId);
 
             sendCommand(command);
-            
+
 
             return s;
         }
@@ -2567,6 +2574,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             Trace.warn("CANNOT SHUTDOWN AT THE MOMENT, TRANSACTIONS ARE STILL ACTIVE");
             return false;
         }
+    }
+
+    @Override
+    public int signal() {
+
+        return 2;
     }
 
 }
