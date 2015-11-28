@@ -695,6 +695,79 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
                 }
                 break;
             case 20: //reserve itinerary
+                //should we pass it as a vector?
+                if (arguments.size() < 13){
+                    wrongNumber();
+                    break;
+                }
+                try {
+                    id = getInt(arguments.elementAt(1));
+                    int custId =  getInt(arguments.elementAt(2));
+                    Vector flights = new Vector();
+                    int i;
+                    for ( i =3 ; i<arguments.size() ;i ++ ){
+                        if (getInt(arguments.elementAt(i)) == -1 ) break;
+                        else {
+                            flights.add(arguments.elementAt(i));
+                        }
+                    }
+                    location = getString(arguments.elementAt(i+1));
+                    car = getBoolean(arguments.elementAt(i+2));
+                    room = getBoolean(arguments.elementAt(i+4));
+                    String carKey = getString(arguments.elementAt(i+5));
+                    int carPrice = getInt(arguments.elementAt(i+6));
+                    String roomKey = getString(arguments.elementAt(i+7));
+                    int roomPrice = getInt(arguments.elementAt(i+8));
+
+                    if (car && room){
+                        boolean cpass = reserveItem(id,custId,location,carKey,carPrice,this.m_rm.CAR);
+                        boolean rpass = reserveItem(id,custId,location,roomKey,roomPrice,this.m_rm.ROOM);
+                        if (cpass && rpass){
+                            System.out.println("REP: Reserved car and room at location: " + location+ " with id "+id);
+                        }
+                        else{
+                            System.out.println("REP: Could not reserve car and room at location: " + location + " with id "+id);
+                            break;
+                        }
+                    }
+                    else if (car){
+                        boolean cpass = reserveItem(id,custId,location,carKey,carPrice,this.m_rm.CAR);
+                        if (cpass){
+                            System.out.println("REP: Reserved car at location: " + location+ " with id "+id);
+                        }
+                        else{
+                            System.out.println("REP: Could not reserve car at location: " + location + " with id "+id);
+                            break;
+                        }
+
+                    }
+                    else if (room){
+                        boolean rpass = reserveItem(id,custId,location,roomKey,roomPrice,this.m_rm.ROOM);
+
+                        if (rpass){
+                            System.out.println("REP: Reserved room at location: " + location+ " with id "+id);
+                        }
+                        else{
+                            System.out.println("REP: Could not reserve room at location: " + location + " with id "+id);
+                            break;
+                        }
+
+                    }
+
+                    Iterator it = flights.iterator();
+                    while (it.hasNext()){
+                        String flightNum = (String) it.next();
+                        String flightKey = (String) it.next();
+                        Integer fprice = (Integer) it.next();
+                        if (reserveItem(id,custId,flightNum,flightKey,fprice,this.m_rm.FLIGHT)){
+                            System.out.println("REP: Could not reserve flight: "+flightNum + " with if " + id);
+                            break;
+                        }
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 break;
 
             case 22:  //new Customer given id
