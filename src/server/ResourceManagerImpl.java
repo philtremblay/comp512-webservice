@@ -13,7 +13,7 @@ import javax.jws.WebService;
 
 
 @WebService(endpointInterface = "server.ws.ResourceManager")
-public class ResourceManagerImpl implements server.ws.ResourceManager {
+public class ResourceManagerImpl extends server.ws.Main implements server.ws.ResourceManager{
 
     protected RMHashtable m_itemHT = new RMHashtable();
 
@@ -22,8 +22,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     protected LockManager lockServer;
     Broadcast broadcaster;
-    String configFile = "flightudp.xml";
+    String configFile = "flighttcp.xml";
 
+    String filename;
 
     //constructor here: initialize the lock manager
     public ResourceManagerImpl() {

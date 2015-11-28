@@ -126,7 +126,7 @@ public class TimeToLive implements Serializable, Runnable {
                     else{
                         System.out.println("TIME OUT");
 
-                        System.out.println("TRYING TO ABORT TRANSACTION" + txnid);
+                        System.out.println("TRYING TO ABORT TRANSACTION " + txnid);
 
                         proxy.abort(txnid);
                         System.out.println("TRANSACTION " + txnid + " ABORTED ");

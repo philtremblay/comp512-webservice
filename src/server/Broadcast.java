@@ -210,7 +210,7 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
 
                     System.out.flush();
                     String line = state.get(state.size()-1);
-                    System.out.println("SENDING THE PACKET");
+                    System.out.println("REP: sending command: "+ line);
                     Message msg = new Message(null, null, line);
                     channel.send(msg);
                     //turn off after sending the message
