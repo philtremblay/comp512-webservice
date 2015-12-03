@@ -45,8 +45,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     protected BitSet transactionBit;
 
     short f_flag = 1;
-    short c_flag = 0;
-    short r_flag = 0;
+    short c_flag = 1;
+    short r_flag = 1;
 
 
     //flight server properties
@@ -79,7 +79,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     String rrep_host = "localhost";
     int rrep_port = 7084;
 
-    String configFile = "middleudp.xml";
+    String configFile = "middletcp.xml";
 
     //code for Client imported from server
     protected RMHashtable m_itemHT = new RMHashtable();

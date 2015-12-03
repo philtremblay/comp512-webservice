@@ -16,9 +16,9 @@
 
 
     <!-- protocol configurations -->
-    <property name="config.dir" value="${basedir}/conf"/>
-    <property name="flight.protocol" value="${config.dir}/flightudp.xml"/>
-
+<!--    <property name="config.dir" value="${basedir}/conf"/>
+    <property name="flight.protocol" value="${config.dir}/flighttcp.xml"/>
+-->
 
 
     <path id="jaxws.classpath">
@@ -66,7 +66,7 @@
     <target name="create-war">
         <war 
             warfile="${basedir}/build/war/${service.name}.war" 
-            webxml="etc/web.xml">
+            webxml="etc/web-${service.name}.xml">
             <webinf dir="${basedir}/etc" includes="sun-jaxws.xml"/>
             <zipfileset
                     dir="${basedir}/etc"

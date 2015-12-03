@@ -1,9 +1,7 @@
 package server.ws;
 
 import java.io.File;
-import org.apache.catalina.LifecycleException;
 import org.apache.catalina.startup.Tomcat;
-import server.Car;
 
 public class Main {
 
@@ -37,19 +35,9 @@ public class Main {
         tomcat.addWebapp("/" + serviceName, 
                 new File(deployDir + "/" + serviceName).getAbsolutePath());
 
+        tomcat.enableNaming();
         tomcat.start();
         tomcat.getServer().await();
 
-
-
-
-
-
-
-
     }
-
-
-
-    
 }

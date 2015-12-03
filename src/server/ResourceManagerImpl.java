@@ -10,6 +10,8 @@ import server.LockManager.LockManager;
 
 import java.util.*;
 import javax.jws.WebService;
+import javax.naming.Context;
+import javax.naming.InitialContext;
 
 
 @WebService(endpointInterface = "server.ws.ResourceManager")
@@ -20,18 +22,44 @@ public class ResourceManagerImpl implements server.ws.ResourceManager{
     private static final int READ = 0;
     private static final int WRITE = 1;
 
+    private static final int FLIGHT = 1;
+    private static final int CAR = 2;
+    private static final int ROOM = 3;
+
     protected LockManager lockServer;
     Broadcast broadcaster = null;
-    String configFile = "flightudp.xml";
-
+    String configFileFlight = "flighttcp.xml";
+    String configFileCar = "cartcp.xml";
+    String configFileRoom = "roomtcp.xml";
 
     //constructor here: initialize the lock manager
     public ResourceManagerImpl() {
-
         //initialize the lock manager
         this.lockServer = new LockManager();
+
+        String serviceName = "";
+        try{
+            Context env = (Context) new InitialContext().lookup("java:comp/env");
+            serviceName = (String) env.lookup("service-name");
+            System.out.println("Service name: " + serviceName);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         try {
-            this.broadcaster = new Broadcast(configFile,this);
+            switch (serviceName){
+                case "flight":
+                    this.broadcaster = new Broadcast(configFileFlight,this,FLIGHT);
+                    break;
+                case "car":
+                    this.broadcaster = new Broadcast(configFileCar,this,CAR);
+                    break;
+                case "room":
+                    this.broadcaster = new Broadcast(configFileRoom,this,ROOM);
+                    break;
+                default:
+                    System.out.println("ERROR: Couldn't get the right Jgroups config file");
+                    break;
+            }
             Thread t = new Thread(broadcaster);
             t.start();
         } catch (Exception e) {

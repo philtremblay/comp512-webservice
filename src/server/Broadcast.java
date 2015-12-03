@@ -28,17 +28,19 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
     String configFile = null;
 
     BitSet firstTime = new BitSet(1);
+    private int RMType;
 
     ResourceManagerImpl s_rm = null;
 
     final List<String> state = new LinkedList<>();
 
 
-    public Broadcast(String configFile, ResourceManagerImpl resourceManager) {
+    public Broadcast(String configFile, ResourceManagerImpl resourceManager, int rmType) {
         System.setProperty("java.net.preferIPv4Stack" , "true");
 
         this.configFile = configFile;
         this.s_rm = resourceManager;
+        this.RMType = rmType;
 
         firstTime.set(0);
 
@@ -263,7 +265,20 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
         try {
             channel = new JChannel(serverConfig);
             channel.setReceiver(this);
-            channel.connect("Flight-Cluster");
+            switch (RMType) {
+                case 1:
+                    channel.connect("Flight-Cluster");
+                    break;
+                case 2:
+                    channel.connect("Car-Cluster");
+                    break;
+                case 3:
+                    channel.connect("Room-Cluster");
+                    break;
+                default:
+                    channel.connect("Cluster");
+                    break;
+            }
             channel.getState(null, 10000);
             multicast();
             channel.close();
@@ -831,15 +846,6 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
         }
     }
 
-    public boolean getBoolean(Object temp) throws Exception {
-        try {
-            return (new Boolean((String)temp)).booleanValue();
-        }
-        catch(Exception e) {
-            throw e;
-        }
-    }
-
     public String getString(Object temp) throws Exception {
         try {
             return (String)temp;
@@ -848,17 +854,6 @@ public class Broadcast extends ReceiverAdapter implements Runnable {
             throw e;
         }
     }
-
-    protected Vector cmdToVect(int RMType, int queryType, int itemNumOrLocation){
-        Vector cmd = new Vector();
-        cmd.add(RMType);
-        cmd.add(queryType);
-        cmd.add(itemNumOrLocation);
-
-        return cmd;
-    }
-
-
 
     public void addCommand(String command) {
 
