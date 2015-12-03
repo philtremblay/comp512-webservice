@@ -891,29 +891,35 @@ public class MidBroadcast extends ReceiverAdapter implements Runnable{
             Integer RMType = (Integer) cmd.get(0);
             Integer queryType = (Integer) cmd.get(1);
             Integer location = (Integer) cmd.get(2);
-            switch (queryType) {
-                case ResourceManagerImpl.ADD:
-                    //location is the customerId. it gets set in newcustomer
-                    if (!m_rm.newCustomerId(txnId, location)) {
-                        Trace.warn("FAILED TO CREATE NEW CUSTOMER UPON ABORT: " + txnId);
-                        return false;
-                    }
-                    break;
-                case ResourceManagerImpl.DEL:
-                    //location is the customerId. it gets set in newcustomer
-                    boolean isDeleted = m_rm.deleteCustomer(txnId, location);
-                    if (!isDeleted) {
-                        Trace.warn("FAILED TO DELETE CUSTOMER UPON ABORT: " + txnId);
-                        return false;
-                    }
-                    break;
-                case ResourceManagerImpl.UNRES:
-                    String objLocation = String.valueOf(cmd.get(3));
-                    String objKey = (String) cmd.get(4);
-                    Integer itemInfo = (Integer) cmd.get(5);
-                    if (!m_rm.unReserveItem(txnId, location, objLocation, objKey, itemInfo)) {
-                        Trace.warn("REP: FAILED UNRERSERVE CUSTOMER UPON ABORT: " + txnId);
-                        return false;
+
+            switch (RMType) {
+
+                case ResourceManagerImpl.CUST:
+                    switch (queryType) {
+                        case ResourceManagerImpl.ADD:
+                            //location is the customerId. it gets set in newcustomer
+                            if (!m_rm.newCustomerId(txnId, location)) {
+                                Trace.warn("FAILED TO CREATE NEW CUSTOMER UPON ABORT: " + txnId);
+                                return false;
+                            }
+                            break;
+                        case ResourceManagerImpl.DEL:
+                            //location is the customerId. it gets set in newcustomer
+                            boolean isDeleted = m_rm.deleteCustomer(txnId, location);
+                            if (!isDeleted) {
+                                Trace.warn("FAILED TO DELETE CUSTOMER UPON ABORT: " + txnId);
+                                return false;
+                            }
+                            break;
+                        case ResourceManagerImpl.UNRES:
+                            String objLocation = String.valueOf(cmd.get(3));
+                            String objKey = (String) cmd.get(4);
+                            Integer itemInfo = (Integer) cmd.get(5);
+                            if (!m_rm.unReserveItem(txnId, location, objLocation, objKey, itemInfo)) {
+                                Trace.warn("REP: FAILED UNRERSERVE CUSTOMER UPON ABORT: " + txnId);
+                                return false;
+                            }
+                            break;
                     }
                     break;
             }
