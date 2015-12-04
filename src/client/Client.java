@@ -21,11 +21,11 @@ public class Client {
     public Client(String serviceName, String serviceHost, int servicePort)
             throws Exception {
 
-        int hasbackup = 0;
+        int hasbackup = 1;
 
         primary = new WSClient(serviceName, serviceHost, servicePort);
         if (hasbackup == 1) {
-            backup = new WSClient("middlerep", serviceHost, 6668);
+            backup = new WSClient("middlerep", "localhost", 6668);
         }
         else {
             backup = primary;
@@ -86,11 +86,6 @@ public class Client {
         System.out.println("Type \"help\" for list of supported commands");
 
         while (true) {
-
-
-
-
-
             try {
                 //read the next command
                 command = stdin.readLine();
@@ -1279,15 +1274,10 @@ public class Client {
                 try {
                     for (int i = 0; i < arguments.size()-6; i++)
                         flightNumbers.addElement(arguments.elementAt(3 + i));
-                    if (id >= 0 && customer >=0 && location != null && carBool && roomBool && reserveFlag) {
                         if (client.proxy.reserveItinerary(id, customer, flightNumbers, location, carBool, roomBool))
                             System.out.println("Itinerary Reserved");
                         else
                             System.out.println("Itinerary could not be reserved.");
-                    }
-                    else {
-                        System.out.println("Itinerary could not be reserved: Invalid command");
-                    }
 
                 }
                 catch(Exception e) {
@@ -1298,15 +1288,10 @@ public class Client {
                             client = backup;
                         }
                         System.out.println("connected to its replica");
-                        if (id >= 0 && customer >=0 && location != null && carBool && roomBool && reserveFlag) {
-                            if (client.proxy.reserveItinerary(id, customer, flightNumbers, location, carBool, roomBool))
-                                System.out.println("Itinerary Reserved");
-                            else
-                                System.out.println("Itinerary could not be reserved.");
-                        }
-                        else {
-                            System.out.println("Itinerary could not be reserved: Invalid command");
-                        }
+                        if (client.proxy.reserveItinerary(id, customer, flightNumbers, location, carBool, roomBool))
+                            System.out.println("Itinerary Reserved");
+                        else
+                            System.out.println("Itinerary could not be reserved.");
                     }catch (IOException e1) {
                         System.out.println("EXCEPTION: fail to connect to PC, connecting to its replica2");
                         try {
@@ -1314,15 +1299,10 @@ public class Client {
                                 client = primary;
                             }
                             System.out.println("connected to its replica2");
-                            if (id >= 0 && customer >=0 && location != null && carBool && roomBool && reserveFlag) {
-                                if (client.proxy.reserveItinerary(id, customer, flightNumbers, location, carBool, roomBool))
-                                    System.out.println("Itinerary Reserved");
-                                else
-                                    System.out.println("Itinerary could not be reserved.");
-                            }
-                            else {
-                                System.out.println("Itinerary could not be reserved: Invalid command");
-                            }
+                            if (client.proxy.reserveItinerary(id, customer, flightNumbers, location, carBool, roomBool))
+                                System.out.println("Itinerary Reserved");
+                            else
+                                System.out.println("Itinerary could not be reserved.");
                         } catch (IOException e2) {
                             e2.printStackTrace();
                             return;

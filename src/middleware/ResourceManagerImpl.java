@@ -46,7 +46,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
     short f_flag = 1;
     short c_flag = 1;
-    short r_flag = 1;
+    short r_flag = 0;
 
 
     //flight server properties
@@ -171,15 +171,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             }
         }
 
-        SignalMessage ping = new SignalMessage(this);
-        Thread t = new Thread(ping);
-        t.start();
-
+//        SignalMessage ping = new SignalMessage(this);
+//        Thread t = new Thread(ping);
+//        t.start();
 
     }
-
-
-
 
     @Override
     public int start(){
@@ -493,7 +489,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
             // the replica directly delete customer data without touching the RMs
             boolean update = true;
             if (broadcast.PCBit.get(0)) {
-
                 switch (itemInfo) {
                     case FLIGHT:
                         try {
@@ -1788,7 +1783,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
 
         //if any of the reservation fails, undo all reservations
-        if (flights.nextSetBit(0) != -1 || !carPassed || !roomPassed){
+        if (flights.nextSetBit(0) != -1 || (!carPassed && car) || (!roomPassed && room)){
             Iterator it2 = flightNumbers.iterator();
             int j =0;
             int failedFlight = flights.nextSetBit(0);
