@@ -21,7 +21,7 @@ public class Client {
     public Client(String serviceName, String serviceHost, int servicePort)
             throws Exception {
 
-        int hasbackup = 1;
+        int hasbackup = 0;
 
         primary = new WSClient(serviceName, serviceHost, servicePort);
         if (hasbackup == 1) {
