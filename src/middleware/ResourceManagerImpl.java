@@ -19,6 +19,7 @@ import java.util.*;
 @WebService(endpointInterface = "server.ws.ResourceManager")
 public class ResourceManagerImpl implements server.ws.ResourceManager {
 
+    //move the WSClient to here
     WSClient flightProxy;
     WSClient flightPC;
     WSClient flightProxyBackup;
